@@ -6,6 +6,15 @@ This file will be culled to update the version history file for official release
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
 1.7
+
+2001-04-10 Lane Roathe <lane@roathe.com>
+Fixed window menu selection code to avoid crashing w/null access if window not found
+Created new routine to set window name
+Window names now reflect if they are the data or resource window
+Added a new routine to menus to get a menu item corresponding to a window
+Moved the version resources to their own file
+Modified the project to set the correct flags in release builds (custom icon, etc.)
+
 2001-02-17 Lane Roathe <lane@roathe.com>
 Fixed all the lines per page calculations! Many a bug are fixed :)
 	(inspired by Scott, who sent in a try at a printed page lines per page fix)
