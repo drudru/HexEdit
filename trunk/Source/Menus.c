@@ -191,7 +191,13 @@ OSStatus InitMenubar( void )
 	// set menu bar
 	Handle	menuBar;
 
-	menuBar = GetNewMBar( kMenuBaseID );
+#if TARGET_API_MAC_CARBON
+	long result;
+	if ((Gestalt(gestaltMenuMgrAttr, &result) == noErr) && (result & gestaltMenuMgrAquaLayoutMask))
+		menuBar = GetNewMBar( kMenuXBaseID);
+	else
+#endif
+		menuBar = GetNewMBar( kMenuBaseID );
 	SetMenuBar( menuBar );
 
 	// get menu references
