@@ -153,7 +153,6 @@ short GetColorMenuResID( short menuItem )
 	short	resID;
 	ResType	resType;
 
-	CheckMenuItem( colorMenu, menuItem, true );
 	GetMenuItemText( colorMenu, menuItem, menuText );
 	h = GetNamedResource( 'HEct', menuText );
 	if( h )
@@ -341,8 +340,10 @@ OSStatus AdjustMenus( void )
 // LR: v1.6.5	CheckMenuItem( gColorMenu, CM_UseColor, gPrefs.useColor );	// allow turning on even if not usable
 // LR: v1.6.5 Try to show status of color in new windows to help "intuitive" nature of menu
 	GetIndString( menuStr, strColor, (gPrefs.useColor) ? 2 : 1 );
-
 	SetMenuItemText( colorMenu, CM_UseColor, menuStr );
+
+	//LR 181 -- set menu item checkmark
+	CheckMenuItem( colorMenu, isObjectWin ? dWin->csMenuID : gPrefs.csMenuID, true );
 
 	selection = gPrefs.useColor && isObjectWin && dWin->csResID > 0;
 	i = CountMenuItems( colorMenu );
@@ -657,7 +658,7 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 		}
 		else if( dWin && dWin->csResID > 0 )		// can't color B&W windows!
 		{
-			short colorResID = GetColorMenuResID( menuItem );;
+			short colorResID = GetColorMenuResID( menuItem );
 
 			CheckMenuItem( colorMenu, gPrefs.csMenuID, false );
 
@@ -676,7 +677,10 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 				while( eWin )
 				{
 					if( GetWindowKind( eWin->oWin.theWin ) == kHexEditWindowTag )
+					{
 						eWin->csResID = gPrefs.csResID;
+						eWin->csMenuID = gPrefs.csMenuID;	//Lr 181 -- for menu tagging
+					}
 
 					eWin = FindNextEditWindow( eWin );
 				}

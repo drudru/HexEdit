@@ -104,6 +104,8 @@ typedef struct
 //LR 180	GWorldPtr			offscreen;
 
 	short				csResID;		// LR: color table res ID for drawing theWin
+	short				csMenuID;		//LR 181 -- menu ID of window's color (for nice window updates)
+
 }	EditWindowRecord, *EditWindowPtr;
 
 void InitializeEditor( void );
