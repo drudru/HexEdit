@@ -67,18 +67,7 @@ extern prefs_t prefs;
 
 // --- Prototypes ---
 
-OSStatus InitPrefs( void );
-Boolean CanUseFindFolder( void );
-Boolean GetPrefsFPath( long *prefDirID, short *systemVolRef );
-Boolean CreatePrefsFolder( short *systemVolRef );
-Boolean GetPrefsFPath6( short *systemVolRef );
-OSStatus WritePrefs( long *prefDirID, short *systemVolRef );
-OSStatus WritePrefs6 ( short *systemVolRef );
 Boolean SavePrefs( void );
-OSStatus ReadPrefs( long *prefDirID, short *systemVolRef );
-OSStatus ReadPrefs6( short *systemVolRef );
-Boolean DeletePrefs( long *dirID, short *volRef );
-Boolean DeletePrefs6( short *volRef );
 Boolean LoadPrefs( void );
 
 #endif
