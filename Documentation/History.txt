@@ -11,6 +11,7 @@ Empty fork warnings now work!
 Use a Carbon v1.1 function just to require that version or later.
 		(this is an attempt to fix the crash under CarbonLib v1.0.x)
 Adjusted position of elements in file compare prefs dialog for OS X
+Added OS X Project Builder project (compiles, links, starts runs, but can't debug)
 Fixed bad sizing of scroll bars
 Fixed problem with scroll thumb moving when clicked on (but not dragged)
 Compare files now uses an open window if existing for a selected file
