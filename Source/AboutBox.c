@@ -100,7 +100,7 @@ void HexEditAboutBox( void )
 #endif
 , NULL, NULL );
 
-	theDialog = GetNewDialog( dlgAbout, NULL, (WindowRef)-1L );
+	theDialog = GetNewDialog( dlgAbout, NULL, kFirstWindowOfClass );
 #if TARGET_API_MAC_CARBON
 	SetPortDialogPort( theDialog );
 #else
@@ -134,11 +134,9 @@ void HexEditAboutBox( void )
 #if TARGET_API_MAC_CARBON
 	if( SetDialogTimeout )
 		SetDialogTimeout( theDialog, ok, 60 );
+#endif
 
 	ShowWindow( GetDialogWindow( theDialog ) );
-#else
-	ShowWindow( theDialog );
-#endif
 	
 	ModalDialog( dlgFilterUPP, &item );
 

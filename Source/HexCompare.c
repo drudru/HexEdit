@@ -251,16 +251,11 @@ void DoComparison( void )
 
 	GetPort( &oldPort );
 
-	pDlg = GetNewDialog ( dlgCompare, 0L, (WindowRef)-1 );
-#if TARGET_API_MAC_CARBON
+	pDlg = GetNewDialog ( dlgCompare, 0L, kFirstWindowOfClass );
+
 	MoveWindow( GetDialogWindow( pDlg ), 22, g.maxHeight -64 +8, true );
 	ShowWindow( GetDialogWindow( pDlg ) );
-	SetPort( GetDialogPort( pDlg ) );
-#else
-	MoveWindow( pDlg, 22, g.maxHeight -64 +8, true );		// move dialog to 14, 400?
-	ShowWindow( pDlg );
-	SetPort( pDlg );
-#endif
+	SetPort( (GrafPtr)GetDialogPort( pDlg ) );
 
 	SetDialogDefaultItem( pDlg, 1 );	// LR: v1.6.5 LR -- correct way of showing default button
 /*
@@ -293,7 +288,7 @@ void DoComparison( void )
 				else
 					PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 
-				SelectWindow( (WindowRef) pDlg );
+				SelectWindow( (WindowRef)pDlg );
 			}
 			if( iType==3 )			// handle find backward here
 			{
@@ -304,7 +299,7 @@ void DoComparison( void )
 				else
 					PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 
-				SelectWindow( (WindowRef) pDlg );
+				SelectWindow( (WindowRef)pDlg );
 			}
 		}
 		else DoEvent( &theEvent );
@@ -389,7 +384,7 @@ void ComparisonPreferences( void )
 
 	GetPort( &oldPort );
 	// make dialog
-	pDlg = GetNewDialog ( dlgComparePref, 0L, (WindowRef)-1 );
+	pDlg = GetNewDialog ( dlgComparePref, 0L, kFirstWindowOfClass );
 
 	SetPortDialogPort( pDlg );
 

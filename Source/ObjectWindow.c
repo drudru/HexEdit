@@ -41,7 +41,7 @@ WindowRef InitObjectWindow( short resID, ObjectWindowPtr objectWindow, Boolean i
 
 	objectWindow->floating = false;
 	objectWindow->themeSavvy = (resID == kAppearanceWindow) ? true : false;	// NS 1.7.1; so we know not to draw the grow icon
-	objectWindow->theWin = GetNewCWindow( resID, NULL, (WindowRef) -1 );
+	objectWindow->theWin = GetNewCWindow( resID, NULL, kFirstWindowOfClass );
 	SetWindowKind( objectWindow->theWin, kHexEditWindowTag );			// new storage location (not in RefCon)
 	SetWRefCon( objectWindow->theWin, (long)objectWindow );	// new storage to stop "(ObjectWindowPtr) theWindowPtr"
 
