@@ -37,7 +37,7 @@
 #define	kPrefsFileNameIndex	FN_PrefsFile
 
 // LR: preferences structure
-#define PREFS_VERSION	0x0208
+#define PREFS_VERSION	0x0209
 
 typedef struct
 {
@@ -59,6 +59,7 @@ typedef struct
 	short	constrainSize;	// resizing allows partial lines?
 	short	formatCopies;	// format copies (spaces, tabs - false == raw data)
 	short	nonDestructive;	// in overwrite mode, Detete is non-destructive (## -> 00)
+	short	moveOnlyPaging;	// page up/down only move display, not selection point
 
 	short	useColor;		// true if we are using color windows
 
