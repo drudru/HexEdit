@@ -79,7 +79,7 @@ Note: Copies are made depending on which side of the editing window you have "cu
 
 The Find Menu
 
-Find - This brings up a dialog box allowing you to search for a sequence of hex bytes, or asciitext. The dialog is movable and modeless, meaning it will stay open after you do a find.
+Find/Replace - This brings up a dialog box allowing you to search for a sequence of hex bytes, or asciitext. You can also enter a replacement string and use the Replace or Replace All buttons to replace the next occurance of the search string with the replacement string, or all subsequent occurances, withing the topmost edit window. The dialog is movable and modeless, meaning it will stay open after you do a find.
 
 Search Forward - This searches for  the last search string, forward until the end of the file.
 
