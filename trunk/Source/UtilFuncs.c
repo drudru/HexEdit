@@ -165,6 +165,7 @@ short ErrorAlert( short severity, short strid, ... )
 	char 	tbuf[256], str[256];
 	short	itemHit;
 	va_list args;
+	AlertType inAlertType;
 
 	GetIndString( (StringPtr)str, strError, strid );
 	CopyPascalStringToC( (StringPtr)str, str );
@@ -175,25 +176,48 @@ short ErrorAlert( short severity, short strid, ... )
 
 	CopyCStringToPascal( tbuf, (StringPtr)tbuf );
 
-	ParamText( (StringPtr) tbuf, NULL, NULL, NULL );
-	InitCursor();
-	switch( severity )
+	if (g.appearanceAvailable)
 	{
-	case ES_Message:
-		itemHit = Alert( alertMessage, NULL );
-		break;
-		
-	case ES_Note:
-		itemHit = NoteAlert( alertError, NULL );
-		break;
-		
-	case ES_Caution:
-		itemHit = CautionAlert( alertError, NULL );
-		break;
+		switch (severity)
+		{
+		case ES_Message:
+			inAlertType  = kAlertPlainAlert;
+			break;
+		case ES_Note:
+			inAlertType  = kAlertNoteAlert;
+			break;
+		case ES_Caution:
+			inAlertType  = kAlertCautionAlert;
+			break;
+		case ES_Stop:
+			inAlertType  = kAlertStopAlert;
+			break;
+		}
+			
+		StandardAlert(inAlertType, (StringPtr)tbuf, NULL, NULL, &itemHit);
+	}
+	else
+	{
+		ParamText( (StringPtr) tbuf, NULL, NULL, NULL );
+		InitCursor();
+		switch( severity )
+		{
+		case ES_Message:
+			itemHit = Alert( alertMessage, NULL );
+			break;
+			
+		case ES_Note:
+			itemHit = NoteAlert( alertError, NULL );
+			break;
+			
+		case ES_Caution:
+			itemHit = CautionAlert( alertError, NULL );
+			break;
 
-	case ES_Stop:
-		itemHit = StopAlert( alertError, NULL );
-		break;
+		case ES_Stop:
+			itemHit = StopAlert( alertError, NULL );
+			break;
+		}
 	}
 
 	// LR: v1.6.5, -- No "Debug" buttons, but OPTION on any goes into debugger now!
