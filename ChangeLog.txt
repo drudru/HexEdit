@@ -14,6 +14,7 @@ Window names now reflect if they are the data or resource window
 Added a new routine to menus to get a menu item corresponding to a window
 Moved the version resources to their own file
 Modified the project to set the correct flags in release builds (custom icon, etc.)
+Fixed a bad (Boolean) conversion with the menu code, which was causing "Edit Other Fork" to fail to find an existing window on occasion (if the last byte happened to be ZERO) because it coerced a Handle into a Char!
 
 2001-02-17 Lane Roathe <lane@roathe.com>
 Fixed all the lines per page calculations! Many a bug are fixed :)
