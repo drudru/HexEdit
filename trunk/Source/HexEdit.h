@@ -89,11 +89,12 @@
 
 //LR 185 -- under Carbon, alloc more RAM for faster ops
 #if TARGET_API_MAC_CARBON
-	#define kMaxFileRAM		(144L * 1024L) 	//LR 185 32000L
-	#define kSlushRAM		( 16L * 1024L)	//LR 185 1000L
+	#define kChunkSize		(128L * 1024L)		//LR 185 -new-
+	#define kMaxFileRAM		(kChunkSize * 8)	//LR 185 32000L
 #else
-	#define kMaxFileRAM		33000L
-	#define kSlushRAM		1000L
+	#define kChunkSize		(32L * 1024L)		//LR 185 33000L
+	#define kMaxFileRAM		(kChunkSize * 4)	//LR 185330000L
+//	#define kSlushRAM		1000L
 #endif
 
 #define kAllocIncrement	64L
