@@ -1215,8 +1215,11 @@ static void _invertSelection( EditWindowPtr	dWin )
 	if( dWin->endSel <= dWin->startSel )
 		return;
 
-	if( ctHdl )	invertColor = ( *ctHdl )->body;
-	else		invertColor = white;
+	// Set our inversion color
+	if( ctHdl )
+		invertColor = ( *ctHdl )->body;
+	else
+		invertColor = white;
 	
 	InvertColor( &invertColor );
 	
@@ -1539,6 +1542,7 @@ static OSStatus _initColorTable( HEColorTablePtr ct )
 	ct->barLine.red = ct->barLine.green = ct->barLine.blue = 0x7FFF;
 	ct->headerText = ct->barText = ct->text = black;
 	ct->body = white;
+	ct->bodyDark = white;
 	return noErr;
 }
 
@@ -1711,10 +1715,9 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	EraseRect( &addrRect );
 
 	addr = sAddr - (sAddr % kBytesPerLine);
-
 	g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kStringHexPos + kBodyStrLen] = ' ';
 
-	// draw each line of data
+	// Now, draw each line of data
 	for( y = r->top + (kLineHeight - 2), j = 0; y < r->bottom && addr < eAddr; y += kLineHeight, j++ )
 	{
 		if( gPrefs.decimalAddr )
@@ -1737,11 +1740,8 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		{
 			Rect r2;
 
-			if( !(j & 1) )
-			{
-				RGBBackColor( &( *ctHdl )->body );
-				RGBForeColor( &( *ctHdl )->text );
-			}
+			RGBBackColor( (j & 1) ? &( *ctHdl )->bodyDark : &( *ctHdl )->body );	//LR 180 -- choose appr. body bkgnd color
+			RGBForeColor( &( *ctHdl )->text );
 
 			// LR: 1.7 -- must erase for this to show up on printouts!
 			r2.top = y - (kLineHeight - 3);
@@ -2158,29 +2158,23 @@ doend:
 			return;
 		}
 
-		// delete characters
-		//LR 1.74 -- non-destructive deletes in overwrite mode (paste appr. lenght zero buffer)
-		case kBackspaceCharCode:	// normal delete
-			if( gPrefs.overwrite && gPrefs.nonDestructive )
+		case kClearCharCode:		//LR 180 -- clearing an area is now a seperate command
 			{
 				long start;
-
-				if( dWin->endSel == dWin->startSel && dWin->startSel > 0L )
+doclear:
+				if( dWin->endSel > dWin->startSel )	// can only clear something if it's selected
 				{
-					ObscureCursor();
-					--dWin->startSel;
-				}
-
-				if( dWin->endSel > dWin->startSel )
-				{
+					// Create a new chunk which will be all zero by default
 					EditChunk **tc = NewChunk( dWin->endSel - dWin->startSel, 0, 0, CT_Unwritten );
-					if( !tc ) ErrorAlert( ES_Caution, errMemory );
+					if( !tc )
+						ErrorAlert( ES_Caution, errMemory );
 					else
 					{
-						(*tc)->lastCtr = 1;	// external
+						(*tc)->lastCtr = 1;	// external chunk
 
 						start = dWin->startSel;
 
+						// now, remember for undo and past this chunk over existing space, then free the memory used
 						RememberOperation( dWin, EO_Paste, &gUndo );
 						PasteOperation( dWin, tc );
 						DisposeChunk( dWin, tc );
@@ -2188,10 +2182,38 @@ doend:
 						ScrollToSelection( dWin, dWin->startSel, false );
 					}
 				}
+				else
+					SysBeep(0);		// nothing to clear, signal it!
+			}
+			break;
 
+		// delete characters
+		//LR 1.74 -- non-destructive deletes in overwrite mode (paste appr. lenght zero buffer)
+		case kBackspaceCharCode:	// normal delete
+
+			if( er->modifiers & optionKey )				//LR 180 -- option key clears
+				goto doclear;
+
+			if( gPrefs.overwrite && gPrefs.nonDestructive )
+			{
+				if( dWin->endSel == dWin->startSel )	//LR 180 -- non-destructive really is now!
+				{
+					if( dWin->startSel > 0L )
+					{
+						ObscureCursor();
+						--dWin->startSel;
+					}
+					else
+						SysBeep(0);
+				}
+
+				dWin->endSel = dWin->startSel;
+				UpdateOnscreen( dWin->oWin.theWin );
 			}
 			else if( dWin->endSel > dWin->startSel )
+			{
 				ClearSelection( dWin );
+			}
 			else if( dWin->startSel > 0L )
 			{
 				ObscureCursor();
