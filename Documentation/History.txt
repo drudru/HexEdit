@@ -1,6 +1,22 @@
 HexEdit Revision History
 
-01/01/25 Version 1.66
+02/13/01 Version 1.66
+	Fixed bad conversion of undo records to pointers (reverted to records)
+	Fixed various NULL reference potentials having to do with using FrontWindow
+	Fixed a few bogus uses of ObjectWindow refs from a non-edit window via GetWRefCon
+	Added ability to cancel searches with Command-. or Escape
+	Removed the last of the english strings to the resource file
+	Re-wrote unique name routine to create more readable filenames
+	Display new window filenames (instead of a bogus generic name)
+	Fixed new windows not being able to edit other fork (fsSpec not initialized!)
+	cleaned up sources for SourceForge CVS & added license comments
+	new text files and names for easier use
+	new directory structure for SF
+	Merged Nick Shanks 1.66
+	URL's now attached to About links
+	FAT Carbonized application
+	Fixed SaveAs problem (and made sure no lingering (EditWindowPtr) coersions existed!)
+	Fixed Goto/Search dialog paste crashes (involved re-writing HandleMenus!)
 	Nick Shanks added a Window menu
 	Option menu was re-arranged a little
 	Moved mac_Offscreen code to EditWindow.c
