@@ -267,7 +267,7 @@ OSStatus AdjustMenus( void )
 	else
 		scrapExists = false;
 
-	undoExists = (gUndo.type != 0);	// check for NULL gUndo!
+	undoExists = (isObjectWin && gUndo.type != 0 && gUndo.theWin == dWin);	// check for NULL gUndo!
 	
 // LR: - enable file menu items during search, via Aaron D.
 // LR:	_enableMenuItem( fileMenu, FM_New, g.searchWin == NULL );

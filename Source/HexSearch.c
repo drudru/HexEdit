@@ -98,7 +98,7 @@ void OpenSearchDialog( void )
 void PerformTextSearch( EditWindowPtr dWin )
 {
 	short		ch, matchIdx;
-	long		addr, matchAddr;
+	long		addr, matchAddr, adjust;
 
 	// LR: v1.6.5 if not passed a window, get first one
 	if( !dWin )
@@ -108,23 +108,24 @@ void PerformTextSearch( EditWindowPtr dWin )
 			return;
 	}
 
-	// Search in Direction prefs.searchForward
-	// for text g.searchBuffer
-
+	// Get starting index into file
+	addr = dWin->startSel;
 	if( prefs.searchForward )
-		addr = dWin->startSel;
+		adjust = 1;
 	else
-		addr = dWin->endSel - 1;
-
-	// LR: 1.7 -- make sure we are searching in OK memory (ie, empty window bug fix)
-	if( addr < 0 || !dWin->fileSize)
-		goto Failure;
+		adjust = -1;
 
 	MySetCursor( C_Watch );
 
 	matchIdx = 0;
-	while( !CheckForAbort() )	//LR: 1.66 - allow user to abort the search
+	addr += adjust;
+
+	// LR: 1.72 -- make sure we are searching in OK memory (ie, empty window bug fix)
+	while( addr >= 0 && addr < dWin->fileSize )
 	{
+		if( !(addr % kBytesPerLine) && CheckForAbort())	//LR: 1.66 - allow user to abort the search
+			break;
+
 		ch = GetByte( dWin, addr );
 		if( !prefs.searchCase && prefs.searchMode != EM_Hex )
 			ch = toupper( ch );
@@ -151,17 +152,7 @@ void PerformTextSearch( EditWindowPtr dWin )
 				addr = matchAddr;
 			}
 		}
-		if( prefs.searchForward )
-		{
-			++addr;
-			if( addr >= dWin->fileSize )
-				goto Failure;
-		}
-		else
-		{
-			--addr;
-			if( addr < 0 ) goto Failure;
-		}
+		addr += adjust;
 	}
 
 Failure:
