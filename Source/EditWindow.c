@@ -627,6 +627,9 @@ void NewEditWindow( void )
 #if !TARGET_API_MAC_CARBON		// standard file callbacks not applicable with carbon
 
 /*** SOURCE DLOG HOOK ***/
+//LR 1.72 -- at some point the fork mode was changed from zero to one based,
+//			probably in my contants cleanup. This caused the WRONG control to be
+//			selected for non-appearance cases ... and then CRASH!
 pascal short SourceDLOGHook( short item, DialogPtr theDialog )
 {
 	switch( item )
@@ -634,13 +637,13 @@ pascal short SourceDLOGHook( short item, DialogPtr theDialog )
 		case DataItem:
 		case RsrcItem:
 		case SmartItem:
-			SetControl( theDialog, g.forkMode + DataItem, false );
+			SetControl( theDialog, g.forkMode + DataItem - 1, false );
 			g.forkMode = item - DataItem;
-			SetControl( theDialog, g.forkMode + DataItem, true );
+			SetControl( theDialog, g.forkMode + DataItem - 1, true );
 			return sfHookNullEvent;	/* Redraw the List */
 		
 		case sfHookFirstCall:
-			SetControl( theDialog, g.forkMode + DataItem, true );
+			SetControl( theDialog, g.forkMode + DataItem - 1, true );
 			return sfHookNullEvent;
 	}
 	return item;
