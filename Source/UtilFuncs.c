@@ -135,17 +135,17 @@ Boolean CheckForAbort( void )
 	{
 		if( keyDown == event.what )		// should always be true, but ...
 		{
-			char c;
-			EventRecord bogus;
+			do	//LR 186 -- check avail and all other events for abort press (other no longer worked!)
+			{
+				char c = (event.message & charCodeMask);
 
-			while( GetNextEvent( everyEvent, &bogus ) )
-				;	// remove all pending events!
-
-			c = (event.message & charCodeMask);
-
-			// 05/10/01 - GAB: unintended assignment?
+				// We allow both ESC and Cmd-'.' to abort
 			if( 27 == c || ('.' == c && (event.modifiers & cmdKey)) )
-				return( true );
+				{
+					FlushEvents( everyEvent, NULL );	// don't leave any events on queue if aborting!
+					return( true );
+				}
+			}while( GetNextEvent( everyEvent, &event ) );
 		}
 	}
 	return( false );
