@@ -63,7 +63,7 @@ Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 
 
 	matchIdx = 0;
-	while ( 1 )
+	while ( !CheckForAbort() )		// LR: 1.7 -- allow aborting compares!
 	{
 		ch = GetByte( dWin, addr );
 		ch2 = GetByte( dWin2, addr2 );
@@ -163,7 +163,7 @@ Boolean PerformTextMatchCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 	if( prefs.searchSize==CM_Long ) matchCnt += 1;
 
 	matchIdx = 0;
-	while ( 1 )
+	while ( !CheckForAbort() )		// LR: 1.7 -- allow aborting compares!
 	{
 		ch = GetByte( dWin, addr );
 		ch2 = GetByte( dWin2, addr2 );
