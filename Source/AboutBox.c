@@ -33,7 +33,12 @@ static TEHandle	hTE;
 static short endText;
 static unsigned long prevTicks;
 
-#define SCROLLDELAY 3
+//LR 1.75 -- only bad on MacOS X, and the PPC version is default in OS 8/9
+#if TARGET_API_MAC_CARBON
+	#define SCROLLDELAY 0
+#else
+	#define SCROLLDELAY 3
+#endif
 
 //LR 1.73 -- make code more readable
 #ifdef __MC68K__
