@@ -27,20 +27,26 @@
 #include "MPWIncludes.h"
 #endif
 
-#include "main.h"
-#include "AboutBox.h"
+#include "Main.h"
+#include "ObjectWindow.h"
 #include "Utility.h"
 
-#if !TARGET_CPU_PPC
+#include "AboutBox.h"
+
+/* if not carbon, appearance manager might not be available and we need these */
+#if !TARGET_API_MAC_CARBON
 	static TEHandle	hTE;
 	static short endText;
 	static long long prevTime;
 
+	#define TEITEM		2
+
 	//LR 1.76 -- rewrite entire text scroll routine to do speed based on pixels per second!
 	#define SCROLLPIXELSPERSECOND 10.0	// NOTE: good to keep in even ticks for update cleanness
+	#define BLANKPIXELSPACE 190			//LR 181 -- blank spacing in text for autoscroll use
 #endif
 
-#define itemFirstURL 6	// all the rest must follow WITHOUT BREAKS!
+#define kFirstURLItem 6	// all the rest must follow WITHOUT BREAKS!
 
 //LR 1.73 -- make code more readable
 #ifdef __MC68K__
@@ -55,19 +61,28 @@
 
 /* --- new dialog method in carbon makes scrolling much better, esp. in X! */
 
-#if !TARGET_CPU_PPC
+#if !TARGET_API_MAC_CARBON
 
 /*** DRAW TE TEXT ***/
 //	draw the TE text in our user item
-static pascal void DrawTEText( DialogPtr whichDialog, short itemNr )
+static pascal void _updateTextBox( DialogPtr whichDialog, short itemNr )
 {
-	#pragma unused( whichDialog, itemNr )
+	#pragma unused( itemNr )
+
+	GrafPtr savePort;
+
+	// let the standard dialog filter handle events
+	GetPort( &savePort );
+	SetPortDialogPort( whichDialog );
+
 	TEUpdate( &(*hTE)->viewRect, hTE );
+
+	SetPort( savePort );
 }
 
 /*** DIALOG FILTER ***/
 //	dialog filter for about box (used to scroll TE contents)
-static pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
+static pascal Boolean _standardFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
 {
 	long long curTime;
 	double elapsed;
@@ -91,7 +106,7 @@ static pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, s
 		}
 		else	// end of credits, start from the top!
 		{
-			register short startOffset = (*hTE)->viewRect.bottom - (*hTE)->viewRect.top;
+			register short startOffset = ((*hTE)->viewRect.bottom - (*hTE)->viewRect.top) - BLANKPIXELSPACE;
 	
 			(*hTE)->destRect.top = (*hTE)->viewRect.top + startOffset;
 			(*hTE)->destRect.bottom = (*hTE)->viewRect.bottom + startOffset;
@@ -102,29 +117,69 @@ static pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, s
 	return StdFilterProc( whichDialog, event, itemHit );
 }
 
-#endif //!TARGET_CPU_PPC
+#endif //!TARGET_API_MAC_CARBON
+
+static pascal Boolean _appearanceFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
+{
+	Boolean handled = false;
+
+	// let background windows update
+	if( updateEvt == event->what )
+	{
+		ObjectWindowPtr objectWindow;
+		WindowRef theWin = (WindowRef) event->message;
+
+		objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
+		if( GetWindowKind( theWin ) == kHexEditWindowTag && objectWindow->Update )
+			objectWindow->Update( theWin );
+	}
+	else
+	{
+		GrafPtr savePort;
+
+		// let the standard dialog filter handle events
+		GetPort( &savePort );
+		SetPortDialogPort( whichDialog );
+		handled = StdFilterProc( whichDialog, event, itemHit );
+		SetPort( savePort );
+	}
+
+	return( handled );
+}
 
 
 /*** HEX EDIT ABOUT BOX ***/
 //	code stolen from Lane's ResCon sources
 void HexEditAboutBox( void )
 {
-	#define TEITEM		2
-
 	DialogPtr	theDialog;
-	Boolean		done;
 	short		item;
 	GrafPtr		savePort;
 	StringPtr	verStr;
 	VersRecHndl	vr;
+	short		dialogID;
+	ModalFilterUPP dlgFilterUPP;
 
-#if !TARGET_CPU_PPC
+#if !TARGET_API_MAC_CARBON
 	Handle		text;
 	StScrpHandle style;
 	Rect		bounds;
 
-	ModalFilterUPP dlgFilterUPP = NewModalFilterUPP( DialogFilter );
-	UserItemUPP userItemUPP = NewUserItemUPP( DrawTEText );
+	UserItemUPP userItemUPP = NewUserItemUPP( _updateTextBox );
+#endif
+
+	/* select which filter proc we want to use */
+	if( g.useAppearance )
+	{
+		dialogID = dlgAbout;
+		dlgFilterUPP = NewModalFilterUPP( _appearanceFilter );
+	}
+#if !TARGET_API_MAC_CARBON
+	else
+	{
+		dialogID = dlgAbout + 1;
+		dlgFilterUPP = NewModalFilterUPP( _standardFilter );
+	}
 #endif
 
 	/* First, get our version information to display in dialog */
@@ -144,60 +199,63 @@ void HexEditAboutBox( void )
 	/* Create the dialog */
 	GetPort( &savePort );
 
-	theDialog = GetNewDialog( dlgAbout, NULL, kFirstWindowOfClass );
+	theDialog = GetNewDialog( dialogID, NULL, kFirstWindowOfClass );
 	SetPortDialogPort( theDialog );
 
-#if !TARGET_CPU_PPC
-	/* Get the text to display */
-	GetRect( theDialog, TEITEM, &bounds );
-	hTE = TEStyleNew( &bounds, &bounds );
-	TEScroll( 0, (*hTE)->viewRect.bottom - (*hTE)->viewRect.top, hTE );
-
-	style = (StScrpHandle)GetResource( 'styl', dlgAbout );		// try to use a styled text edit for coolness
-	text = GetResource ('TEXT', dlgAbout);
-	if( text )
+	/* W/O appearance manager we must create scrolling box ourselves! */
+#if !TARGET_API_MAC_CARBON
+	if( !g.useAppearance )
 	{
-		HLock( text );
-		TEStyleInsert (&(**text), GetHandleSize (text), style, hTE);	// Style == 0 creates plain text
-		ReleaseResource( text );
+		/* Get the text to display */
+		GetRect( theDialog, TEITEM, &bounds );
+		hTE = TEStyleNew( &bounds, &bounds );
+		TEScroll( 0, ((*hTE)->viewRect.bottom - (*hTE)->viewRect.top) - BLANKPIXELSPACE, hTE );
+
+		style = (StScrpHandle)GetResource( 'styl', dlgAbout );		// try to use a styled text edit for coolness
+		text = GetResource ('TEXT', dlgAbout);
+		if( text )
+		{
+			HLock( text );
+			TEStyleInsert (&(**text), GetHandleSize (text), style, hTE);	// Style == 0 creates plain text
+			ReleaseResource( text );
+		}
+
+		TECalText( hTE );
+		endText = (((*hTE)->destRect.top + BLANKPIXELSPACE) - (TEGetHeight( (*hTE)->nLines, 1, hTE ) - BLANKPIXELSPACE));	// bottom < this == done
+
+		SetDraw( theDialog, TEITEM, (Handle) userItemUPP );
+
+		Microseconds( (UnsignedWide *)&prevTime );
 	}
+#endif //!TARGET_API_MAC_CARBON
 
-	TECalText( hTE );
-	endText = (*hTE)->destRect.top - TEGetHeight( (*hTE)->nLines, 1, hTE );	// bottom < this == donet
-
-	SetDraw( theDialog, TEITEM, (Handle) userItemUPP );
-
-	Microseconds( (UnsignedWide *)&prevTime );
-#endif //!TARGET_CPU_PPC
-
-	done = false;
-
+	/* Show the dialog and run it */
 	SetDialogDefaultItem( theDialog, ok );
 	ShowWindow( GetDialogWindow( theDialog ) );
 
 	InitCursor();
 
-#if TARGET_CPU_PPC
-	ModalDialog( NULL, &item );
-#else
 	ModalDialog( dlgFilterUPP, &item );
-#endif
 
 	// LR: 1.66 check for a URL item and launch if so
 #ifndef __MC68K__
-	if( itemFirstURL <= item )
+	if( kFirstURLItem <= item )
 	{
 		Str255 str;
-		GetIndString( str, strURLs, item - (itemFirstURL - 1) );
+		GetIndString( str, strURLs, item - (kFirstURLItem - 1) );
 		LaunchURL( str );
 	}
 #endif
 
-#if !TARGET_CPU_PPC
-	TEDispose( hTE );
+#if !TARGET_API_MAC_CARBON
+	if( !g.useAppearance )
+	{
+		TEDispose( hTE );
+		DisposeUserItemUPP( userItemUPP );
+	}
+#endif //!TARGET_API_MAC_CARBON
+
 	DisposeModalFilterUPP( dlgFilterUPP );
-	DisposeUserItemUPP( userItemUPP );
-#endif //!TARGET_CPU_PPC
 
 	DisposeDialog( theDialog );
 
