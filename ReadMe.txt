@@ -33,6 +33,13 @@ In Internet Explorer, you can set these by going to "Preferences" and the "File 
 
 Anyway, no one is more annoyed with this entire problem than me (Lane), because I get the blame and yet I have no control over the situation!
 
+* Translations *
+
+Japanese translation provided by:  Hardboiled_egg <boiled@geocities.co.jp>
+French translation provided by:  Jean-Jacques Cortes <jjcortes@wanadoo.fr>
+German translation provided by:  Bruce Gehre <bruce@gehre.org>
+				 <http://gehre.org/hexedit/>
+
 * From Jim's original Docs *
 HexEdit is a hexdump viewer and editor that works similarly to the hex editor provided with Apple's ResEdit.  It allows you to edit either the data fork or the resource fork of a file.
 
