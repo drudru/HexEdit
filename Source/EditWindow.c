@@ -24,6 +24,7 @@
  *		Nick Shanks (NS)
  *		Scott E. Lasley (SEL) 
  *		Brian Bergstrand (BB) 
+ *		Nick Pissaro Jr. (NP)
  */
 
 // 05/10/01 - GAB: MPW environment support
@@ -52,217 +53,6 @@ HEColorTableHandle ctHdl = NULL;	// LR: global to file, for speed
 RGBColor black = { 0, 0, 0 };
 RGBColor white = { 0xFFFF, 0xFFFF, 0xFFFF };
 
-#if TARGET_API_MAC_CARBON
-
-// SEL: 1.7 - added carbon printing (function rearrangment by LR)
-
-/*------------------------------------------------------------------------------
-    Get the printing information from the end user
-
-    Parameters:
-        printSession    -   current printing session
-        pageFormat      -   a PageFormat object addr
-        printSettings   -   a PrintSettings object addr
-
-    Description:
-        If the caller passes an empty PrintSettings object, create a new one,
-        otherwise validate the one provided by the caller.
-        Invokes the Print dialog and checks for Cancel.
-        Note that the PrintSettings object is modified by this function.
-
-------------------------------------------------------------------------------*/
-static OSStatus _doPrintDialog( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings* printSettings )
-{
-    OSStatus    status;
-    Boolean     accepted;
-    UInt32      minPage = 1,
-                maxPage = 9999;
-
-    //  In this sample code the caller provides a valid PageFormat reference but in
-    //  your application you may want to load and unflatten the PageFormat object
-    //  that was saved at PageSetup time.  See LoadAndUnflattenPageFormat below.
-
-    //  Set up a valid PrintSettings object.
-    if (*printSettings == kPMNoPrintSettings)
-    {
-        status = PMCreatePrintSettings(printSettings);
-
-        //  Note that PMPrintSettings is not session-specific, but calling
-        //  PMSessionDefaultPrintSettings assigns values specific to the printer
-        //  associated with the current printing session.
-        if ((status == noErr) && (*printSettings != kPMNoPrintSettings))
-            status = PMSessionDefaultPrintSettings(printSession, *printSettings);
-    }
-    else
-        status = PMSessionValidatePrintSettings(printSession, *printSettings,
-                    kPMDontWantBoolean);
-    //  Set a valid page range before displaying the Print dialog
-    if (status == noErr)
-        status = PMSetPageRange(*printSettings, minPage, maxPage);
-
-    //  Display the Print dialog.
-    if (status == noErr)
-    {
-        status = PMSessionPrintDialog(printSession, *printSettings, pageFormat,
-                    &accepted);
-        if (!accepted)
-            status = kPMCancel; // user clicked Cancel button
-    }
-
-    return( status );
-}
-
-/*------------------------------------------------------------------------------
-	Print the pages
-
-    Parameters:
-        printSession    -   current printing session
-        pageFormat      -   a PageFormat object addr
-        printSettings   -   a PrintSettings object addr
-
-    Description:
-        Assumes the caller provides validated PageFormat and PrintSettings objects.
-        Calculates a valid page range and prints each page by calling DrawDump.
-
-------------------------------------------------------------------------------*/
-static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings printSettings, EditWindowPtr dWin )
-{
-	OSStatus  	status,
-	          printError;
-	PMRect		pageRect;
-	SInt32		startAddr, endAddr, linesPerPage, addr;
-	UInt32			realNumberOfPagesinDoc,
-	          pageNumber,
-	          firstPage,
-	          lastPage;
-
-	//  PMGetAdjustedPaperRect returns the paper size taking into account rotation,
-	//  resolution, and scaling settings.  Note this is the paper size selected
-	//  the Page Setup dialog.  It is not guaranteed to be the same as the paper
-	//  size selected in the Print dialog on Mac OS X.
-	status = PMGetAdjustedPaperRect(pageFormat, &pageRect);
-
-	//  PMGetAdjustedPageRect returns the page size taking into account rotation,
-	//  resolution, and scaling settings.  Note this is the imageable area of the
-	//  paper selected in the Page Setup dialog.
-	//  DetermineNumberOfPagesInDoc returns the number of pages required to print
-	//  the document.
-	if (status == noErr)
-	{
-	  status = PMGetAdjustedPageRect(pageFormat, &pageRect);
-	  if (status == noErr)
-	  {
-			if( dWin->startSel == dWin->endSel )
-			{
-				startAddr = 0;
-				endAddr = dWin->fileSize;
-			}
-			else
-			{
-				startAddr = dWin->startSel;
-				endAddr = dWin->endSel;
-			}
-
-			addr = startAddr;
-//LR: 1.7 -fix lpp calculation!			linesPerPage = (pageRect.bottom - TopMargin - (kHeaderHeight + 1)) / kLineHeight;
-			linesPerPage = ((pageRect.bottom - pageRect.top) + (kLineHeight / 3) - (kHeaderHeight + kFooterHeight)) / kLineHeight;
-			realNumberOfPagesinDoc = (((endAddr - startAddr) / kBytesPerLine) / linesPerPage) + 1;
-		}
-	}
-
-	//  Get the user's selection for first and last pages
-	if (status == noErr)
-	{
-	  status = PMGetFirstPage(printSettings, &firstPage);
-	  if (status == noErr)
-	      status = PMGetLastPage(printSettings, &lastPage);
-	}
-
-	//  Check that the selected page range does not go beyond the actual
-	//  number of pages in the document.
-	if (status == noErr)
-	{
-		if( firstPage > realNumberOfPagesinDoc )
-		{
-			status = kPMValueOutOfRange;
-			PMSessionSetError (printSession, kPMValueOutOfRange);
-		}
-
-		if (realNumberOfPagesinDoc < lastPage)
-			lastPage = realNumberOfPagesinDoc;
-	}
-
-	//  NOTE:  We don't have to worry about the number of copies.  The Printing
-	//  Manager handles this.  So we just iterate through the document from the
-	//  first page to be printed, to the last.
-	if (status == noErr)
-	{ //  Establish a graphics context for drawing the document's pages.
-	  //  Although it's not used in this sample code, PMGetGrafPtr can be called
-	  //  get the QD grafport.
-	  status = PMSessionBeginDocument(printSession, printSettings, pageFormat);
-	  if (status == noErr)
-	  { //  Print all the pages in the document.  Note that we spool all pages
-			//  and rely upon the Printing Manager to print the correct page range.
-			//  In this sample code we assume the total number of pages in the
-			//  document is equal to "lastPage".
-			pageNumber = 1;
-			while ((pageNumber <= lastPage) && (PMSessionError(printSession) == noErr))
-			{
-				Rect	r;
-				
-				//  NOTE:  We don't have to deal with the old Printing Manager's
-				//  128-page boundary limit anymore.
-
-				//  Set up a page for printing.
-				status = PMSessionBeginPage(printSession, pageFormat, &pageRect);
-				if (status != noErr)
-				  break;
-
-				//  Draw the page.
-				r.top = (short)(pageRect.top);
-				r.left = (short)(pageRect.left);
-				r.bottom = r.top + kHeaderHeight - 1;
-				r.right = (short)(pageRect.right);
-				DrawHeader( dWin, &r );
-
-				r.top += kHeaderHeight;
-				r.bottom = pageRect.bottom - kFooterHeight;
-				DrawDump( dWin, &r, addr, endAddr );
-
-				r.top = r.bottom;
-				r.bottom += kFooterHeight;
-				DrawFooter( dWin, &r, pageNumber, realNumberOfPagesinDoc );
-
-				//  Close the page.
-				status = PMSessionEndPage(printSession);
-				if (status != noErr)
-				  break;
-
-				addr += linesPerPage * kBytesPerLine;
-				addr -= ( addr % kBytesPerLine );
-
-				//  And loop.
-				pageNumber++;
-			}
-
-			// Close the printing port
-			(void)PMSessionEndDocument(printSession);
-	  }
-	}
-
-	//  Only report a printing error once we have completed the print loop. This
-	//  ensures that every PMSessionBegin... call is followed by a matching
-	//  PMSessionEnd... call, so the Printing Manager can release all temporary
-	//  memory and close properly.
-	printError = PMSessionError(printSession);
-	if ( ( kPMCancel != printError) && (printError != noErr) )
-	  PostPrintingErrors(printError);
-}
-
-// NS: v1.6.6, event filters for navigation services
-
-#endif	//TARGET_API_MAC_CARBON  -- BB: moved _navEventFilter from Carbon only
-
 // BB: selector to determine Nav dialog type
 #define kNavOpenDialogType ((NavCallBackUserData)-1L)
 enum
@@ -275,6 +65,168 @@ enum
 	kAutoForkRadioID = 4,
 	kNavDITLNumControls = 4//3 radio buttons + radio group control
 };
+
+/* NS: v1.6.6, GWorld creation moved to where it is used */
+
+/*
+	Handle creation and use of offscreen bitmaps
+	=================================================
+	22-Sep-00 LR: GWorlds only now (courtesy of Nick Shanks)
+	21-Jun-94 LR: attach palette to offscreen pixmap
+	24-Apr-94 LR: Shit, it was working, color table was messed up!
+	22-Apr-94 LR: ok, no GWorlds, how about CGrafPtrs?
+	20-Apr-94 LR: creation ( w/GWorlds )
+*/
+
+// LR: used to force non-color offscreens ( 1/8 to 1/32 the size! )
+// NS: not used // short PIXELBITS = 1;	// 8, 16, 32
+
+/*** NEW OFFSCREEN GWORLD ***/
+static GWorldPtr _newCOffScreen( short width, short height )
+{
+	OSStatus	error = noErr;
+	GWorldPtr	theGWorld = NULL;
+	Rect		rect;
+	
+	SetRect( &rect, 0, 0, width, height );
+	error = NewGWorld( &theGWorld, gPrefs.useColor? 0:1, &rect, NULL, NULL, keepLocal );
+	if( error != noErr ) return NULL;
+	return theGWorld;
+}
+
+/*** ENSURE NAME IS UNIQUE ***/	
+// LR: complete re-write as this function used to create bogus names and overwrite memory
+// LR: 1.66 -- another rewrite, to create more "readable" names
+static void _ensureNameIsUnique( FSSpec *tSpec )
+{
+	OSStatus err;
+	FInfo fInfo;
+	int i = tSpec->name[0], num = 1;
+
+	// Weird compiler bug, having the OS call in the while loop can caues it to fail w/o error
+	do
+	{
+		err = HGetFInfo( tSpec->vRefNum, tSpec->parID, tSpec->name, &fInfo );
+		if( err != fnfErr )
+		{
+			Str31 numstr;
+
+			NumToString( num++, numstr );	// get string equiv
+
+			if( i > 30 - numstr[0] )
+				i = 30 - numstr[0];		// don't make too long of a name
+
+			tSpec->name[i + 1] = ' ';
+			BlockMoveData( numstr + 1, &tSpec->name[i + 2], numstr[0] );
+
+			tSpec->name[0] = i + 1 + numstr[0];
+		}
+	}while( err != fnfErr && i );
+}
+
+/*** Set the window title (making sure it's good ***/	
+static void _setWindowTitle( EditWindowPtr dWin )
+{
+	Str255 wintitle;		// NOTE: static so we can pass back pointer (ie, it's not on stack!)
+
+	int i,j,l;
+
+	// LR: 1.66 make sure the name is good (for instance "icon/r" is bad!)
+	l = (int)dWin->fsSpec.name[0];
+	for( i = 1, j= 1; i <= l; i++ )
+	{
+		if( dWin->fsSpec.name[i] >= ' ' && '!' != dWin->fsSpec.name[i] && '^' != dWin->fsSpec.name[i] )	//LR 1.72 -- don't copy bad chars (can cause menu to mess up!)
+			wintitle[j++] = dWin->fsSpec.name[i];
+	}
+
+	// LR: 1.7 Append fork in use to title
+	if( j < 255 - 8 )
+	{
+		Str31 str2;
+
+		GetIndString( (StringPtr) str2, strHeader, dWin->fork );
+
+		BlockMoveData( &str2[1], &wintitle[j], str2[0] );
+
+		wintitle[0] = j + str2[0] - 1;
+	}
+
+	SetWTitle( dWin->oWin.theWin, wintitle );
+
+	// NS: 1.6.6 add window to window menu
+	MacAppendMenu( GetMenuHandle(kWindowMenu), wintitle );
+}
+
+/*** SETUP NEW EDIT WINDOW ***/
+// LR: 1.7 - static, and remove title (always fsSpec->name)
+
+static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
+{
+	WindowRef theWin;
+	ObjectWindowPtr objectWindow;
+	Rect r;
+
+	// NS 1.7.1; check for appearance and create appropriate window
+	theWin = InitObjectWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, (ObjectWindowPtr) dWin, false );
+	if( !theWin )
+		ErrorAlert( ES_Stop, errMemory );
+
+	// LR: 1.7 set window title & get text for window menu
+	_setWindowTitle( dWin );
+
+	objectWindow = (ObjectWindowPtr)dWin;
+	
+	objectWindow->Draw			= MyDraw;
+	objectWindow->Idle			= MyIdle;
+	objectWindow->HandleClick	= MyHandleClick;
+	objectWindow->Dispose		= DisposeEditWindow;
+	objectWindow->ProcessKey	= MyProcessKey;
+	objectWindow->Save			= SaveContents;
+	objectWindow->SaveAs		= SaveAsContents;
+	objectWindow->Revert		= RevertContents;
+	objectWindow->Activate		= MyActivate;
+
+	if( gPrefs.useColor )
+		dWin->csResID = gPrefs.csResID;	// LR: 1.5 - color selection
+	else
+		dWin->csResID = -1;	// LR: if created w/o color then offscreen is 1 bit, NO COLOR possible!
+
+	// Make it the current grafport
+	SetPortWindowPort( theWin );
+	
+	dWin->offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
+	if( !dWin->offscreen )
+			ErrorAlert( ES_Stop, errMemory );
+
+	SizeEditWindow( theWin, CompareFlag );
+
+	GetWindowPortBounds( theWin, &r );
+
+//LR: 1.7 -fix lpp calculation!	dWin->linesPerPage = ( r.bottom - TopMargin - BotMargin - ( kHeaderHeight-1 ) ) / kLineHeight + 1;
+
+/*LR 175 -- done in SetupScrollBars (this was causing bogus scrollbar values!)
+	dWin->linesPerPage = (maxheight - kHeaderHeight) / kLineHeight;
+	dWin->startSel = dWin->endSel = 0L;
+	dWin->editMode = EM_Hex;
+	dWin->lastTypePos = -1;	//LR 1.72 -- allow insertion before first char to get into undo buffer
+*/
+	//LR: 1.7 - what was this??? ((WStateData *) *((WindowPeek)theWin)->dataHandle)->stdState.left + kHexWindowWidth;
+
+	LocalToGlobal( (Point *)&r.top );
+	LocalToGlobal( (Point *)&r.bottom );
+
+	r.bottom /= 2;		// zoom'd state is 1/2 normal (assume we want as large a window as possible!)
+
+	SetWindowStandardState( theWin, &r );
+
+	return noErr;
+}
+
+#pragma mark -
+
+#define DataItem		11
+#define RsrcItem		12
+#define SmartItem		13
 
 #if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
 /*** NAV SERVICES EVENT FILTER ***/
@@ -372,363 +324,13 @@ static pascal Boolean _navFileFilter( AEDesc* theItem, void* info, void *callBac
 */
 #endif	//POWERPC
 
-/* NS: v1.6.6, GWorld creation moved to where it is used */
-
-/*
-	Handle creation and use of offscreen bitmaps
-	=================================================
-	22-Sep-00 LR: GWorlds only now (courtesy of Nick Shanks)
-	21-Jun-94 LR: attach palette to offscreen pixmap
-	24-Apr-94 LR: Shit, it was working, color table was messed up!
-	22-Apr-94 LR: ok, no GWorlds, how about CGrafPtrs?
-	20-Apr-94 LR: creation ( w/GWorlds )
-*/
-
-// LR: used to force non-color offscreens ( 1/8 to 1/32 the size! )
-// NS: not used // short PIXELBITS = 1;	// 8, 16, 32
-
-/*** NEW OFFSCREEN GWORLD ***/
-static GWorldPtr _newCOffScreen( short width, short height )
-{
-	OSStatus	error = noErr;
-	GWorldPtr	theGWorld = NULL;
-	Rect		rect;
-	
-	SetRect( &rect, 0, 0, width, height );
-	error = NewGWorld( &theGWorld, gPrefs.useColor? 0:1, &rect, NULL, NULL, keepLocal );
-	if( error != noErr ) return NULL;
-	return theGWorld;
-}
-
-/*** ENSURE NAME IS UNIQUE ***/	
-// LR: complete re-write as this function used to create bogus names and overwrite memory
-// LR: 1.66 -- another rewrite, to create more "readable" names
-static void _ensureNameIsUnique( FSSpec *tSpec )
-{
-	OSStatus err;
-	FInfo fInfo;
-	int i = tSpec->name[0], num = 1;
-
-	// Weird compiler bug, having the OS call in the while loop can caues it to fail w/o error
-	do
-	{
-		err = HGetFInfo( tSpec->vRefNum, tSpec->parID, tSpec->name, &fInfo );
-		if( err != fnfErr )
-		{
-			Str31 numstr;
-
-			NumToString( num++, numstr );	// get string equiv
-
-			if( i > 30 - numstr[0] )
-				i = 30 - numstr[0];		// don't make too long of a name
-
-			tSpec->name[i + 1] = ' ';
-			BlockMoveData( numstr + 1, &tSpec->name[i + 2], numstr[0] );
-
-			tSpec->name[0] = i + 1 + numstr[0];
-		}
-	}while( err != fnfErr && i );
-}
-
-/*** Set the window title (making sure it's good ***/	
-static void _setWindowTitle( EditWindowPtr dWin )
-{
-	Str255 wintitle;		// NOTE: static so we can pass back pointer (ie, it's not on stack!)
-
-	int i,j,l;
-
-	// LR: 1.66 make sure the name is good (for instance "icon/r" is bad!)
-	l = (int)dWin->fsSpec.name[0];
-	for( i = 1, j= 1; i <= l; i++ )
-	{
-		if( dWin->fsSpec.name[i] >= ' ' && '!' != dWin->fsSpec.name[i] && '^' != dWin->fsSpec.name[i] )	//LR 1.72 -- don't copy bad chars (can cause menu to mess up!)
-			wintitle[j++] = dWin->fsSpec.name[i];
-	}
-
-	// LR: 1.7 Append fork in use to title
-	if( j < 255 - 8 )
-	{
-		Str31 str2;
-
-		GetIndString( (StringPtr) str2, strHeader, dWin->fork );
-
-		BlockMoveData( &str2[1], &wintitle[j], str2[0] );
-
-		wintitle[0] = j + str2[0] - 1;
-	}
-
-	SetWTitle( dWin->oWin.theWin, wintitle );
-
-	// NS: 1.6.6 add window to window menu
-	MacAppendMenu( GetMenuHandle(kWindowMenu), wintitle );
-}
-
-/*** SIZE A WINDOW APPR. TO SITUATION ***/
-//LR 175 -- seperated to allow calling from OpenWindow to handle compare requests on open windows
-
-static void _sizeWindow( WindowRef theWin )
-{
-	EditWindowPtr dWin = (EditWindowPtr)GetWRefCon( theWin );
-	short maxheight = g.maxHeight / 2 - 96;
-
-	// LR:	Hack for comparing two files
-	if( CompareFlag == 1 )
-	{
-		MoveWindow( theWin, 14, 48, true );
-		CompWind1 = theWin;
-	}
-	else if( CompareFlag == 2 )
-	{
-		MoveWindow( theWin, 14, g.maxHeight / 2, true );
-		CompWind2 = theWin;
-	}
-	else
-		maxheight = g.maxHeight - 64;
-
-	// Check for best window size
-	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
-		maxheight = (((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) * kLineHeight);
-
-	if( maxheight < (kLineHeight * 5) )
-		maxheight = (kLineHeight * 5);
-
-	// LR: v1.6.5 round this to a size showing only full lines
-	maxheight = ((maxheight / kLineHeight) * kLineHeight) + kHeaderHeight;
-
-	SizeWindow( theWin, kHexWindowWidth, maxheight, true );
-
-	// Show the theWin
-	SelectWindow( theWin );
-	ShowWindow( theWin );
-
-	SetupScrollBars( dWin );
-}
-
-/*** SETUP NEW EDIT WINDOW ***/
-// LR: 1.7 - static, and remove title (always fsSpec->name)
-
-static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
-{
-	WindowRef theWin;
-	ObjectWindowPtr objectWindow;
-	Rect r;
-
-	// NS 1.7.1; check for appearance and create appropriate window
-	theWin = InitObjectWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, (ObjectWindowPtr) dWin, false );
-	if( !theWin )
-		ErrorAlert( ES_Stop, errMemory );
-
-	// LR: 1.7 set window title & get text for window menu
-	_setWindowTitle( dWin );
-
-	objectWindow = (ObjectWindowPtr)dWin;
-	
-	objectWindow->Draw			= MyDraw;
-	objectWindow->Idle			= MyIdle;
-	objectWindow->HandleClick	= MyHandleClick;
-	objectWindow->Dispose		= DisposeEditWindow;
-	objectWindow->ProcessKey	= MyProcessKey;
-	objectWindow->Save			= SaveContents;
-	objectWindow->SaveAs		= SaveAsContents;
-	objectWindow->Revert		= RevertContents;
-	objectWindow->Activate		= MyActivate;
-
-	if( gPrefs.useColor )
-		dWin->csResID = gPrefs.csResID;	// LR: 1.5 - color selection
-	else
-		dWin->csResID = -1;	// LR: if created w/o color then offscreen is 1 bit, NO COLOR possible!
-
-	// Make it the current grafport
-	SetPortWindowPort( theWin );
-	
-	dWin->offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
-	if( !dWin->offscreen )
-			ErrorAlert( ES_Stop, errMemory );
-
-	_sizeWindow( theWin );
-
-	GetWindowPortBounds( theWin, &r );
-
-//LR: 1.7 -fix lpp calculation!	dWin->linesPerPage = ( r.bottom - TopMargin - BotMargin - ( kHeaderHeight-1 ) ) / kLineHeight + 1;
-
-/*LR 175 -- done in SetupScrollBars (this was causing bogus scrollbar values!)
-	dWin->linesPerPage = (maxheight - kHeaderHeight) / kLineHeight;
-	dWin->startSel = dWin->endSel = 0L;
-	dWin->editMode = EM_Hex;
-	dWin->lastTypePos = -1;	//LR 1.72 -- allow insertion before first char to get into undo buffer
-*/
-	//LR: 1.7 - what was this??? ((WStateData *) *((WindowPeek)theWin)->dataHandle)->stdState.left + kHexWindowWidth;
-
-	LocalToGlobal( (Point *)&r.top );
-	LocalToGlobal( (Point *)&r.bottom );
-
-	r.bottom /= 2;		// zoom'd state is 1/2 normal (assume we want as large a window as possible!)
-
-	SetWindowStandardState( theWin, &r );
-
-	return noErr;
-}
-
-
-/*** INITIALIZE EDITOR ***/
-void InitializeEditor( void )
-{
-//LR 175	CursHandle	cursorHandle = NULL;
-	Str255		str;
-	SInt32		val;
-	FontInfo	finfo;
-	WindowRef	newWin;
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
-	PScrapStuff			ScrapInfo;
-
-	ScrapInfo = InfoScrap();
-	if( ScrapInfo->scrapState < 0 )
-		ZeroScrap();
-#endif
-
-	// Start Profiling
-#if PROFILE			// 6/15 Optional profiling support
-	freopen( "profile.log", "w", stdout );		// If console isn't wanted
-	InitProfile( 200, 200 );
-	_profile = 0;
-	// cecho2file( "profile.log", false, stdout );	// If console is wanted
-#endif
-
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-{
-	BitMap qdScreenBits;
-
-	GetQDGlobalsScreenBits( &qdScreenBits );
-	g.maxHeight = qdScreenBits.bounds.bottom - qdScreenBits.bounds.top - 24;
-}
-#else
-	g.maxHeight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - 24;	// LR: add 'qd.'
-#endif
-
-	//LR 1.72 -- more flexability in font usage, get from string and find width/height from actual data
-
-	newWin = GetNewCWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, NULL, kLastWindowOfClass );	//LR 1.72 don't change system font!
-	SelectWindow( newWin );
-	SetPortWindowPort( newWin );
-
-	GetIndString( str, strFont, 1 );
-	GetFNum( str, &g.fontFaceID );		// 1.7 carsten-unhardcoded font name & size
-	GetIndString( str, strFont, 2 );
-	StringToNum( str, &val );			//LR 1.72 -- get font info from resource
-	g.fontSize = (short)val;
-	TextFont( g.fontFaceID );
-	TextSize( g.fontSize );
-	GetFontInfo( &finfo );
-	g.charWidth = CharWidth( '0' );	//LR -- should, but doesn't, work -> finfo.widMax;
-	g.lineHeight = finfo.ascent + finfo.descent;
-
-	DisposeWindow( newWin );	// done w/temp window, get rid of it
-
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
-	PrOpen();
-	g.HPrint = (THPrint) NewHandle( sizeof(TPrint) );
-	if( !g.HPrint )
-		ErrorAlert( ES_Stop, errMemory );
-
-	PrintDefault( g.HPrint );
-	PrClose();
-#endif
-}
-
-/*** CLEANUP EDITOR ***/
-void CleanupEditor( void )
-{
-	PrefsSave();
-
-	// LR: v1.6.5 now need to dispose of these at exit since they never truly "close"
-	if( g.searchDlg )
-	{
-		DisposeDialog( g.searchDlg );
-		g.searchDlg = NULL;
-	}
-
-	if( g.gotoDlg )
-	{
-		DisposeDialog( g.gotoDlg );
-		g.gotoDlg = NULL;
-	}
-}
-
-/*** NEW EDIT WINDOW ***/
-void NewEditWindow( void )
-{
-	EditWindowPtr		dWin;
-	OSStatus			error;
-	short				refNum = 0;	// 05/10/01 - GAB: NULL is a pointer type, and doesn't fit in a short
-//LR 175	Point				where = { -1, -1 };
-	FSSpec				workSpec;
-// LR: 1.5	Rect				r, offRect;
-
-	// Get the Template & Create the Window, initially set to the file's data fork
-
-	dWin = (EditWindowPtr) NewPtrClear( sizeof(EditWindowRecord) );
-	if( !dWin )
-	{
-		FSClose( refNum );
-		ErrorAlert( ES_Caution, errMemory );
-		return;
-	}
-
-	dWin->fork = FT_Data;
-	dWin->fileSize = 0L;
-	dWin->refNum = 0;
-
-	// Initialize WorkSpec
-	workSpec = dWin->workSpec;
-	error = FindFolder( kOnSystemDisk, kTemporaryFolderType, kCreateFolder, &workSpec.vRefNum, &workSpec.parID );
-	if( error != noErr )
-	{
-		ErrorAlert( ES_Caution, errFindFolder, error );
-		return;
-	}
-	GetIndString( workSpec.name, strFiles, FN_Untitled );
-//LR: 1.66	BlockMove( "\pUntitledw", workSpec.name, 10 );
-	_ensureNameIsUnique( &workSpec );
-//LR 175	HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
-	error = FSpCreate( &workSpec, kAppCreator, '????', smSystemScript );
-	if( error != noErr )
-	{
-		ErrorAlert( ES_Caution, errCreate, error );
-		return;
-	}
-//LR 175	error = HOpenDF( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
-	error = FSpOpenDF( &workSpec, fsRdWrPerm, &refNum );
-	if( error != noErr )
-	{
-		ErrorAlert( ES_Caution, errOpen, error );
-		return;
-	}
-
-	dWin->workSpec = dWin->fsSpec = workSpec;
-	dWin->workRefNum = refNum;
-	dWin->workBytesWritten = 0L;
-
-	dWin->fileType = kDefaultFileType;
-	dWin->creator = kAppCreator;
-	dWin->creationDate = 0L;
-
-	_setupNewEditWindow( dWin );	//LR 1.66 "\pUntitled" );	// LR: 1.5 -make mashortenence easier!
-
-	dWin->firstChunk = NewChunk( 0L, 0L, 0L, CT_Unwritten );
-	dWin->curChunk = dWin->firstChunk;
-}
-
-#define DataItem		11
-#define RsrcItem		12
-#define SmartItem		13
-
 #if !TARGET_API_MAC_CARBON		// standard file callbacks not applicable with carbon
 
 /*** SOURCE DLOG HOOK ***/
 //LR 1.72 -- at some point the fork mode was changed from zero to one based,
 //			probably in my contants cleanup. This caused the WRONG control to be
 //			selected for non-appearance cases ... and then CRASH!
-pascal short SourceDLOGHook( short item, DialogPtr theDialog )
+static pascal short _sourceDLOGHook( short item, DialogPtr theDialog )
 {
 	switch( item )
 	{
@@ -748,7 +350,7 @@ pascal short SourceDLOGHook( short item, DialogPtr theDialog )
 }
 
 /*** SOURCE DLOG FILTER ***/
-pascal Boolean SourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item )
+pascal Boolean _sourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item )
 {
 	Str63		prompt;
 
@@ -815,8 +417,8 @@ short AskEditWindowSF( void )
 	DlgHookUPP myGetFileUPP;		// LR: v1.6.5 limited to this routine
 	ModalFilterUPP myFilterUPP;
 
-	myGetFileUPP = NewDlgHookProc( SourceDLOGHook );
-	myFilterUPP = NewModalFilterProc( SourceDLOGFilter );
+	myGetFileUPP = NewDlgHookProc( _sourceDLOGHook );
+	myFilterUPP = NewModalFilterProc( _sourceDLOGFilter );
 
 	// LR: make less of a hack!
 // LR: v1.6.5 localization	= { "\pFile to Open:", "\pFirst File to Compare:", "\pSecond File to Compare:"};
@@ -848,6 +450,259 @@ short AskEditWindowSF( void )
 }
 #endif
 
+#pragma mark -
+
+/*** CLEANUP EDITOR ***/
+void CleanupEditor( void )
+{
+	PrefsSave();
+
+	// LR: v1.6.5 now need to dispose of these at exit since they never truly "close"
+	if( g.searchDlg )
+	{
+		DisposeDialog( g.searchDlg );
+		g.searchDlg = NULL;
+	}
+
+	if( g.gotoDlg )
+	{
+		DisposeDialog( g.gotoDlg );
+		g.gotoDlg = NULL;
+	}
+}
+
+/*** INITIALIZE EDITOR ***/
+void InitializeEditor( void )
+{
+//LR 175	CursHandle	cursorHandle = NULL;
+	Str255		str;
+	SInt32		val;
+	FontInfo	finfo;
+	WindowRef	newWin;
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
+	PScrapStuff			ScrapInfo;
+
+	ScrapInfo = InfoScrap();
+	if( ScrapInfo->scrapState < 0 )
+		ZeroScrap();
+#endif
+
+	// Start Profiling
+#if PROFILE			// 6/15 Optional profiling support
+	freopen( "profile.log", "w", stdout );		// If console isn't wanted
+	InitProfile( 200, 200 );
+	_profile = 0;
+	// cecho2file( "profile.log", false, stdout );	// If console is wanted
+#endif
+
+#if TARGET_API_MAC_CARBON	// LR: v1.6
+{
+	BitMap qdScreenBits;
+
+	GetQDGlobalsScreenBits( &qdScreenBits );
+	g.maxHeight = qdScreenBits.bounds.bottom - qdScreenBits.bounds.top - 24;
+}
+#else
+	g.maxHeight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - 24;	// LR: add 'qd.'
+#endif
+
+	//LR 1.72 -- more flexability in font usage, get from string and find width/height from actual data
+
+	newWin = GetNewCWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, NULL, kLastWindowOfClass );	//LR 1.72 don't change system font!
+	SelectWindow( newWin );
+	SetPortWindowPort( newWin );
+
+	GetIndString( str, strFont, 1 );
+	GetFNum( str, &g.fontFaceID );		// 1.7 carsten-unhardcoded font name & size
+	GetIndString( str, strFont, 2 );
+	StringToNum( str, &val );			//LR 1.72 -- get font info from resource
+	g.fontSize = (short)val;
+	TextFont( g.fontFaceID );
+	TextSize( g.fontSize );
+	GetFontInfo( &finfo );
+	g.charWidth = CharWidth( '0' );	//LR -- should, but doesn't, work -> finfo.widMax;
+	g.lineHeight = finfo.ascent + finfo.descent;
+
+	DisposeWindow( newWin );	// done w/temp window, get rid of it
+
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
+	PrOpen();
+	g.HPrint = (THPrint) NewHandle( sizeof(TPrint) );
+	if( !g.HPrint )
+		ErrorAlert( ES_Stop, errMemory );
+
+	PrintDefault( g.HPrint );
+	PrClose();
+#endif
+}
+
+/*** SIZE A WINDOW APPR. TO SITUATION ***/
+//LR 175 -- seperated to allow calling from OpenWindow to handle compare requests on open windows
+//NP 176 -- Global for compare's usage, plus LR added a window type from NP's suggestion :)
+
+void SizeEditWindow( WindowRef theWin, tWindowType type )
+{
+	EditWindowPtr dWin = (EditWindowPtr)GetWRefCon( theWin );
+	short maxheight = g.maxHeight / 2 - 96;
+
+	// LR:	Hack for comparing two files
+	if( kWindowCompareTop == type )
+	{
+		MoveWindow( theWin, 14, 48, true );
+		CompWind1 = theWin;
+	}
+	else if( kWindowCompareBtm == type )
+	{
+		MoveWindow( theWin, 14, g.maxHeight / 2, true );
+		CompWind2 = theWin;
+	}
+	else	// kWindowNormal
+	{
+		maxheight = g.maxHeight - 64;
+	}
+
+	// Check for best window size
+	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
+		maxheight = (((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) * kLineHeight);
+
+	if( maxheight < (kLineHeight * 5) )
+		maxheight = (kLineHeight * 5);
+
+	// LR: v1.6.5 round this to a size showing only full lines
+	maxheight = ((maxheight / kLineHeight) * kLineHeight) + kHeaderHeight;
+
+	SizeWindow( theWin, kHexWindowWidth, maxheight, true );
+
+	// Show the theWin
+	SelectWindow( theWin );
+	ShowWindow( theWin );
+
+	SetupScrollBars( dWin );
+}
+
+/*** CLOSE EDIT WINDOW ***/
+Boolean	CloseEditWindow( WindowRef theWin )
+{
+	short			i, n;
+//	Str63			fileName;
+	Str255			windowName, menuItemTitle;
+	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+	MenuRef			windowMenu;
+
+	MySetCursor( C_Arrow );
+
+	if( dWin->dirtyFlag )
+	{
+//LR 1.72		GetWTitle( theWin, fileName );
+		if( !g.useNavServices ) // BB: use Nav Services ?
+		{
+			ParamText( dWin->fsSpec.name, NULL, NULL, NULL );
+			switch( CautionAlert( alertSave, NULL ) )
+			{
+				case ok:
+					SaveContents( theWin );	
+					break;
+					
+				case cancel:
+					return false;
+					
+				case 3:
+					// Discard
+					break;
+			}
+		}
+#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
+		else		// BB: code to support Nav Services
+		{
+			OSStatus error = noErr;
+			NavAskSaveChangesResult		reply;
+			NavDialogOptions	dialogOptions;
+			NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
+
+			NavGetDefaultDialogOptions( &dialogOptions );
+			BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0]+1 );//set the file name string
+			error = NavAskSaveChanges( &dialogOptions, kNavSaveChangesClosingDocument, &reply, eventProc, NULL );
+			if( error != noErr )	return false; //on error, make sure we don't destroy the contents
+			switch( reply )
+			{
+				case kNavAskSaveChangesSave:
+					SaveContents( theWin );
+					break;
+				
+				case kNavAskSaveChangesCancel:
+					return false;
+					
+				case kNavAskSaveChangesDontSave:
+					break;				
+			}
+			
+			DisposeNavEventUPP( eventProc );
+		}
+#endif	//POWERPC
+	}
+
+	// NS: v1.6.6, remove window from menu on closing
+	GetWTitle( theWin, windowName );
+	windowMenu = GetMenuHandle( kWindowMenu );
+	n = CountMenuItems(windowMenu);
+	for( i = 1; i <= n; i++ )
+	{
+		GetMenuItemText( windowMenu, i, menuItemTitle );
+		if( EqualPStrings( windowName, menuItemTitle ) )
+		{
+			DeleteMenuItem( windowMenu, i );
+			n = i+1;
+		}
+	}
+
+	//LR 1.73 :if a compare window, clear ptr so compare routine can exit!
+	if( theWin == CompWind1 )
+		CompWind1 = NULL;
+	if( theWin == CompWind2 )
+		CompWind2 = NULL;
+
+	((ObjectWindowPtr)dWin)->Dispose( theWin );
+
+	// LR: v1.7 -- if no edit window available, close find windows
+	if( !FindFirstEditWindow() )
+	{
+		if( g.gotoDlg )
+			HideWindow( GetDialogWindow( g.gotoDlg ) );
+		if( g.searchDlg )
+			HideWindow( GetDialogWindow( g.searchDlg ) );
+	}
+
+	return true;
+}
+
+/*** CLOSE ALL EDIT WINDOWS ***/
+Boolean CloseAllEditWindows( void )
+{
+	WindowRef next, theWin = FrontNonFloatingWindow();
+
+	while( theWin )
+	{
+		long windowKind = GetWindowKind( theWin );
+
+		next = GetNextWindow( theWin );
+
+/*LR 1.7 -- now closed if no windows open!
+		if( (DialogPtr)theWin == g.searchDlg )
+		{
+			DisposeDialog( g.searchDlg );
+			g.searchDlg = NULL;
+		}
+		else*/
+		if( windowKind == kHexEditWindowTag )
+			if( !CloseEditWindow( theWin ) )
+				return false;
+
+		theWin = next;
+	}
+
+	return true;
+}
+
 /*** OPEN EDIT WINDOW ***/
 OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 {
@@ -865,7 +720,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	//LR 175 -- try to find the file in an open window first, and use it if found
 	if( NULL != (dWin = LocateEditWindow( fsSpec, g.forkMode == FM_Smart ? -1 : g.forkMode )) )
 	{
-		_sizeWindow( dWin->oWin.theWin );
+		SizeEditWindow( dWin->oWin.theWin, CompareFlag );
 		return( noErr );
 	}
 
@@ -1071,128 +926,71 @@ void DisposeEditWindow( WindowRef theWin )
 	AdjustMenus();
 }
 
-/*** CLOSE EDIT WINDOW ***/
-Boolean	CloseEditWindow( WindowRef theWin )
+/*** NEW EDIT WINDOW ***/
+void NewEditWindow( void )
 {
-	short			i, n;
-//	Str63			fileName;
-	Str255			windowName, menuItemTitle;
-	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-	MenuRef			windowMenu;
+	EditWindowPtr		dWin;
+	OSStatus			error;
+	short				refNum = 0;	// 05/10/01 - GAB: NULL is a pointer type, and doesn't fit in a short
+//LR 175	Point				where = { -1, -1 };
+	FSSpec				workSpec;
+// LR: 1.5	Rect				r, offRect;
 
-	MySetCursor( C_Arrow );
+	// Get the Template & Create the Window, initially set to the file's data fork
 
-	if( dWin->dirtyFlag )
+	dWin = (EditWindowPtr) NewPtrClear( sizeof(EditWindowRecord) );
+	if( !dWin )
 	{
-//LR 1.72		GetWTitle( theWin, fileName );
-		if( !g.useNavServices ) // BB: use Nav Services ?
-		{
-			ParamText( dWin->fsSpec.name, NULL, NULL, NULL );
-			switch( CautionAlert( alertSave, NULL ) )
-			{
-				case ok:
-					SaveContents( theWin );	
-					break;
-					
-				case cancel:
-					return false;
-					
-				case 3:
-					// Discard
-					break;
-			}
-		}
-#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
-		else		// BB: code to support Nav Services
-		{
-			OSStatus error = noErr;
-			NavAskSaveChangesResult		reply;
-			NavDialogOptions	dialogOptions;
-			NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
-
-			NavGetDefaultDialogOptions( &dialogOptions );
-			BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0]+1 );//set the file name string
-			error = NavAskSaveChanges( &dialogOptions, kNavSaveChangesClosingDocument, &reply, eventProc, NULL );
-			if( error != noErr )	return false; //on error, make sure we don't destroy the contents
-			switch( reply )
-			{
-				case kNavAskSaveChangesSave:
-					SaveContents( theWin );
-					break;
-				
-				case kNavAskSaveChangesCancel:
-					return false;
-					
-				case kNavAskSaveChangesDontSave:
-					break;				
-			}
-			
-			DisposeNavEventUPP( eventProc );
-		}
-#endif	//POWERPC
+		FSClose( refNum );
+		ErrorAlert( ES_Caution, errMemory );
+		return;
 	}
 
-	// NS: v1.6.6, remove window from menu on closing
-	GetWTitle( theWin, windowName );
-	windowMenu = GetMenuHandle( kWindowMenu );
-	n = CountMenuItems(windowMenu);
-	for( i = 1; i <= n; i++ )
+	dWin->fork = FT_Data;
+	dWin->fileSize = 0L;
+	dWin->refNum = 0;
+
+	// Initialize WorkSpec
+	workSpec = dWin->workSpec;
+	error = FindFolder( kOnSystemDisk, kTemporaryFolderType, kCreateFolder, &workSpec.vRefNum, &workSpec.parID );
+	if( error != noErr )
 	{
-		GetMenuItemText( windowMenu, i, menuItemTitle );
-		if( EqualPStrings( windowName, menuItemTitle ) )
-		{
-			DeleteMenuItem( windowMenu, i );
-			n = i+1;
-		}
+		ErrorAlert( ES_Caution, errFindFolder, error );
+		return;
+	}
+	GetIndString( workSpec.name, strFiles, FN_Untitled );
+//LR: 1.66	BlockMove( "\pUntitledw", workSpec.name, 10 );
+	_ensureNameIsUnique( &workSpec );
+//LR 175	HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
+	error = FSpCreate( &workSpec, kAppCreator, '????', smSystemScript );
+	if( error != noErr )
+	{
+		ErrorAlert( ES_Caution, errCreate, error );
+		return;
+	}
+//LR 175	error = HOpenDF( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
+	error = FSpOpenDF( &workSpec, fsRdWrPerm, &refNum );
+	if( error != noErr )
+	{
+		ErrorAlert( ES_Caution, errOpen, error );
+		return;
 	}
 
-	//LR 1.73 :if a compare window, clear ptr so compare routine can exit!
-	if( theWin == CompWind1 )
-		CompWind1 = NULL;
-	if( theWin == CompWind2 )
-		CompWind2 = NULL;
+	dWin->workSpec = dWin->fsSpec = workSpec;
+	dWin->workRefNum = refNum;
+	dWin->workBytesWritten = 0L;
 
-	((ObjectWindowPtr)dWin)->Dispose( theWin );
+	dWin->fileType = kDefaultFileType;
+	dWin->creator = kAppCreator;
+	dWin->creationDate = 0L;
 
-	// LR: v1.7 -- if no edit window available, close find windows
-	if( !FindFirstEditWindow() )
-	{
-		if( g.gotoDlg )
-			HideWindow( GetDialogWindow( g.gotoDlg ) );
-		if( g.searchDlg )
-			HideWindow( GetDialogWindow( g.searchDlg ) );
-	}
+	_setupNewEditWindow( dWin );	//LR 1.66 "\pUntitled" );	// LR: 1.5 -make mashortenence easier!
 
-	return true;
+	dWin->firstChunk = NewChunk( 0L, 0L, 0L, CT_Unwritten );
+	dWin->curChunk = dWin->firstChunk;
 }
 
-/*** CLOSE ALL EDIT WINDOWS ***/
-Boolean CloseAllEditWindows( void )
-{
-	WindowRef next, theWin = FrontNonFloatingWindow();
-
-	while( theWin )
-	{
-		long windowKind = GetWindowKind( theWin );
-
-		next = GetNextWindow( theWin );
-
-/*LR 1.7 -- now closed if no windows open!
-		if( (DialogPtr)theWin == g.searchDlg )
-		{
-			DisposeDialog( g.searchDlg );
-			g.searchDlg = NULL;
-		}
-		else*/
-		if( windowKind == kHexEditWindowTag )
-			if( !CloseEditWindow( theWin ) )
-				return false;
-
-		theWin = next;
-	}
-
-	return true;
-}
+#pragma mark -
 
 // Locate Edit Window	( LR 951121 )
 // 
@@ -1221,15 +1019,21 @@ EditWindowPtr LocateEditWindow( FSSpec *fs, short fork )
 	return NULL;
 }
 
-/*** FIND FIRST EDIT WINDOW ***/
-EditWindowPtr FindFirstEditWindow( void )
+/*** FIND NEXT EDIT WINDOW ***/
+// NP 177 -- Added FineNextEditWindow, FindFirst calls w/NULL for first window
+
+EditWindowPtr FindNextEditWindow( EditWindowPtr curr )
 {
 	WindowRef theWin, editWin = NULL;
 
 	// Find and Select Top Window
 	//LR: 1.66 total re-write to avoid null window references!
 
+	if( ! curr )
 	theWin = FrontNonFloatingWindow();
+	else
+		theWin =  GetNextWindow( curr->oWin.theWin );
+	
 	if( theWin ) do
 	{
 		if( GetWindowKind( theWin ) == kHexEditWindowTag )
@@ -1243,6 +1047,42 @@ EditWindowPtr FindFirstEditWindow( void )
 		return( NULL );
 
 	return( (EditWindowPtr)GetWRefCon( editWin ) );
+}
+
+/*** FIND FIRST EDIT WINDOW ***/
+EditWindowPtr FindFirstEditWindow( void )
+{
+	return FindNextEditWindow( NULL );
+}
+
+/*** MY ACTIVATE ***/
+void MyActivate( WindowRef theWin, Boolean active )
+{
+	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+
+	if( dWin->vScrollBar )
+		HiliteControl( dWin->vScrollBar, active? 0 : 255 );
+	DefaultActivate( theWin, active );
+}
+
+/*** UPDATE EDIT WINDOWS ***/
+//LR: 1.66 - avoid NULL window ref, DrawPage with CURRENT dWin (not first!)
+void UpdateEditWindows( void )
+{
+	WindowRef		theWin = FrontNonFloatingWindow();
+	EditWindowPtr	dWin;
+
+	while( theWin )
+	{
+		long windowKind = GetWindowKind( theWin );
+		if( windowKind == kHexEditWindowTag )
+		{
+			dWin = (EditWindowPtr)GetWRefCon( theWin );
+			DrawPage( dWin );
+			UpdateOnscreen( theWin );
+		}
+		theWin = GetNextWindow( theWin );
+	}
 }
 
 /*** INIT COLOUR TABLE ***/
@@ -2126,184 +1966,6 @@ void InvertSelection( EditWindowPtr	dWin )
 	}
 }
 
-/*** PRINT WINDOW ***/
-void PrintWindow( EditWindowPtr dWin )
-{
-#if TARGET_API_MAC_CARBON	// SEL: 1.7 - carbon printing
-	// Carbon session based printing variables 
-	OSStatus    		status;
-	PMPrintSession	printSession;
-	PMPrintSettings	printSettings;
-	PMPageFormat		pageFormat;
-#else
-	Boolean			ok;
-	Rect				r;
-	TPPrPort		printPort;
-	TPrStatus		prStatus;
-	short		pageNbr, startPage, endPage, nbrPages;
-	long		startAddr, endAddr, addr;
-	short		linesPerPage;
-#endif
-
-	GrafPtr		savePort;
-
-	GetPort( &savePort );
-
-#if TARGET_API_MAC_CARBON	// SEL: 1.7 - implemented Carbon printing
-
-	// make a new printing session
-	status = PMCreateSession(&printSession);
-	if ( noErr != status )
-	{
-		PostPrintingErrors(status);
-		return;
-	}
-	if ( kPMNoPageFormat == g.pageFormat )
-	{
-		status = PMCreatePageFormat(&pageFormat);
-		//  Note that PMPageFormat is not session-specific, but calling
-		//  PMSessionDefaultPageFormat assigns values specific to the printer
-		//  associated with the current printing session.
-		if ((status == noErr) && (pageFormat != kPMNoPageFormat))
-		{
-			status = PMSessionDefaultPageFormat(printSession, pageFormat);
-		}
-	}
-	else
-	{ // already have a pageFormat, prolly because the user selected Page Setup
-		status = PMCreatePageFormat(&pageFormat);
-		status = PMCopyPageFormat(g.pageFormat, pageFormat);
-		if ( noErr == status )
-		{
-			status = PMSessionValidatePageFormat(printSession, pageFormat, kPMDontWantBoolean);
-		}
-	}
-	if ( noErr != status )
-	{
-		PostPrintingErrors(status);
-		(void)PMRelease(printSession);
-		return;
-	}
-	if ( kPMNoPrintSettings != g.printSettings )
-	{
-		status = PMCreatePrintSettings(&printSettings);
-		status = PMCopyPrintSettings(g.printSettings, printSettings);
-	}
-	else
-	{
-		printSettings = kPMNoPrintSettings;
-	}
-	if ( noErr != status )
-	{
-		PostPrintingErrors(status);
-		(void)PMRelease(pageFormat);
-		(void)PMRelease(printSession);
-		return;
-	}
-  //  Display the Print dialog.
-	status = _doPrintDialog(printSession, pageFormat, &printSettings);
-	if  ( kPMCancel != status )
-	{ // user did not cancel the print dialog box
-		if ( ( noErr == status ) )
-		{ //  Execute the print loop.
-			_doPrintLoop(printSession, pageFormat, printSettings, dWin);
-		}
-		else
-		{
-			PostPrintingErrors(status);
-			return;
-		}
-	}
-
-	//  Release the PageFormat and PrintSettings objects.  PMRelease decrements the
-	//  ref count of the allocated objects.  We let the Printing Manager decide when
-	//  to release the allocated memory.
-	if (pageFormat != kPMNoPageFormat)
-	{
-		(void)PMRelease(pageFormat);
-	}
-	if (printSettings != kPMNoPrintSettings)
-	{
-		(void)PMRelease(printSettings);
-	}
-	//  Terminate the current printing session.
-	(void)PMRelease(printSession);
-
-#else	// non-Carbon printing
-
-	PrOpen();
-
-	PrValidate( g.HPrint );
-	ok = PrJobDialog( g.HPrint );
-	if( ok )
-	{
-		if( dWin->startSel == dWin->endSel )
-		{
-			startAddr = 0;
-			endAddr = dWin->fileSize;
-		}
-		else
-		{
-			startAddr = dWin->startSel;
-			endAddr = dWin->endSel;
-		}
-
-		printPort = PrOpenDoc( g.HPrint, NULL, NULL );
-
-		r = printPort->gPort.portRect;
-//LR: 1.7 -fix lpp calculation!		linesPerPage = ( r.bottom - TopMargin - ( kHeaderHeight + 1 ) ) / kLineHeight;
-			linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - (kHeaderHeight + kFooterHeight)) / kLineHeight;
-		nbrPages = ((endAddr - startAddr) / kBytesPerLine) / linesPerPage + 1;
-
-		startPage = ( **g.HPrint ).prJob.iFstPage;
-		endPage = ( **g.HPrint ).prJob.iLstPage;
-		if( startPage > nbrPages )
-		{
-			PrCloseDoc( printPort );
-			ErrorAlert( ES_Caution, errPrintRange, nbrPages );
-			goto ErrorExit;
-		}
-		addr = startAddr;
-
-		if( endPage > nbrPages )
-			endPage = nbrPages;
-
-		ctHdl = NULL;	// print in black & white!
-
-		for ( pageNbr = 1; pageNbr <= nbrPages; ++pageNbr )
-		{
-			SetPort( &printPort->gPort );
-			PrOpenPage( printPort, NULL );
-	
-			if( pageNbr >= startPage && pageNbr <= endPage )
-			{
-				r = printPort->gPort.portRect;
-				r.bottom = r.top + kHeaderHeight - 1;		//LR: 1.7 - don't erase entire page!
-				DrawHeader( dWin, &r );
-		
-				r.top += kHeaderHeight;
-				r.bottom = printPort->gPort.portRect.bottom - kFooterHeight;
-				DrawDump( dWin, &r, addr, endAddr );
-	
-				r.top = r.bottom;
-				r.bottom += kFooterHeight;
-				DrawFooter( dWin, &r, pageNbr, nbrPages );	//SEL: 1.7 - fix Lane's DrawDump usage (what was I thinking? P)
-			}
-
-			addr += linesPerPage * kBytesPerLine;
-			addr -= ( addr % kBytesPerLine );
-			PrClosePage( printPort );
-		}
-		PrCloseDoc( printPort );
-		if( ( **g.HPrint ).prJob.bJDocLoop == bSpoolLoop && PrError() == noErr )
-			PrPicFile( g.HPrint, NULL, NULL, NULL, &prStatus );
-	}
-ErrorExit:
-	PrClose();
-#endif
-	SetPort( savePort );
-}
-
 /*** OFFSET SELECTION ***/
 void OffsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFlag )
 {
@@ -2590,8 +2252,401 @@ void CursorOn( WindowRef theWin )
 	}
 }
 
+#pragma mark -
+
+#if TARGET_API_MAC_CARBON
+
+// SEL: 1.7 - added carbon printing (function rearrangment by LR)
+
+/*------------------------------------------------------------------------------
+    Get the printing information from the end user
+
+    Parameters:
+        printSession    -   current printing session
+        pageFormat      -   a PageFormat object addr
+        printSettings   -   a PrintSettings object addr
+
+    Description:
+        If the caller passes an empty PrintSettings object, create a new one,
+        otherwise validate the one provided by the caller.
+        Invokes the Print dialog and checks for Cancel.
+        Note that the PrintSettings object is modified by this function.
+
+------------------------------------------------------------------------------*/
+static OSStatus _doPrintDialog( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings* printSettings )
+{
+    OSStatus    status;
+    Boolean     accepted;
+    UInt32      minPage = 1,
+                maxPage = 9999;
+
+    //  In this sample code the caller provides a valid PageFormat reference but in
+    //  your application you may want to load and unflatten the PageFormat object
+    //  that was saved at PageSetup time.  See LoadAndUnflattenPageFormat below.
+
+    //  Set up a valid PrintSettings object.
+    if (*printSettings == kPMNoPrintSettings)
+    {
+        status = PMCreatePrintSettings(printSettings);
+
+        //  Note that PMPrintSettings is not session-specific, but calling
+        //  PMSessionDefaultPrintSettings assigns values specific to the printer
+        //  associated with the current printing session.
+        if ((status == noErr) && (*printSettings != kPMNoPrintSettings))
+            status = PMSessionDefaultPrintSettings(printSession, *printSettings);
+    }
+    else
+        status = PMSessionValidatePrintSettings(printSession, *printSettings,
+                    kPMDontWantBoolean);
+    //  Set a valid page range before displaying the Print dialog
+    if (status == noErr)
+        status = PMSetPageRange(*printSettings, minPage, maxPage);
+
+    //  Display the Print dialog.
+    if (status == noErr)
+    {
+        status = PMSessionPrintDialog(printSession, *printSettings, pageFormat,
+                    &accepted);
+        if (!accepted)
+            status = kPMCancel; // user clicked Cancel button
+    }
+
+    return( status );
+}
+
+/*------------------------------------------------------------------------------
+	Print the pages
+
+    Parameters:
+        printSession    -   current printing session
+        pageFormat      -   a PageFormat object addr
+        printSettings   -   a PrintSettings object addr
+
+    Description:
+        Assumes the caller provides validated PageFormat and PrintSettings objects.
+        Calculates a valid page range and prints each page by calling DrawDump.
+
+------------------------------------------------------------------------------*/
+static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings printSettings, EditWindowPtr dWin )
+{
+	OSStatus  	status,
+	          printError;
+	PMRect		pageRect;
+	SInt32		startAddr, endAddr, linesPerPage, addr;
+	UInt32			realNumberOfPagesinDoc,
+	          pageNumber,
+	          firstPage,
+	          lastPage;
+
+	//  PMGetAdjustedPaperRect returns the paper size taking into account rotation,
+	//  resolution, and scaling settings.  Note this is the paper size selected
+	//  the Page Setup dialog.  It is not guaranteed to be the same as the paper
+	//  size selected in the Print dialog on Mac OS X.
+	status = PMGetAdjustedPaperRect(pageFormat, &pageRect);
+
+	//  PMGetAdjustedPageRect returns the page size taking into account rotation,
+	//  resolution, and scaling settings.  Note this is the imageable area of the
+	//  paper selected in the Page Setup dialog.
+	//  DetermineNumberOfPagesInDoc returns the number of pages required to print
+	//  the document.
+	if (status == noErr)
+	{
+	  status = PMGetAdjustedPageRect(pageFormat, &pageRect);
+	  if (status == noErr)
+	  {
+			if( dWin->startSel == dWin->endSel )
+			{
+				startAddr = 0;
+				endAddr = dWin->fileSize;
+			}
+			else
+			{
+				startAddr = dWin->startSel;
+				endAddr = dWin->endSel;
+			}
+
+			addr = startAddr;
+//LR: 1.7 -fix lpp calculation!			linesPerPage = (pageRect.bottom - TopMargin - (kHeaderHeight + 1)) / kLineHeight;
+			linesPerPage = ((pageRect.bottom - pageRect.top) + (kLineHeight / 3) - (kHeaderHeight + kFooterHeight)) / kLineHeight;
+			realNumberOfPagesinDoc = (((endAddr - startAddr) / kBytesPerLine) / linesPerPage) + 1;
+		}
+	}
+
+	//  Get the user's selection for first and last pages
+	if (status == noErr)
+	{
+	  status = PMGetFirstPage(printSettings, &firstPage);
+	  if (status == noErr)
+	      status = PMGetLastPage(printSettings, &lastPage);
+	}
+
+	//  Check that the selected page range does not go beyond the actual
+	//  number of pages in the document.
+	if (status == noErr)
+	{
+		if( firstPage > realNumberOfPagesinDoc )
+		{
+			status = kPMValueOutOfRange;
+			PMSessionSetError (printSession, kPMValueOutOfRange);
+		}
+
+		if (realNumberOfPagesinDoc < lastPage)
+			lastPage = realNumberOfPagesinDoc;
+	}
+
+	//  NOTE:  We don't have to worry about the number of copies.  The Printing
+	//  Manager handles this.  So we just iterate through the document from the
+	//  first page to be printed, to the last.
+	if (status == noErr)
+	{ //  Establish a graphics context for drawing the document's pages.
+	  //  Although it's not used in this sample code, PMGetGrafPtr can be called
+	  //  get the QD grafport.
+	  status = PMSessionBeginDocument(printSession, printSettings, pageFormat);
+	  if (status == noErr)
+	  { //  Print all the pages in the document.  Note that we spool all pages
+			//  and rely upon the Printing Manager to print the correct page range.
+			//  In this sample code we assume the total number of pages in the
+			//  document is equal to "lastPage".
+			pageNumber = 1;
+			while ((pageNumber <= lastPage) && (PMSessionError(printSession) == noErr))
+			{
+				Rect	r;
+				
+				//  NOTE:  We don't have to deal with the old Printing Manager's
+				//  128-page boundary limit anymore.
+
+				//  Set up a page for printing.
+				status = PMSessionBeginPage(printSession, pageFormat, &pageRect);
+				if (status != noErr)
+				  break;
+
+				//  Draw the page.
+				r.top = (short)(pageRect.top);
+				r.left = (short)(pageRect.left);
+				r.bottom = r.top + kHeaderHeight - 1;
+				r.right = (short)(pageRect.right);
+				DrawHeader( dWin, &r );
+
+				r.top += kHeaderHeight;
+				r.bottom = pageRect.bottom - kFooterHeight;
+				DrawDump( dWin, &r, addr, endAddr );
+
+				r.top = r.bottom;
+				r.bottom += kFooterHeight;
+				DrawFooter( dWin, &r, pageNumber, realNumberOfPagesinDoc );
+
+				//  Close the page.
+				status = PMSessionEndPage(printSession);
+				if (status != noErr)
+				  break;
+
+				addr += linesPerPage * kBytesPerLine;
+				addr -= ( addr % kBytesPerLine );
+
+				//  And loop.
+				pageNumber++;
+			}
+
+			// Close the printing port
+			(void)PMSessionEndDocument(printSession);
+	  }
+	}
+
+	//  Only report a printing error once we have completed the print loop. This
+	//  ensures that every PMSessionBegin... call is followed by a matching
+	//  PMSessionEnd... call, so the Printing Manager can release all temporary
+	//  memory and close properly.
+	printError = PMSessionError(printSession);
+	if ( ( kPMCancel != printError) && (printError != noErr) )
+	  PostPrintingErrors(printError);
+}
+
+// NS: v1.6.6, event filters for navigation services
+
+#endif	//TARGET_API_MAC_CARBON  -- BB: moved _navEventFilter from Carbon only
+
+/*** PRINT WINDOW ***/
+void PrintWindow( EditWindowPtr dWin )
+{
+#if TARGET_API_MAC_CARBON	// SEL: 1.7 - carbon printing
+	// Carbon session based printing variables 
+	OSStatus    		status;
+	PMPrintSession	printSession;
+	PMPrintSettings	printSettings;
+	PMPageFormat		pageFormat;
+#else
+	Boolean			ok;
+	Rect				r;
+	TPPrPort		printPort;
+	TPrStatus		prStatus;
+	short		pageNbr, startPage, endPage, nbrPages;
+	long		startAddr, endAddr, addr;
+	short		linesPerPage;
+#endif
+
+	GrafPtr		savePort;
+
+	GetPort( &savePort );
+
+#if TARGET_API_MAC_CARBON	// SEL: 1.7 - implemented Carbon printing
+
+	// make a new printing session
+	status = PMCreateSession(&printSession);
+	if ( noErr != status )
+	{
+		PostPrintingErrors(status);
+		return;
+	}
+	if ( kPMNoPageFormat == g.pageFormat )
+	{
+		status = PMCreatePageFormat(&pageFormat);
+		//  Note that PMPageFormat is not session-specific, but calling
+		//  PMSessionDefaultPageFormat assigns values specific to the printer
+		//  associated with the current printing session.
+		if ((status == noErr) && (pageFormat != kPMNoPageFormat))
+		{
+			status = PMSessionDefaultPageFormat(printSession, pageFormat);
+		}
+	}
+	else
+	{ // already have a pageFormat, prolly because the user selected Page Setup
+		status = PMCreatePageFormat(&pageFormat);
+		status = PMCopyPageFormat(g.pageFormat, pageFormat);
+		if ( noErr == status )
+		{
+			status = PMSessionValidatePageFormat(printSession, pageFormat, kPMDontWantBoolean);
+		}
+	}
+	if ( noErr != status )
+	{
+		PostPrintingErrors(status);
+		(void)PMRelease(printSession);
+		return;
+	}
+	if ( kPMNoPrintSettings != g.printSettings )
+	{
+		status = PMCreatePrintSettings(&printSettings);
+		status = PMCopyPrintSettings(g.printSettings, printSettings);
+	}
+	else
+	{
+		printSettings = kPMNoPrintSettings;
+	}
+	if ( noErr != status )
+	{
+		PostPrintingErrors(status);
+		(void)PMRelease(pageFormat);
+		(void)PMRelease(printSession);
+		return;
+	}
+  //  Display the Print dialog.
+	status = _doPrintDialog(printSession, pageFormat, &printSettings);
+	if  ( kPMCancel != status )
+	{ // user did not cancel the print dialog box
+		if ( ( noErr == status ) )
+		{ //  Execute the print loop.
+			_doPrintLoop(printSession, pageFormat, printSettings, dWin);
+		}
+		else
+		{
+			PostPrintingErrors(status);
+			return;
+		}
+	}
+
+	//  Release the PageFormat and PrintSettings objects.  PMRelease decrements the
+	//  ref count of the allocated objects.  We let the Printing Manager decide when
+	//  to release the allocated memory.
+	if (pageFormat != kPMNoPageFormat)
+	{
+		(void)PMRelease(pageFormat);
+	}
+	if (printSettings != kPMNoPrintSettings)
+	{
+		(void)PMRelease(printSettings);
+	}
+	//  Terminate the current printing session.
+	(void)PMRelease(printSession);
+
+#else	// non-Carbon printing
+
+	PrOpen();
+
+	PrValidate( g.HPrint );
+	ok = PrJobDialog( g.HPrint );
+	if( ok )
+	{
+		if( dWin->startSel == dWin->endSel )
+		{
+			startAddr = 0;
+			endAddr = dWin->fileSize;
+		}
+		else
+		{
+			startAddr = dWin->startSel;
+			endAddr = dWin->endSel;
+		}
+
+		printPort = PrOpenDoc( g.HPrint, NULL, NULL );
+
+		r = printPort->gPort.portRect;
+//LR: 1.7 -fix lpp calculation!		linesPerPage = ( r.bottom - TopMargin - ( kHeaderHeight + 1 ) ) / kLineHeight;
+			linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - (kHeaderHeight + kFooterHeight)) / kLineHeight;
+		nbrPages = ((endAddr - startAddr) / kBytesPerLine) / linesPerPage + 1;
+
+		startPage = ( **g.HPrint ).prJob.iFstPage;
+		endPage = ( **g.HPrint ).prJob.iLstPage;
+		if( startPage > nbrPages )
+		{
+			PrCloseDoc( printPort );
+			ErrorAlert( ES_Caution, errPrintRange, nbrPages );
+			goto ErrorExit;
+		}
+		addr = startAddr;
+
+		if( endPage > nbrPages )
+			endPage = nbrPages;
+
+		ctHdl = NULL;	// print in black & white!
+
+		for ( pageNbr = 1; pageNbr <= nbrPages; ++pageNbr )
+		{
+			SetPort( &printPort->gPort );
+			PrOpenPage( printPort, NULL );
+	
+			if( pageNbr >= startPage && pageNbr <= endPage )
+			{
+				r = printPort->gPort.portRect;
+				r.bottom = r.top + kHeaderHeight - 1;		//LR: 1.7 - don't erase entire page!
+				DrawHeader( dWin, &r );
+		
+				r.top += kHeaderHeight;
+				r.bottom = printPort->gPort.portRect.bottom - kFooterHeight;
+				DrawDump( dWin, &r, addr, endAddr );
+	
+				r.top = r.bottom;
+				r.bottom += kFooterHeight;
+				DrawFooter( dWin, &r, pageNbr, nbrPages );	//SEL: 1.7 - fix Lane's DrawDump usage (what was I thinking? P)
+			}
+
+			addr += linesPerPage * kBytesPerLine;
+			addr -= ( addr % kBytesPerLine );
+			PrClosePage( printPort );
+		}
+		PrCloseDoc( printPort );
+		if( ( **g.HPrint ).prJob.bJDocLoop == bSpoolLoop && PrError() == noErr )
+			PrPicFile( g.HPrint, NULL, NULL, NULL, &prStatus );
+	}
+ErrorExit:
+	PrClose();
+#endif
+	SetPort( savePort );
+}
+
+#pragma mark -
+
 /*** COPY FORK ***/
-OSStatus CopyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
+static OSStatus _copyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
 {
 	OSStatus error;
 	short	sRefNum, dRefNum;
@@ -2735,7 +2790,7 @@ void SaveContents( WindowRef theWin )
 		}
 		// Preserve other fork if it exists (LR 1.73 can't do !fork because fork #s are now 1 & 2!)
 		if( dWin->refNum )
-			if( CopyFork( &dWin->fsSpec, &tSpec, (dWin->fork == FT_Data) ? FT_Resource : FT_Data ) != noErr )
+			if( _copyFork( &dWin->fsSpec, &tSpec, (dWin->fork == FT_Data) ? FT_Resource : FT_Data ) != noErr )
 				return;
 
 		// Open the temp file
@@ -2994,34 +3049,4 @@ void RevertContents( WindowRef theWin )
 
 	DrawPage( dWin );
 	UpdateOnscreen( theWin );
-}
-
-/*** MY ACTIVATE ***/
-void MyActivate( WindowRef theWin, Boolean active )
-{
-	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-
-	if( dWin->vScrollBar )
-		HiliteControl( dWin->vScrollBar, active? 0 : 255 );
-	DefaultActivate( theWin, active );
-}
-
-/*** UPDATE EDIT WINDOWS ***/
-//LR: 1.66 - avoid NULL window ref, DrawPage with CURRENT dWin (not first!)
-void UpdateEditWindows( void )
-{
-	WindowRef		theWin = FrontNonFloatingWindow();
-	EditWindowPtr	dWin;
-
-	while( theWin )
-	{
-		long windowKind = GetWindowKind( theWin );
-		if( windowKind == kHexEditWindowTag )
-		{
-			dWin = (EditWindowPtr)GetWRefCon( theWin );
-			DrawPage( dWin );
-			UpdateOnscreen( theWin );
-		}
-		theWin = GetNextWindow( theWin );
-	}
 }
