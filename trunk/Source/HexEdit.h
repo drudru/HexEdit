@@ -52,7 +52,9 @@
 // Comatibility macros
 //LR -- 1.72 :no longer requires carbon headers to compile for non-carbon targets
 #if !TARGET_API_MAC_CARBON
-	#define SetPortDialogPort SetPort
+	#if !defined(SetPortDialogPort)
+		#define SetPortDialogPort SetPort
+	#endif
 	#define GetPortBounds( p, rp ) *rp = (p)->portRect
 	#define GetWindowPortBounds( w, rp ) *rp = (w)->portRect
 	#define GetPortPixMap(p) p->portPixMap
@@ -61,7 +63,9 @@
 	#define DisableMenuItem DisableItem
 	#define FrontNonFloatingWindow FrontWindow
 	#define MenuRef MenuHandle
-	#define GetDialogFromWindow
+	#if !defined(GetDialogFromWindow)
+		#define GetDialogFromWindow
+	#endif
 #endif
 
 // make some things a bit easier to read
