@@ -637,7 +637,12 @@ OSStatus InitAppleEvents( void )
 #endif
 	{
 		AEHandlerUPP = NewAEEventHandlerUPP( CoreEventHandler );
-		AEInstallEventHandler( kCoreEventClass, typeWildCard, AEHandlerUPP, 0, false );
+//LR: 1.7 -- Carbon requires specific handlers!		AEInstallEventHandler( kCoreEventClass, typeWildCard, AEHandlerUPP, 0, false );
+
+		AEInstallEventHandler( kCoreEventClass, kAEOpenApplication, AEHandlerUPP, 0, false );
+		AEInstallEventHandler( kCoreEventClass, kAEOpenDocuments, AEHandlerUPP, 0, false );
+		AEInstallEventHandler( kCoreEventClass, kAEPrintDocuments, AEHandlerUPP, 0, false );
+		AEInstallEventHandler( kCoreEventClass, kAEQuitApplication, AEHandlerUPP, 0, false );
 
 		AECompareHandlerUPP = NewAEEventHandlerUPP( CompareEventHandler );
 		AEInstallEventHandler( kCompareEventClass, kAECompareEvent, AECompareHandlerUPP, 0, false );
