@@ -241,10 +241,7 @@ Boolean PrefsLoad( void )
 */
 	if( PREFS_VERSION != prefs.version )	// check for good version #
 	{
-		if( PREFS_V204 == prefs.version )	// check for modifyable version
-			prefs.constrainSize = false;
-		else
-			_prefsInit();					// !!! start from scratch!
+		_prefsInit();					// !!! start from scratch!
 	}
 
 	// funky...but menus sorted by name mess me up!

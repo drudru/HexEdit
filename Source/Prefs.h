@@ -31,8 +31,7 @@
 #define	kPrefsFileNameIndex	FN_PrefsFile
 
 // LR: preferences structure
-#define PREFS_V204		0x0204
-#define PREFS_VERSION	0x0205
+#define PREFS_VERSION	0x0206
 
 typedef struct
 {
@@ -51,15 +50,11 @@ typedef struct
 	short	overwrite;		// insert or overwrite editing?
 	short	backupFlag;		// from original (moved in 1.5)
 	short	vertBars;		// use David Emme's vertical bars
+	short	constrainSize;	// resizing allows partial lines?
 
 	short	useColor;		// true if we are using color windows
 
 	short	version;		// version # of prefs record
-
-	// %% NOTE: below version so that older versions do not require prefs to be inited!
-	//			If a prefs update requires older prefs inited, move below above version!
-
-	short	constrainSize;	// resizing allows partial lines?
 
 }	prefs_t, *prefsPtr;
 
