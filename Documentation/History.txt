@@ -1,5 +1,45 @@
 HexEdit Revision History
 
+6/6/01 Version 1.72
+Modified options menu to be a bit more understandable
+Find menu options now match dialog buttons
+Fixed scroll limit calculations so that all lines are always visible & scroll bar set correctly
+Fixed erasing of undrawn area to erase partial ending of lines (ie, when window not limited to full lines)
+Removed all &0xFFFFFFF0 && << 4 references since we may not always have 16 bytes per line
+Find forward/back are now disabled if edit window not in front, is empty or search string is empty
+Revert now puts up a dialog to confirm revert since it zaps all changes
+Movement keys to before/after file now deselect if shift not pressed
+Filenames in menus/windows are now stripped of bad characters
+	(meaning that displayed names may not exactly match, but won't break app either!)
+searchWin & gotoWin are now searchDlg and gotoDlg since they are dialogs
+Reverting a file now sets the file as unchanged
+Switching from the find dialog to an edit window now sets the search text
+Removed duplicate error alert resource (it was unused)
+Icon used in dialogs has been changed for consistancy with standard applications
+Partially hidden line at bottom of window now reflected in selection inversion
+Changed Redo Delete to Redo Editing (cause delete almost never made sense)
+Added a colon after Len in hex status bar
+Tested on 7.6 PPC (non-interface or appearance) and 7.55 68K machines ... works now!
+HEct template is now for Resourceror by default
+Added font face/size STR# resource
+Drawing routines can now work w/most any mono font and size!
+Enlarged many dialog controls to account for stupidly large size of OS X font!
+Increased the search speed under Carbon even more by only checking for aborts every 4K bytes
+Fixed non-appearance open dialog usage (caused crash on 8.1 and older systems)
+Made InternetConfigLib,NavigationLib,AppearanceLib, and InterfaceLib weak linked
+Added a few new contributors to the about box
+Undo/Redo is no only available for the window the change was made for
+Undo buffer is now disposed when corresponding window is closed
+Fixed editing an empy fork (ie, a new file) displaying garbage in first line
+Fixed saving files when backups were on (temp files now use ^ suffix, backups use ~ suffix)
+Fixed "find again" not search for second item (plus cleaned up code)
+Fixed slowness of find, it was over agressive on the CheckForAbort call, now 15x as fast
+Fixed ability to click on first two characters of the ASCII data column
+Improved click sensitivity withing the Hex data column (esp. for last hex byte)
+Implemented Nick Shanks's v1.71 changes relating to selecing Appearance or standard window
+Implemented Greg Branche's changes (a few bug fixes and MPW build capability!)
+Minor code cleanup and interface tweaks
+
 4/15/01 Version 1.70
 Fixed many bad uses of a WindowRef as a DialogRef (ie, if dialogRef == FrontWindow() fails on OS X!)
 	(As a side note, this also fixe the not pasting on entry...very cool!)
