@@ -195,7 +195,8 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin, tWindowType type )
 	objectWindow->Activate		= MyActivate;
 
 //LR 180	if( gPrefs.useColor )
-		dWin->csResID = gPrefs.csResID;	// LR: 1.5 - color selection
+	dWin->csResID = gPrefs.csResID;	// LR: 1.5 - color selection
+	dWin->csMenuID = gPrefs.csMenuID;
 //LR 180	else
 //LR 180		dWin->csResID = -1;	// LR: if created w/o color then offscreen is 1 bit, NO COLOR possible!
 
@@ -1850,7 +1851,7 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	if( gPrefs.vertBars )
 	{
 		if( ctHdl )
-			RGBForeColor( &( *ctHdl )->headerLine );	// LR: v1.6.5 LR - was barText
+			RGBForeColor( &( *ctHdl )->dividerLine );	//LR 181 -- now had it's own color!
 
 		MoveTo( CHARPOS(kStringHexPos + 11) - (kCharWidth / 2) - 1, addrRect.top );
 		LineTo( CHARPOS(kStringHexPos + 11) - (kCharWidth / 2) - 1, addrRect.bottom );
