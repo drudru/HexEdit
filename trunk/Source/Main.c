@@ -300,19 +300,12 @@ OSStatus DoEvent( EventRecord *theEvent )
 							{
 // LR: v1.6.5					DisposeDialog( g.searchWin );
 // LR: v1.6.5					g.searchWin = NULL;
-#if TARGET_API_MAC_CARBON
+
 								HideWindow( GetDialogWindow( g.searchWin ) );
-#else
-								HideWindow( g.searchWin );
-#endif
 							}
 							else if( theWin == (WindowRef) g.gotoWin )		// LR: v1.6.5
 							{
-#if TARGET_API_MAC_CARBON
 								HideWindow( GetDialogWindow( g.gotoWin ) );
-#else
-								HideWindow( g.gotoWin );
-#endif
 							}
 
 							AdjustMenus();
@@ -627,26 +620,18 @@ static pascal OSErr CompareEventHandler( const AppleEvent *theEvent, AppleEvent 
 /*** INIT APPLE EVENTS ***/
 OSStatus InitAppleEvents( void )
 {
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-	AEHandlerUPP = NewAEEventHandlerUPP( CoreEventHandler );
-	AEInstallEventHandler( kCoreEventClass, typeWildCard, AEHandlerUPP, 0, false );
-
-	AECompareHandlerUPP = NewAEEventHandlerUPP( CompareEventHandler );
-	AEInstallEventHandler( kCompareEventClass, kAECompareEvent, AECompareHandlerUPP, 0, false );
-
-	trackActionUPP = NewControlActionUPP( MyScrollAction );
-#else
+#if !TARGET_API_MAC_CARBON	// LR: v1.7 (no need for seperate non-carbon code)
 	if( g.sys7Flag )
+#endif
 	{
-		AEHandlerUPP = NewAEEventHandlerProc( CoreEventHandler );
+		AEHandlerUPP = NewAEEventHandlerUPP( CoreEventHandler );
 		AEInstallEventHandler( kCoreEventClass, typeWildCard, AEHandlerUPP, 0, false );
 
-		AECompareHandlerUPP = NewAEEventHandlerProc( CompareEventHandler );
+		AECompareHandlerUPP = NewAEEventHandlerUPP( CompareEventHandler );
 		AEInstallEventHandler( kCompareEventClass, kAECompareEvent, AECompareHandlerUPP, 0, false );
 
-		trackActionUPP = NewControlActionProc( MyScrollAction );
+		trackActionUPP = NewControlActionUPP( MyScrollAction );
 	}
-#endif
 	return noErr;
 }
 
@@ -664,4 +649,5 @@ OSStatus CheckEnvironment( void )
 	g.colorQDFlag = sEnv.hasColorQD;
 	return error;
 }
+
 #endif
