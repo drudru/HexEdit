@@ -200,6 +200,7 @@ typedef struct
 	RGBColor	body;
 	RGBColor	text;
 	RGBColor	bodyDark;
+	RGBColor	dividerLine;
 
 }	HEColorTable_t, *HEColorTablePtr, **HEColorTableHandle;
 
