@@ -46,7 +46,7 @@
 
 // Create a new main theWin using a 'WIND' template from the resource fork
 
-SInt16			CompareFlag = 0;
+//LR 177 SInt16			CompareFlag = 0;
 
 HEColorTableHandle ctHdl = NULL;	// LR: global to file, for speed
 
@@ -158,9 +158,10 @@ static void _setWindowTitle( EditWindowPtr dWin )
 }
 
 /*** SETUP NEW EDIT WINDOW ***/
-// LR: 1.7 - static, and remove title (always fsSpec->name)
+//LR: 1.7 - static, and remove title (always fsSpec->name)
+//LR 177 -- Accept window type instead of checking global var
 
-static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
+static OSStatus _setupNewEditWindow( EditWindowPtr dWin, tWindowType type )
 {
 	WindowRef theWin;
 	ObjectWindowPtr objectWindow;
@@ -198,7 +199,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	if( !dWin->offscreen )
 			ErrorAlert( ES_Stop, errMemory );
 
-	SizeEditWindow( theWin, CompareFlag );
+	SizeEditWindow( theWin, type );
 
 	GetWindowPortBounds( theWin, &r );
 
@@ -350,16 +351,16 @@ static pascal short _sourceDLOGHook( short item, DialogPtr theDialog )
 }
 
 /*** SOURCE DLOG FILTER ***/
-pascal Boolean _sourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item )
+static pascal Boolean _sourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item )
 {
-	Str63		prompt;
+/*	Str63		prompt;
 
 	if( activateEvt == event->what )
 	{
 		GetIndString( prompt, strPrompt, CompareFlag+2 );	// LR: v1.6.5 localizable way!
 		SetText( dlg, 14, prompt );
 	}
-
+*/
 	return StdFilterProc( dlg, event, item );
 }
 
@@ -367,8 +368,7 @@ pascal Boolean _sourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item
 
 /*** ASK EDIT WINDOW ***/
 #if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
-//short AskEditWindow( void ) // BB: split into two functions
-short AskEditWindowNav( void )
+short AskEditWindowNav( tWindowType type )
 {
 //#if TARGET_API_MAC_CARBON	// LR: v1.6  -- BB no longer used
 	OSStatus error = noErr;
@@ -386,6 +386,8 @@ short AskEditWindowNav( void )
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
 	dialogOptions.dialogOptionFlags |= kNavNoTypePopup+kNavAllowInvisibleFiles; // BB: allow invisible files - fixes bug #425256
+	GetIndString( dialogOptions.message, strPrompt, type + 2 );	//LR 177 -- modify prompt
+
 	error = NavGetFile( NULL, &reply, &dialogOptions, eventProc, previewProc, filterProc, openTypeList, kNavOpenDialogType);
 	if( reply.validRecord || !error )
 	{
@@ -396,7 +398,8 @@ short AskEditWindowNav( void )
 		
 		error = AEGetNthPtr( &(reply.selection), 1, typeFSS, &keyword, &descType, &openedSpec, sizeof(FSSpec), &actualSize );
 		if( !error )
-			OpenEditWindow( &openedSpec, true );
+			OpenEditWindow( &openedSpec, type, true );
+
 		NavDisposeReply( &reply );
 	}
 	else error = ioErr;		// user cancelled
@@ -407,12 +410,13 @@ short AskEditWindowNav( void )
 #endif	//POWERPC
 
 #if !TARGET_API_MAC_CARBON	// BB:  replaced
-short AskEditWindowSF( void )
+short AskEditWindowSF( tWindowType type )
 {
 	SFReply		macSFReply;
 	FSSpec		fSpec;
 	long		procID;
 	Point		where = { -1, -1 };
+	Str255		prompt;
 
 	DlgHookUPP myGetFileUPP;		// LR: v1.6.5 limited to this routine
 	ModalFilterUPP myFilterUPP;
@@ -431,8 +435,9 @@ short AskEditWindowSF( void )
 		SFPGetFile( where, "\pSecond File to Compare:", NULL, -1, NULL, myGetFileUPP, &macSFReply, dlgGetFile, NULL );
 	else
 */
+	GetIndString( prompt, strPrompt, type + 2 );	//LR 177 -- send now, instead of modifying dialog later
 
-	SFPGetFile( where, NULL, NULL, -1, NULL, myGetFileUPP, &macSFReply, dlgGetFile, myFilterUPP );
+	SFPGetFile( where, prompt, NULL, -1, NULL, myGetFileUPP, &macSFReply, dlgGetFile, myFilterUPP );
 
 	DisposeDlgHookUPP( myGetFileUPP );
 	DisposeModalFilterUPP( myFilterUPP );
@@ -441,7 +446,7 @@ short AskEditWindowSF( void )
 	{
 		BlockMove( macSFReply.fName, fSpec.name, macSFReply.fName[0]+1 );
 		GetWDInfo( macSFReply.vRefNum, &fSpec.vRefNum, &fSpec.parID, &procID );
-		OpenEditWindow( &fSpec, true );
+		OpenEditWindow( &fSpec, type, true );
 	}
 	else return -1;
 
@@ -538,7 +543,8 @@ void InitializeEditor( void )
 
 /*** SIZE A WINDOW APPR. TO SITUATION ***/
 //LR 175 -- seperated to allow calling from OpenWindow to handle compare requests on open windows
-//NP 176 -- Global for compare's usage, plus LR added a window type from NP's suggestion :)
+//NP 177 -- Global for compare's usage
+//LR 177 -- added window type parameter from NP's suggestion :)
 
 void SizeEditWindow( WindowRef theWin, tWindowType type )
 {
@@ -704,7 +710,9 @@ Boolean CloseAllEditWindows( void )
 }
 
 /*** OPEN EDIT WINDOW ***/
-OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
+// LR 177 -- Now accepts window kind as a parameter instead of using global var CompareFlag
+
+OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 {
 // LR: 1.5	WindowRef	theWin;
 	EditWindowPtr		dWin;
@@ -720,7 +728,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	//LR 175 -- try to find the file in an open window first, and use it if found
 	if( NULL != (dWin = LocateEditWindow( fsSpec, g.forkMode == FM_Smart ? -1 : g.forkMode )) )
 	{
-		SizeEditWindow( dWin->oWin.theWin, CompareFlag );
+		SizeEditWindow( dWin->oWin.theWin, type );
 		return( noErr );
 	}
 
@@ -888,7 +896,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	dWin->fsSpec =
 	dWin->destSpec = *fsSpec;
 
-	error = _setupNewEditWindow( dWin );	// LR: 1.5 -make maintenence easier!
+	error = _setupNewEditWindow( dWin, type );	// LR: 1.5 -make maintenence easier!
 	if( !error )
 		LoadFile( dWin );
 
@@ -984,7 +992,7 @@ void NewEditWindow( void )
 	dWin->creator = kAppCreator;
 	dWin->creationDate = 0L;
 
-	_setupNewEditWindow( dWin );	//LR 1.66 "\pUntitled" );	// LR: 1.5 -make mashortenence easier!
+	_setupNewEditWindow( dWin, kWindowNormal );	//LR 1.66 "\pUntitled" );	// LR: 1.5 -make mashortenence easier!
 
 	dWin->firstChunk = NewChunk( 0L, 0L, 0L, CT_Unwritten );
 	dWin->curChunk = dWin->firstChunk;

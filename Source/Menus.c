@@ -426,7 +426,7 @@ OSStatus HandleMenu( long mSelect )
 			break;
 
 		case FM_Open:
-			AskEditWindow();
+			AskEditWindow( kWindowNormal );
 			break;
 
 		case FM_OtherFork:	// LR: I want to see both!
@@ -447,7 +447,7 @@ OSStatus HandleMenu( long mSelect )
 				else	// try to open other fork in new theWin!
 				{
 					g.forkMode = fork;
-					OpenEditWindow( &dWin->fsSpec, true );
+					OpenEditWindow( &dWin->fsSpec, kWindowNormal, true );
 				}
 			}
 			break;

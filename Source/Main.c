@@ -59,7 +59,7 @@ AEEventHandlerUPP AEHandlerUPP, AECompareHandlerUPP;
 	extern DlgHookUPP myGetFileUPP;
 #endif
 
-extern SInt16		CompareFlag;
+//LR 177 extern SInt16		CompareFlag;
 extern WindowRef	CompWind1, CompWind2;
 static SInt32		caretTime;
 static Boolean		skipOpen = false;
@@ -69,153 +69,23 @@ static Boolean		skipOpen = false;
 QDGlobals	qd;
 #endif
 
-/*** MAIN ***/
-int main(int argc, char *argv[])	//LR 175
+// Do Idle Time Processing
+
+/*** IDLE OBJECTS ***/
+static OSStatus _idleObjects( EventRecord *er )
 {
-#pragma unused(argc,argv)
-	// Standard Mac Initialization
-	InitToolbox();
+	WindowRef theWin = FrontNonFloatingWindow();
+	ObjectWindowPtr objectWindow;
 
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
-	// Check if Multifinder ( WaitNextEvent ) is implemented
-	InitMultifinder();
-#endif
-
-	// Check running environment
-	CheckEnvironment();
-
-	InitGlobals();
-	InitAppleEvents();
-	InitMenubar();
-
-	PrefsLoad();
-	InitializeEditor();
-	AdjustMenus();
-
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
-	if( !g.sys7Flag )
-		AskEditWindow();
-#endif
-
-	InitCursor();	// NS: v1.6.6, moved here from InitToolbox()
-	
-#if TARGET_API_MAC_CARBON  // SEL: 1.7 - carbon session based printing
-	g.pageFormat = kPMNoPageFormat;
-	g.printSettings = kPMNoPrintSettings;
-#endif
-
-	// main event loop
-	while( !g.quitFlag )
-		HandleEvent();
-
-	CleanupEditor();
-
-#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
-	// BB: Unload NavServices
-	if( g.useNavServices )
-		NavUnload();
-#endif
-
-// 05/10/01 - GAB: MPW environment support
-#if !defined(__MC68K__) && !defined(__SC__)
-	if( ICStop )
+	while( theWin )
 	{
-		ICStop( g.icRef );	// shutdown IC
+		objectWindow = (ObjectWindowPtr)GetWRefCon( theWin );	//LR: 1.66 - don't use NULL window, and update for all windows!
+
+		if( GetWindowKind( theWin ) == kHexEditWindowTag && objectWindow->Idle )
+			objectWindow->Idle( theWin, er );
+
+		theWin = GetNextWindow( theWin );
 	}
-#endif
-	return( 0 );
-}
-
-/*** INIT TOOLBOX ***/
-OSStatus InitToolbox( void )
-{
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
-	MaxApplZone();
-	InitGraf( &qd.thePort );
-	InitFonts();
-	FlushEvents( everyEvent, 0 );
-	InitWindows();
-	InitMenus();
-	TEInit();
-	InitDialogs( 0L );
-#endif
-
-	memset( &g, 0, sizeof(g) );	// make sure we have a known starting state!
-
-	caretTime = (GetCaretTime()/3)*2;
-	return noErr;
-}
-
-// Check if WaitNextEvent ( Multifinder ) is implemented on this Macintosh
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
-OSStatus InitMultifinder( void )
-{
-	g.WNEImplemented = ( NGetTrapAddress(_WaitNextEvent, ToolTrap) != NGetTrapAddress(_Unimplemented, ToolTrap) );
-	return noErr;
-}
-#endif
-
-/*** INIT GLOBALS ***/
-OSStatus InitGlobals( void )
-{
-	// check for drag manager presence/attributes
-	SInt32 result = 0;
-	OSStatus error;
-
-	error = Gestalt( gestaltDragMgrAttr, &result );
-	g.dragAvailable = (Boolean) (result & (1 << gestaltDragMgrPresent));
-	g.translucentDrag = (Boolean) (result & (1 << gestaltDragMgrHasImageSupport));
-	
-	// check appearance availablilty
-	// 05/10/01 - GAB: result is an int, not a pointer
-	result = 0;
-	error = Gestalt( gestaltAppearanceAttr, &result );
-	g.appearanceAvailable = (Boolean) (result & (1 << gestaltAppearanceExists));
-	if( g.appearanceAvailable )	g.useAppearance = true;
-	else						g.useAppearance = false;
-	if( g.useAppearance )		RegisterAppearanceClient();
-	
-	// check nav services availablilty
-// 05/10/01 - GAB: MPW environment support
-#if !defined(__MC68K__) && !defined(__SC__)
-	g.navAvailable = (Boolean) NavServicesAvailable();
-	// BB: check for Navlib version, older versions were very buggy 
-	g.useNavServices = ((g.navAvailable) && (NavLibraryVersion() >= 0x0110));
-
-	if( g.useNavServices )
-	{
-	  if ( NavLoad() != noErr ) // BB: make sure NavLoad returns noErr
-	    g.useNavServices = false;
-	}    
-
-	// Startup InternetConfig (should only be done once!)
-	if( ICStart )
-	{
-		error = ICStart( &g.icRef, kAppCreator );			// start IC up
-		if( !error )
-		{
-#if !TARGET_API_MAC_CARBON
-			if( ICFindConfigFile )
-				error = ICFindConfigFile( g.icRef, 0, NULL );	// configure IC
-#endif
-		}
-	}
-#endif
-
-	// application global initalisation
-	g.forkMode = FM_Smart;
-	g.highChar = 0x7F;
-	g.watch = GetCursor( watchCursor );
-	g.iBeam = GetCursor( iBeamCursor );
-	g.searchBuffer[0] = g.searchText[0] = g.gotoText[0] = 0;
-	g.searchDisabled = false;
-	g.searchDlg = NULL;
-	g.gotoDlg = NULL;
-
-	//LR: 1.66 - clear undo/redo records
-	memset( &gUndo, sizeof(UndoRecord), 0 );
-	memset( &gRedo, sizeof(UndoRecord), 0 );
-
 	return( noErr );
 }
 
@@ -249,7 +119,8 @@ OSStatus HandleEvent( void )
 
 	if( IsDialogEvent( &theEvent ) )	DoModelessDialogEvent( &theEvent );
 	else if( ok )						DoEvent( &theEvent );
-	else								IdleObjects( &theEvent );
+	else								_idleObjects( &theEvent );
+
 	return noErr;
 }
 
@@ -492,28 +363,10 @@ OSStatus DoEvent( EventRecord *theEvent )
 	return noErr;
 }
 
-// Do Idle Time Processing
-
-/*** IDLE OBJECTS ***/
-OSStatus IdleObjects( EventRecord *er )
-{
-	WindowRef theWin = FrontNonFloatingWindow();
-	ObjectWindowPtr objectWindow;
-
-	while( theWin )
-	{
-		objectWindow = (ObjectWindowPtr)GetWRefCon( theWin );	//LR: 1.66 - don't use NULL window, and update for all windows!
-
-		if( GetWindowKind( theWin ) == kHexEditWindowTag && objectWindow->Idle )
-			objectWindow->Idle( theWin, er );
-
-		theWin = GetNextWindow( theWin );
-	}
-	return( noErr );
-}
+#pragma mark -
 
 /*** GOT REQUIRED PARAMS ***/
-static Boolean GotRequiredParams( const AppleEvent *theEvent )
+static Boolean _gotRequiredParams( const AppleEvent *theEvent )
 {
 	DescType returnedType;
 	Size 	actualSize;
@@ -522,7 +375,7 @@ static Boolean GotRequiredParams( const AppleEvent *theEvent )
 }
 
 /*** DO OPEN EVENT ***/
-static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
+static OSStatus _doOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 {
 	OSStatus	error;
 //LR 175	Handle		docList = NULL;
@@ -545,11 +398,11 @@ static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 	}
 
 	// make sure event description is correct
-	if( !GotRequiredParams( theEvent ) )
+	if( !_gotRequiredParams( theEvent ) )
 	{
 // 05/10/01 - GAB: DEBUGSTR not defined for non-Carbon builds
 #if !TARGET_API_MAC_CARBON
-		DEBUGSTR( "\pGotRequiredParams" );
+		DEBUGSTR( "\p_gotRequiredParams" );
 #endif
 		return( error );
 	}
@@ -571,7 +424,7 @@ static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 		error = AEGetNthPtr( &theList, i, typeFSS, &aeKeyword, &actualType, (Ptr) &myFSS, sizeof( FSSpec ), &actualSize );
 		if( error == noErr )
 		{
-			if( noErr == OpenEditWindow( &myFSS, false ) )
+			if( noErr == OpenEditWindow( &myFSS, kWindowNormal, false ) )
 			{
 				if( print && kHexEditWindowTag == GetWindowKind( FrontNonFloatingWindow() ) )	// LR: 1.7 -- allow printing documents
 				{
@@ -589,7 +442,7 @@ static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 }
 
 /*** CORE EVENT HANDLER ***/
-static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *reply, long refCon )
+static pascal OSErr _coreEventHandler( const AppleEvent *theEvent, AppleEvent *reply, long refCon )
 {
 	#pragma unused( reply, refCon )	// LR
 	DescType	actualType;
@@ -604,23 +457,23 @@ static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *re
 	switch( eventID )
 	{
 		case kAEOpenApplication:
-			if( GotRequiredParams( theEvent ) )
+			if( _gotRequiredParams( theEvent ) )
 			{
 				if( !skipOpen )
-					AskEditWindow();	// LR: -- voodoo can't have this
+					AskEditWindow( kWindowNormal );	// LR: -- voodoo can't have this
 			}
 			break;
 				
 		case kAEOpenDocuments:
-			DoOpenAppleEvent( theEvent, false );
+			_doOpenAppleEvent( theEvent, false );
 			break;
 				
 		case kAEPrintDocuments:
-			DoOpenAppleEvent( theEvent, true );
+			_doOpenAppleEvent( theEvent, true );
 			break;
 			
 		case kAEQuitApplication:
-			if( GotRequiredParams( theEvent ) && CloseAllEditWindows())
+			if( _gotRequiredParams( theEvent ) && CloseAllEditWindows())
 				g.quitFlag = true;
 			break;
 	}
@@ -630,10 +483,10 @@ static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *re
 // LR --- handles only the VOODOO compare files AE
 
 /*** COMPARE EVENT HANDLER ***/
-static pascal OSErr CompareEventHandler( const AppleEvent *theEvent, AppleEvent *reply, long refCon )
+static pascal OSErr _compareEventHandler( const AppleEvent *theEvent, AppleEvent *reply, long refCon )
 {
 	#pragma unused( reply, refCon )			// LR
-	extern WindowRef CompWind1, CompWind2;	// set in OpenEditWindow
+//LR 177	extern WindowRef CompWind1, CompWind2;	// set in OpenEditWindow
 
 	DescType	actualType;
 	Size		actualSize;
@@ -655,12 +508,12 @@ static pascal OSErr CompareEventHandler( const AppleEvent *theEvent, AppleEvent 
 	error = AEGetParamPtr( theEvent, kAEOldFileParam, typeFSS, &actualType, &oldSpec, sizeof( oldSpec ), &actualSize );
 	if( error ) return error;
 
-	CompareFlag = 1;
-	error = OpenEditWindow( &newSpec, false );
+//LR 177	CompareFlag = 1;
+	error = OpenEditWindow( &newSpec, kWindowCompareTop, false );
 	if( !error )
 	{
-		CompareFlag = 2;
-		error = OpenEditWindow( &oldSpec, false );
+//LR 177		CompareFlag = 2;
+		error = OpenEditWindow( &oldSpec, kWindowCompareBtm, false );
 		if( !error )
 		{
 			if( gPrefs.searchType == CM_Match )
@@ -684,17 +537,18 @@ static pascal OSErr CompareEventHandler( const AppleEvent *theEvent, AppleEvent 
 	CompWind1 = CompWind2 = NULL;
 	result = false;
 	error = AEPutParamPtr( reply, keyDirectObject, typeBoolean, &result, sizeof( result ) );
+
 	return error;
 }
 
 /*** INIT APPLE EVENTS ***/
-OSStatus InitAppleEvents( void )
+static OSStatus _initAppleEvents( void )
 {
 #if !TARGET_API_MAC_CARBON	// LR: v1.7 (no need for seperate non-carbon code)
 	if( g.sys7Flag )
 #endif
 	{
-		AEHandlerUPP = NewAEEventHandlerUPP( CoreEventHandler );
+		AEHandlerUPP = NewAEEventHandlerUPP( _coreEventHandler );
 //LR: 1.7 -- Carbon requires specific handlers!		AEInstallEventHandler( kCoreEventClass, typeWildCard, AEHandlerUPP, 0, false );
 
 		AEInstallEventHandler( kCoreEventClass, kAEOpenApplication, AEHandlerUPP, 0, false );
@@ -702,15 +556,14 @@ OSStatus InitAppleEvents( void )
 		AEInstallEventHandler( kCoreEventClass, kAEPrintDocuments, AEHandlerUPP, 0, false );
 		AEInstallEventHandler( kCoreEventClass, kAEQuitApplication, AEHandlerUPP, 0, false );
 
-		AECompareHandlerUPP = NewAEEventHandlerUPP( CompareEventHandler );
+		AECompareHandlerUPP = NewAEEventHandlerUPP( _compareEventHandler );
 		AEInstallEventHandler( kCompareEventClass, kAECompareEvent, AECompareHandlerUPP, 0, false );
 	}
 	return noErr;
 }
 
-
 /*** CHECK ENVIRONMENT ***/
-OSStatus CheckEnvironment( void )
+static OSStatus _checkEnvironment( void )
 {
 	OSStatus	error;
 
@@ -729,4 +582,154 @@ OSStatus CheckEnvironment( void )
 #endif
 
 	return error;
+}
+
+/*** INIT TOOLBOX ***/
+static OSStatus _initToolbox( void )
+{
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
+	MaxApplZone();
+	InitGraf( &qd.thePort );
+	InitFonts();
+	FlushEvents( everyEvent, 0 );
+	InitWindows();
+	InitMenus();
+	TEInit();
+	InitDialogs( 0L );
+#endif
+
+	memset( &g, 0, sizeof(g) );	// make sure we have a known starting state!
+
+	caretTime = (GetCaretTime()/3)*2;
+	return noErr;
+}
+
+// Check if WaitNextEvent ( Multifinder ) is implemented on this Macintosh
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
+static OSStatus _initMultifinder( void )
+{
+	g.WNEImplemented = ( NGetTrapAddress(_WaitNextEvent, ToolTrap) != NGetTrapAddress(_Unimplemented, ToolTrap) );
+	return noErr;
+}
+#endif
+
+/*** INIT GLOBALS ***/
+static OSStatus _initGlobals( void )
+{
+	// check for drag manager presence/attributes
+	SInt32 result = 0;
+	OSStatus error;
+
+	error = Gestalt( gestaltDragMgrAttr, &result );
+	g.dragAvailable = (Boolean) (result & (1 << gestaltDragMgrPresent));
+	g.translucentDrag = (Boolean) (result & (1 << gestaltDragMgrHasImageSupport));
+	
+	// check appearance availablilty
+	// 05/10/01 - GAB: result is an int, not a pointer
+	result = 0;
+	error = Gestalt( gestaltAppearanceAttr, &result );
+	g.appearanceAvailable = (Boolean) (result & (1 << gestaltAppearanceExists));
+	if( g.appearanceAvailable )	g.useAppearance = true;
+	else						g.useAppearance = false;
+	if( g.useAppearance )		RegisterAppearanceClient();
+	
+	// check nav services availablilty
+// 05/10/01 - GAB: MPW environment support
+#if !defined(__MC68K__) && !defined(__SC__)
+	g.navAvailable = (Boolean) NavServicesAvailable();
+	// BB: check for Navlib version, older versions were very buggy 
+	g.useNavServices = ((g.navAvailable) && (NavLibraryVersion() >= 0x0110));
+
+	if( g.useNavServices )
+	{
+	  if ( NavLoad() != noErr ) // BB: make sure NavLoad returns noErr
+	    g.useNavServices = false;
+	}    
+
+	// Startup InternetConfig (should only be done once!)
+	if( ICStart )
+	{
+		error = ICStart( &g.icRef, kAppCreator );			// start IC up
+		if( !error )
+		{
+#if !TARGET_API_MAC_CARBON
+			if( ICFindConfigFile )
+				error = ICFindConfigFile( g.icRef, 0, NULL );	// configure IC
+#endif
+		}
+	}
+#endif
+
+	// application global initalisation
+	g.forkMode = FM_Smart;
+	g.highChar = 0x7F;
+	g.watch = GetCursor( watchCursor );
+	g.iBeam = GetCursor( iBeamCursor );
+	g.searchBuffer[0] = g.searchText[0] = g.gotoText[0] = 0;
+	g.searchDisabled = false;
+	g.searchDlg = NULL;
+	g.gotoDlg = NULL;
+
+	//LR: 1.66 - clear undo/redo records
+	memset( &gUndo, sizeof(UndoRecord), 0 );
+	memset( &gRedo, sizeof(UndoRecord), 0 );
+
+	return( noErr );
+}
+
+/*** MAIN ***/
+int main(int argc, char *argv[])	//LR 175
+{
+#pragma unused(argc,argv)
+	// Standard Mac Initialization
+	_initToolbox();
+
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
+	// Check if Multifinder ( WaitNextEvent ) is implemented
+	_initMultifinder();
+#endif
+
+	// Check running environment
+	_checkEnvironment();
+
+	_initGlobals();
+	_initAppleEvents();
+	InitMenubar();
+
+	PrefsLoad();
+	InitializeEditor();
+	AdjustMenus();
+
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
+	if( !g.sys7Flag )
+		AskEditWindow( kWindowNormal );
+#endif
+
+	InitCursor();	// NS: v1.6.6, moved here from _initToolbox()
+	
+#if TARGET_API_MAC_CARBON  // SEL: 1.7 - carbon session based printing
+	g.pageFormat = kPMNoPageFormat;
+	g.printSettings = kPMNoPrintSettings;
+#endif
+
+	// main event loop
+	while( !g.quitFlag )
+		HandleEvent();
+
+	CleanupEditor();
+
+#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
+	// BB: Unload NavServices
+	if( g.useNavServices )
+		NavUnload();
+#endif
+
+// 05/10/01 - GAB: MPW environment support
+#if !defined(__MC68K__) && !defined(__SC__)
+	if( ICStop )
+	{
+		ICStop( g.icRef );	// shutdown IC
+	}
+#endif
+	return( 0 );
 }

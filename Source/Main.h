@@ -31,13 +31,7 @@
 
 #include "AECompareSuite.h"
 
-OSStatus InitToolbox( void );
-OSStatus InitMultifinder( void );
-OSStatus InitGlobals( void );
-OSStatus InitAppleEvents( void );
-OSStatus CheckEnvironment( void );
 OSStatus HandleEvent( void );
 OSStatus DoEvent( EventRecord *theEvent );
-OSStatus IdleObjects( EventRecord *er );
 
 #endif
