@@ -123,6 +123,9 @@ void HexEditAboutBox( void )
 	prevTicks = 0;
 	done = false;
 
+	InitCursor();
+	SetDialogDefaultItem( theDialog, ok );
+
 #if TARGET_API_MAC_CARBON
 	if( SetDialogTimeout )
 		SetDialogTimeout( theDialog, ok, 60 );
@@ -131,8 +134,6 @@ void HexEditAboutBox( void )
 #else
 	ShowWindow( theDialog );
 #endif
-
-	SetDialogDefaultItem( theDialog, ok );
 	
 	ModalDialog( dlgFilterUPP, &item );
 
