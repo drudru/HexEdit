@@ -159,30 +159,18 @@ enum CompPref { CP_Done=1,CP_Cancel,CP_Bytes,CP_Words,CP_Longs,CP_Different,CP_M
 #define kHexEditWindowTag		1000
 
 // Mac OS versions
-const SInt32 kMacOSSevenPointOne	= 0x00000710;
-const SInt32 kMacOSSevenPointFivePointFive = 0x00000755;
-const SInt32 kMacOSEight			= 0x00000800;
-const SInt32 kMacOSEightPointFive	= 0x00000850;
-const SInt32 kMacOSEightPointSix	= 0x00000860;
-const SInt32 kMacOSNine				= 0x00000900;
-const SInt32 kMacOSNinePointOne		= 0x00000910;
-const SInt32 kMacOSTen				= 0x00001000;
-
-const SInt32 kMacOS71				= kMacOSSevenPointOne;
-const SInt32 kMacOS755				= kMacOSSevenPointFivePointFive;
-const SInt32 kMacOS8				= kMacOSEight;
-const SInt32 kMacOS85				= kMacOSEightPointFive;
-const SInt32 kMacOS86				= kMacOSEightPointSix;
-const SInt32 kMacOS9				= kMacOSNine;
-const SInt32 kMacOS91				= kMacOSNinePointOne;
-const SInt32 kMacOSX				= kMacOSTen;
+#define kMacOSSevenPointOne	 	0x00000710
+#define kMacOSSevenPointFivePointFive 0x00000755
+#define kMacOSEight				0x00000800
+#define kMacOSEightPointFive	0x00000850
+#define kMacOSEightPointSix		0x00000860
+#define kMacOSNine				0x00000900
+#define kMacOSNinePointOne		0x00000910
+#define kMacOSTen				0x00001000
 
 // CarbonLib versions
-const SInt32 kCarbonLibOnePointOne	= 0x00000110;
-const SInt32 kCarbonLibOnePointThreePointOne = 0x00000131;
-
-const SInt32 kCarbonLib11			= kCarbonLibOnePointOne;
-const SInt32 kCarbonLib131			= kCarbonLibOnePointThreePointOne;
+#define kCarbonLibOnePointOne			0x00000110
+#define kCarbonLibOnePointThreePointOne 0x00000131
 
 /*** COLOUR TABLE ***/
 typedef struct
