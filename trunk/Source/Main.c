@@ -432,6 +432,7 @@ static OSStatus _doOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 		error = AEGetNthPtr( &theList, i, typeFSS, &aeKeyword, &actualType, (Ptr) &myFSS, sizeof( FSSpec ), &actualSize );
 		if( error == noErr )
 		{
+			g.forkMode = FM_Smart;	//LR 190 -- open whichever fork we can find!
 			if( noErr == OpenEditWindow( &myFSS, kWindowNormal, !print ) )		//LR 181 -- show fork errors, etc. w/drag & drop open (but not print)
 			{
 				if( print && kHexEditWindowTag == GetWindowKind( FrontNonFloatingWindow() ) )	// LR: 1.7 -- allow printing documents
