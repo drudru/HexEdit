@@ -64,10 +64,10 @@ void LoadFile( EditWindowPtr dWin )
 
 	while( count || once )
 	{
-		if( count <= ( kMaxFileRAM - kSlushRAM ) )
+		if( count <= kChunkSize )
 			chunkSize = count;
 		else
-			chunkSize = ( kMaxFileRAM - kSlushRAM );
+			chunkSize = kChunkSize;
 		count -= chunkSize;
 		nc = NewChunk( chunkSize, pos, pos, CT_Original );
 		dWin->firstChunk = AppendChunk( dWin->firstChunk, nc );
