@@ -1,8 +1,8 @@
 HexEdit
-Copyright © 1996-2001 Lane Roathe <www.ifd.com>
+Copyright © 1996-2002 Lane Roathe <www.ifd.com>
 Based on the original, Copyright © 1993 Jim Bumgardner <www.jbum.com>
 
-HexEdit is a file editor allowing you to view and edit the data contained withn any file. The original (through v1.07) is from Jim Bumgardner, Dave Polaschek released a version 1.1 and Nick Shanks released a version 1.3, and many of his changes are now part of the official HexEdit release. You can reach Nick at <nick.shanks@virgin.net> or on the web at <http://freespace.virgin.net/nick.shanks/mac/>. I (Lane Roathe) have released "official" versions from v1.1 through the current release. The official HexEdit page is:
+HexEdit is a file editor allowing you to view and edit the data contained withn any file. The original (through v1.07) is from Jim Bumgardner, Dave Polaschek released a version 1.1 and Nick Shanks released a version 1.3, and many of his changes are now part of the official HexEdit release. You can reach Nick at <hexedit@nickshanks.com> or on the web at <http://nickshanks.com/hexedit>. I (Lane Roathe) have released "official" versions from v1.1 through the current release, and you can get more information at my site <http://www.ifd.com/hexedit.html>. The official HexEdit page is:
 
 <http://hexedit.sourceforge.net/>
 
