@@ -345,7 +345,7 @@ void NewEditWindow( void )
 		return;
 	}
 
-	dWin->workSpec = workSpec;
+	dWin->workSpec = dWin->fsSpec = workSpec;
 	dWin->workRefNum = refNum;
 	dWin->workBytesWritten = 0L;
 
@@ -624,8 +624,8 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	dWin->creator = pb.fileParam.ioFlFndrInfo.fdCreator;
 	dWin->creationDate =	pb.fileParam.ioFlCrDat;
 
-	dWin->fsSpec = *fsSpec;
-	dWin->destSpec = dWin->fsSpec;
+	dWin->fsSpec =
+	dWin->destSpec = *fsSpec;
 
 	error = SetupNewEditWindow( dWin, fsSpec->name );	// LR: 1.5 -make maintenence easier!
 	if( !error )
