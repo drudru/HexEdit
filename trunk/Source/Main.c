@@ -13,13 +13,18 @@
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
  * Portions created by Lane Roathe (LR) are
- * Copyright (C) Copyright © 1996-2000.
+ * Copyright (C) Copyright © 1996-2001.
  * All Rights Reserved.
  * 
  * Contributor(s):
  *		Nick Shanks (NS)
  *		Scott E. Lasley (SEL) 
  */
+
+// 05/10/01 - GAB: MPW environment support
+#ifdef __MPW__
+#include "MPWIncludes.h"
+#endif
 
 #include <debugging.h>
 
@@ -47,6 +52,11 @@ extern SInt16		CompareFlag;
 extern WindowRef	CompWind1, CompWind2;
 static SInt32		caretTime;
 static Boolean		skipOpen = false;
+
+// 05/10/01 - GAB: qd must be supplied by Interface.o applications
+#if !__MWERKS__ && !TARGET_API_MAC_CARBON
+QDGlobals	qd;
+#endif
 
 /*** MAIN ***/
 void main( void )	// LR: fix warnings
@@ -92,7 +102,8 @@ void main( void )	// LR: fix warnings
 
 	CleanupEditor();
 
-#ifndef __MC68K__
+// 05/10/01 - GAB: MPW environment support
+#if !defined(__MC68K__) && !defined(__SC__)
 	if( ICStop )
 	{
 		ICStop( g.icRef );	// shutdown IC
@@ -141,7 +152,8 @@ OSStatus InitGlobals( void )
 	g.translucentDrag = (Boolean) (result & (1 << gestaltDragMgrHasImageSupport));
 	
 	// check appearance availablilty
-	result = nil;
+	// 05/10/01 - GAB: result is an int, not a pointer
+	result = 0;
 	error = Gestalt( gestaltAppearanceAttr, &result );
 	g.appearanceAvailable = (Boolean) (result & (1 << gestaltAppearanceExists));
 	if( g.appearanceAvailable )	g.useAppearance = true;
@@ -149,7 +161,8 @@ OSStatus InitGlobals( void )
 	if( g.useAppearance )		RegisterAppearanceClient();
 	
 	// check nav services availablilty
-#ifndef __MC68K__
+// 05/10/01 - GAB: MPW environment support
+#if !defined(__MC68K__) && !defined(__SC__)
 	g.navAvailable = (Boolean) NavServicesAvailable();
 	if( g.navAvailable )		g.useNavServices = true;
 	else						g.useNavServices = false;
@@ -494,14 +507,20 @@ static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 	error = AEGetParamDesc( theEvent, keyDirectObject, typeAEList, &theList );
 	if( error != noErr )
 	{
+// 05/10/01 - GAB: DEBUGSTR not defined in non-Carbon builds
+#if !TARGET_API_MAC_CARBON
 		DEBUGSTR( "\pAEGetParamDesc" );
+#endif
 		return( error );
 	}
 
 	// make sure event description is correct
 	if( !GotRequiredParams( theEvent ) )
 	{
+// 05/10/01 - GAB: DEBUGSTR not defined for non-Carbon builds
+#if !TARGET_API_MAC_CARBON
 		DEBUGSTR( "\pGotRequiredParams" );
+#endif
 		return( error );
 	}
 
@@ -509,7 +528,10 @@ static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 	error = AECountItems( &theList, &itemCount );
 	if( error != noErr )
 	{
+// 05/10/01 - GAB: DEBUGSTR not defined for non-Carbon builds
+#if !TARGET_API_MAC_CARBON
 		DEBUGSTR( "\pAECountItems" );
+#endif
 		return( error );
 	}
 
