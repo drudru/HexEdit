@@ -123,7 +123,7 @@
 */
 
 // LR: 1.6.5 -- better ID defs, and include all references
-enum AlertIDs		{ alertSave = 10000, alertError, alertNoFork, alertMessage };
+enum AlertIDs		{ alertSave = 10000, alertError, alertNoFork, alertRevert };
 enum DialogIDs		{ dlgSearch = 128, dlgGoto, dlgAbout, dlgCompare, dlgComparePref, dlgGetFile = 1401 };
 enum StringIDs		{ strUndo = 128, strPrint, strHeader, strError, strColor, strPrompt, strFiles, strURLs, strFont };
 
@@ -140,7 +140,7 @@ enum Filenames		{ FN_PrefsFolder = 1, FN_PrefsFile, FN_Untitled, FN_DATA, FN_RSR
 enum AsciiModes		{ AM_Lo, AM_Hi };
 enum EditMode 		{ EM_Hex, EM_Decimal, EM_Ascii };
 enum EditOperation	{ EO_Undo = 1, EO_Redo, EO_Typing, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete };
-enum ErrorSeverity	{ ES_Message, ES_Note, ES_Caution, ES_Stop };
+enum ErrorSeverity	{ ES_Note, ES_Caution, ES_Stop };
 enum CursorNumbers	{ C_Arrow, C_Watch, C_IBeam };
 enum CompModeSize 	{ CM_Byte, CM_Word, CM_Long };
 enum CompModeType 	{ CM_Different, CM_Match };
@@ -236,8 +236,8 @@ typedef struct
 	CursHandle	iBeam;
 	
 	// dialogs
-	DialogPtr	searchWin;
-	DialogPtr	gotoWin;
+	DialogPtr	searchDlg;
+	DialogPtr	gotoDlg;
 	
 	// printing
 #if TARGET_API_MAC_OS8
