@@ -26,6 +26,7 @@
 #include "Menus.h"
 #include "Prefs.h"
 #include "EditWindow.h"
+#include "EditRoutines.h"
 #include "EditScrollbar.h"
 #include "HexCompare.h"
 #include "HexSearch.h"
@@ -167,6 +168,10 @@ OSStatus InitGlobals( void )
 	g.searchDisabled = false;
 	g.searchWin = NULL;
 	g.gotoWin = NULL;
+
+	//LR: 1.66 - clear undo/redo records
+	memset( &gUndo, sizeof(UndoRecord), 0 );
+	memset( &gRedo, sizeof(UndoRecord), 0 );
 
 	return( noErr );
 }

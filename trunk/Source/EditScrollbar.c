@@ -23,8 +23,6 @@
 #include "EditScrollbar.h"
 #include "EditRoutines.h"
 
-extern globals g;
-
 ControlActionUPP trackActionUPP;		// LR: init'd in Main!
 
 /*** SETUP SCROLL BARS ***/

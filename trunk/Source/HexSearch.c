@@ -27,10 +27,8 @@
 #include "EditRoutines.h"
 #include "EditScrollbar.h"
 #include "Menus.h"
+#include "Prefs.h"
 #include "Utility.h"
-
-extern globals g;
-extern prefs_t prefs;
 
 /*** SET SEARCH BUTTONS ***/
 void SetSearchButtons( void )
