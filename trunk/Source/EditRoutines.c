@@ -47,16 +47,17 @@ void LoadFile( EditWindowPtr dWin )
 // Assumes theWin has just been opened, file is open, fileSize field is correct
 	EditChunk	**nc;
 	long		count, chunkSize, pos;
+	Boolean		once = true;
 
 	count = dWin->fileSize;
 	pos = 0L;
 
 	// LR: - if empty fork, just create a chunk so we can insert data!
 
-	if( !count )
-		count = 1;
+//	if( !count )
+//		count = 1;
 
-	while( count )
+	while( count || once )
 	{
 		if( count <= ( kMaxFileRAM - kSlushRAM ) )
 			chunkSize = count;
@@ -66,6 +67,7 @@ void LoadFile( EditWindowPtr dWin )
 		nc = NewChunk( chunkSize, pos, pos, CT_Original );
 		dWin->firstChunk = AppendChunk( dWin->firstChunk, nc );
 		pos += chunkSize;
+		once = false;
 	}
 	dWin->curChunk = dWin->firstChunk;
 }
@@ -103,7 +105,7 @@ EditChunk** NewChunk( long size, long addr, long filePos, short type )
 	{
 		( *nc )->loaded = true;
 		( *nc )->allocSize = size;
-		( *nc )->data = NewHandleClear( ( *nc )->allocSize );
+		( *nc )->data = NewHandleClear( size );
 		if( !( *nc )->data )
 		{
 			ErrorAlert( ES_Caution, errMemory );
@@ -227,9 +229,12 @@ void LoadChunk( EditWindowPtr dWin, EditChunk **cc )
 		if( ( error = SetFPos( refNum, fsFromStart, ( *cc )->filePos ) ) != noErr )
 			ErrorAlert( ES_Caution, errSeek, error );
 		count = ( *cc )->size;
-		dWin->totLoaded += ( *cc )->size;
-		if( ( error = FSRead( refNum, &count, *( *cc )->data ) ) != noErr )
-			ErrorAlert( ES_Caution, errRead, error );
+		if( count )	//1.73 LR :empty file is OK, don't bring up an error by trying to read nothing!
+		{
+			dWin->totLoaded += count;
+			if( ( error = FSRead( refNum, &count, *( *cc )->data ) ) != noErr )
+				ErrorAlert( ES_Caution, errRead, error );
+		}
 	}
 }
 
