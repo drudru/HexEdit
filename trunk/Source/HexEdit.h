@@ -58,7 +58,7 @@
 	#define InvalWindowRect(w,r) InvalRect(r)
 	#define EnableMenuItem EnableItem
 	#define DisableMenuItem DisableItem
-	#define GetWindowList FrontWindow
+	#define FrontNonFloatingWindow FrontWindow
 	#define MenuRef MenuHandle
 #endif
 
