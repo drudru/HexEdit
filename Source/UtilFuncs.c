@@ -106,6 +106,36 @@ void EnableButton( DialogPtr dialog, short bid )
 	HiliteControl( ( ControlHandle ) h, kControlNoPart );
 }
 
+/*	*** Check for an abort keypress (ESC or Command .) ***
+
+	LR: 1.66 - added to allow any routine to check for an abort keypress.
+
+	EXIT: true == user pressed abort key(s)
+*/
+
+Boolean CheckForAbort( void )
+{
+	EventRecord event;
+
+	if( EventAvail( keyDownMask, &event ) )	// GetNextEvent will NOT work (doesn't see the key press!)
+	{
+		if( keyDown == event.what )		// should always be true, but ...
+		{
+			char c;
+			EventRecord bogus;
+
+			while( GetNextEvent( everyEvent, &bogus ) )
+				;	// remove all pending events!
+
+			c = (event.message & charCodeMask);
+
+			if( c == 27 || (c = '.' && (event.modifiers & cmdKey)) )
+				return( true );
+		}
+	}
+	return( false );
+}
+
 // Simulate the user pressing a button.	This is used to give the user some
 // visual feedback when they use the keyboard as a shortcut to press a dialog button.
 

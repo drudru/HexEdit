@@ -34,6 +34,7 @@ void SetDraw( DialogPtr dialog, short item, Handle proc );
 void DisableButton( DialogPtr dialog, short bid );
 void EnableButton( DialogPtr dialog, short bid );
 void SimulateButtonPress( DialogPtr dialog, short bid );
+Boolean CheckForAbort( void );
 short ErrorAlert( short severity, short strid, ... );
 short MyRandom( short limit );
 void MySetCursor( short n );
