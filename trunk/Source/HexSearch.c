@@ -406,6 +406,8 @@ setmode:
 							SelectWindow( dWin->oWin.theWin );
 							ScrollToSelection( dWin, addr, true );
 						}
+						else
+							SysBeep(0);	//LR 180 -- signal error
 					}
 				}
 				break;
