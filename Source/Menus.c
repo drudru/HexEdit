@@ -86,7 +86,7 @@ OSStatus AdjustMenus( void )
 	register		WindowRef theWin;
 	short 			windowKind;
 	Boolean 		isDA, isObjectWin, selection, scrapExists, undoExists, isGotoWin, isFindWin;
-	EditWindowPtr	dWin;
+	EditWindowPtr	dWin = NULL;
 	Str31			menuStr;
 	short 			i;
 	long			scrapSize;	// LR: v1.6.5
@@ -96,8 +96,6 @@ OSStatus AdjustMenus( void )
 	theWin = FrontWindow();
 	if( theWin )
 	{
-		dWin = (EditWindowPtr) GetWRefCon( theWin );
-
 	#if TARGET_API_MAC_CARBON
 		isGotoWin = (theWin == GetDialogWindow( g.gotoWin ));
 		isFindWin = (theWin == GetDialogWindow( g.searchWin ));
@@ -110,10 +108,11 @@ OSStatus AdjustMenus( void )
 		isDA = ( windowKind < 0 );
 		isObjectWin = GetWindowKind( theWin ) == HexEditWindowID;
 		selection = ( isObjectWin && dWin->endSel > dWin->startSel );
+		if( isObjectWin )
+			dWin = (EditWindowPtr)GetWRefCon( theWin );	//LR: 1.66 - don't set unless an edit window!
 	}
 	else	// LR: v1.6.5 if no window is visible, then nothing is true!
 	{
-		dWin = NULL;
 		isGotoWin = isFindWin = isObjectWin = isDA = selection = 0;
 	}
 
@@ -208,7 +207,11 @@ OSStatus AdjustMenus( void )
 	} while( --i > 2 );
 	
 	// NS: v1.6.6 checkmark front window in window menu
-	GetWTitle( FrontWindow(), frontWindowName );
+	if( theWin )
+		GetWTitle( theWin, frontWindowName );	//LR: 1.66 - don't use NULL window!
+	else
+		frontWindowName[0] = 0;
+
 	i = CountMenuItems( windowMenu );
 	while( i )
 	{
@@ -333,6 +336,7 @@ OSStatus HandleMenu( long mSelect )
 				DoComparison();
 			break;
 
+		//LR: 1.66 - NOTE: dWin == NULL == frontWindow!
 		case FM_Save:
 			if( dWin && dWin->oWin.Save )
 				dWin->oWin.Save( frontWindow );
@@ -509,18 +513,15 @@ OSStatus HandleMenu( long mSelect )
 	case kColorMenu:
 		if( menuItem == CM_UseColor )
 			prefs.useColor = !prefs.useColor;
-		else
+		else if( dWin && dWin->csResID > 0 )		// can't color B&W windows!
 		{
-			if( dWin->csResID > 0 )		// can't color B&W windows!
-			{
-				CheckMenuItem( colorMenu, prefs.csMenuID, false );
+			CheckMenuItem( colorMenu, prefs.csMenuID, false );
 
-				prefs.csResID = GetColorMenuResID( menuItem );
-				prefs.csMenuID = menuItem;
-				
-				if( GetWindowKind( dWin->oWin.theWin ) == HexEditWindowID )
-					dWin->csResID = prefs.csResID;
-			}
+			prefs.csResID = GetColorMenuResID( menuItem );
+			prefs.csMenuID = menuItem;
+			
+			if( GetWindowKind( dWin->oWin.theWin ) == HexEditWindowID )
+				dWin->csResID = prefs.csResID;
 		}
 		UpdateEditWindows();
 		break;

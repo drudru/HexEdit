@@ -755,23 +755,25 @@ EditWindowPtr LocateEditWindow( FSSpec *fs, short fork )
 /*** FIND FIRST EDIT WINDOW ***/
 EditWindowPtr FindFirstEditWindow( void )
 {
-	WindowRef theWin;
-	long windowKind;
+	WindowRef theWin, editWin = NULL;
 
 	// Find and Select Top Window
+	//LR: 1.66 total re-write to avoid null window references!
+
 	theWin = FrontWindow();
-
-	windowKind = GetWindowKind( theWin );
-	while( theWin && windowKind != HexEditWindowID )
+	if( theWin ) do
 	{
+		if( GetWindowKind( theWin ) == HexEditWindowID )
+			editWin = theWin;
+
 		theWin = GetNextWindow( theWin );
-		windowKind = GetWindowKind( theWin );
-	}
 
-	if( !theWin || windowKind != HexEditWindowID )
-		return NULL;
+	}while( theWin && !editWin  );
 
-	return (EditWindowPtr) GetWRefCon( theWin );
+	if( !editWin )
+		return( NULL );
+
+	return( (EditWindowPtr)GetWRefCon( editWin ) );
 }
 
 /*** INIT COLOUR TABLE ***/
@@ -1147,13 +1149,13 @@ void UpdateOnscreen( WindowRef theWin )
 /*** MY IDLE ***/
 void MyIdle( WindowRef theWin, EventRecord *er )
 {
-	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+	EditWindowPtr	dWin = (EditWindowPtr)GetWRefCon( theWin );
 
 // LR: v1.6.5	long			scrapCount;
 	Boolean			frontWindowFlag;
 	Point			w;
 
-	frontWindowFlag = ( theWin == FrontWindow() && dWin->oWin.active );
+	frontWindowFlag = (theWin == FrontWindow() && dWin->oWin.active);
 	if( frontWindowFlag )
 	{
 		w = er->where;
@@ -1268,8 +1270,7 @@ void InvertSelection( EditWindowPtr	dWin )
 	Boolean	frontFlag;
 	RGBColor invertColor;
 
-	frontFlag = ( dWin->oWin.theWin == FrontWindow() &&
-				 dWin->oWin.active );
+	frontFlag = (dWin->oWin.theWin == FrontWindow() && dWin->oWin.active);
 
 	if( dWin->endSel <= dWin->startSel )
 		return;
@@ -2324,15 +2325,18 @@ void MyActivate( WindowRef theWin, Boolean active )
 }
 
 /*** UPDATE EDIT WINDOWS ***/
+//LR: 1.66 - avoid NULL window ref, DrawPage with CURRENT dWin (not first!)
 void UpdateEditWindows( void )
 {
 	WindowRef		theWin = FrontWindow();
-	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+	EditWindowPtr	dWin;
+
 	while( theWin )
 	{
 		long windowKind = GetWindowKind( theWin );
 		if( windowKind == HexEditWindowID )
 		{
+			dWin = (EditWindowPtr)GetWRefCon( theWin );
 			DrawPage( dWin );
 			UpdateOnscreen( theWin );
 		}

@@ -930,6 +930,7 @@ void RememberOperation( EditWindowPtr dWin, short opType, UndoRecord *ur )
 /*** UNDO OPERATION ***/
 void UndoOperation( void )
 {
+	WindowRef win;
 	EditWindowPtr dWin;
 
 	if( !g.undo )	//LR: 1.66 -- can be NULL!
@@ -937,8 +938,10 @@ void UndoOperation( void )
 
 	dWin = g.undo->theWin;
 	if( g.undo->type == 0 ) return;
-	
-	if( dWin != (EditWindowPtr) GetWRefCon( FrontWindow() ) )
+
+	//LR: 1.66 check for null front window!
+	win = FrontWindow();
+	if( !win || dWin != (EditWindowPtr)GetWRefCon( win ) )
 		SelectWindow( dWin->oWin.theWin );
 	
 	switch( g.undo->type )
