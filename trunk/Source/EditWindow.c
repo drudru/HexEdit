@@ -1239,12 +1239,13 @@ static void _offsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFla
 	}
 }
 
-//LR 185 -- macros to easy playing with hiliting
+//LR 185 -- macros to ease playing with hiliting
 //#define SETHILITE()	{char c = LMGetHiliteMode(); BitClr( &c, pHiliteBit ); LMSetHiliteMode( c ); }
 //#define SETHILITE()
-//#define HILITERECT(r) {	RGBForeColor( &hColor ); PenMode( adMin ); PaintRect(r); RGBForeColor( &grey ); PenMode( srcCopy ); }
-#define HILITERECT(r) {	RGBForeColor( &hColor ); PenMode( blend ); PaintRect(r); RGBForeColor( &grey ); PenMode( srcCopy ); }
 //#define HILITERECT(r) SETHILITE(); InvertRect(r)
+
+#define HILITERECT(r) {	RGBForeColor( &hColor ); PenMode( adMin ); PaintRect(r); RGBForeColor( &grey ); PenMode( srcCopy ); }
+//#define HILITERECT(r) {	RGBForeColor( &hColor ); PenMode( blend ); PaintRect(r); RGBForeColor( &grey ); PenMode( srcCopy ); }
 
 /*** INVERT SELECTION ***/
 //LR 180 -- changes to draw offscreen instead of directly to window
@@ -1254,7 +1255,7 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 	long	start, end;
 	short	startX, endX;
 	Boolean	frontFlag;
-	RGBColor hColor, opcolor = { 0x8000, 0x8000, 0x8000 };
+	RGBColor hColor, opcolor = { 0x8000, 0x8000, 0xF000 };
 //185	RGBColor invertColor;
 
 	frontFlag = (dWin->oWin.theWin == FrontNonFloatingWindow() && dWin->oWin.active);
