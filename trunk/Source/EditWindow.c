@@ -2229,9 +2229,8 @@ void PrintWindow( EditWindowPtr dWin )
 
 	PrOpen();
 
-	ok = PrValidate( g.HPrint );
-	if( ok )
-		ok = PrJobDialog( g.HPrint );
+	PrValidate( g.HPrint );
+	ok = PrJobDialog( g.HPrint );
 	if( ok )
 	{
 		if( dWin->startSel == dWin->endSel )
