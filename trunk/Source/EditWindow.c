@@ -836,6 +836,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	HParamBlockRec		pb;
 	FSSpec				workSpec;
 	Str31				tempStr;
+	long				fileEOF;	//LR 175
 // LR: 1.5 	Rect		r, offRect;
 	
 	// Get the Template & Create the Window, it is set up in the resource fork
@@ -873,13 +874,22 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 		dWin->fork = FT_Data;
 //LR 175		error = HOpenDF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
 		error = FSpOpenDF( fsSpec, fsRdWrPerm, &refNum );
-		if( error == fnfErr )
+		if( !error )
+			error = GetEOF( refNum, &fileEOF );		//LR 175
+		if( error == fnfErr || (!error && 0 == fileEOF) )
 		{
-			if( !showerr ) return error;
+			if( showerr )
+				return fnfErr;
+
 			GetIndString( tempStr, strFiles, FN_DATA );
 			ParamText( fsSpec->name, tempStr, NULL, NULL );
 			if( StopAlert( alertNoFork, NULL ) != 2 )
-				return error;
+			{
+				FSClose( refNum );		//LR 175
+				return( fnfErr );
+			}
+
+/*LR 175 -- empty forks are always opened, so we just have to warn about them being empty!
 
 //LR 175			error = HCreate( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, 
 			error = FSpCreate( fsSpec, pb.fileParam.ioFlFndrInfo.fdCreator, pb.fileParam.ioFlFndrInfo.fdType, smSystemScript );
@@ -890,6 +900,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 			}
 //LR 175			error = HOpenDF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
 			error = FSpOpenDF( fsSpec, fsRdWrPerm, &refNum );
+*/
 		}
 		if( error != noErr )
 		{
@@ -905,15 +916,22 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 		dWin->fork = FT_Resource;
 //LR 175		error = HOpenRF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
 		error = FSpOpenRF( fsSpec, fsRdWrPerm, &refNum );
-		if( error == fnfErr )
+		if( !error )
+			error = GetEOF( refNum, &fileEOF );		//LR 175
+		if( error == fnfErr || (!error && 0 == fileEOF) )
 		{
 			if( !showerr )
-				return error;
+				return fnfErr;
 
 			GetIndString( tempStr, strFiles, FN_RSRC );
 			ParamText( fsSpec->name, tempStr, NULL, NULL );
 			if( StopAlert( alertNoFork, NULL ) != 2 )
-				return error;
+			{
+				FSClose( refNum );		//LR 175
+				return( fnfErr );
+			}
+
+/*LR 175 -- empty forks are always opened, so we just have to warn about them being empty!
 
 //LR 175			HCreateResFile( fsSpec->vRefNum, fsSpec->parID, fsSpec->name );
 			FSpCreateResFile( fsSpec, pb.fileParam.ioFlFndrInfo.fdCreator, pb.fileParam.ioFlFndrInfo.fdType, smSystemScript );
@@ -924,6 +942,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 			}
 //LR 175			error = HOpenRF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
 			error = FSpOpenRF( fsSpec, fsRdWrPerm, &refNum );
+*/
 		}
 		if( error != noErr )
 		{
