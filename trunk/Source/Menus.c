@@ -668,15 +668,7 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 			if( _cmCheckedItem )
 				CheckMenuItem( colorMenu, _cmCheckedItem, false );
 
-			if( (modifiers & optionKey) )	// option down == do only front window!
-			{
-				if( GetWindowKind( dWin->oWin.theWin ) == kHexEditWindowTag )
-				{
-					dWin->csResID = colorResID;
-					dWin->csMenuID = menuItem;	//LR 181 -- for menu tagging
-				}
-			}
-			else	//LR 180 -- default is to change color of ALL windows!
+			if( (modifiers & optionKey) )	// option down == change all windows (set default color)
 			{
 				EditWindowPtr eWin = FindFirstEditWindow();
 
@@ -693,6 +685,14 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 
 				gPrefs.csResID = colorResID;	//LR 180 -- save prefs when changing all
 				gPrefs.csMenuID = menuItem;
+			}
+			else	//LR 181 -- default is (back) to changing color of a single window!
+			{
+				if( GetWindowKind( dWin->oWin.theWin ) == kHexEditWindowTag )
+				{
+					dWin->csResID = colorResID;
+					dWin->csMenuID = menuItem;	//LR 181 -- for menu tagging
+				}
 			}
 		}
 		UpdateEditWindows();
