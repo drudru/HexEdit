@@ -1,5 +1,59 @@
 HexEdit Revision History
 
+04/29/02 1.80
+Major re-arrangement of EditWindow.c to be easier to follow
+Removed per-window offscreen drawing surface
+	(a single color capable offscreen is now used for all windows)
+Single offscreen means memory usage goes WAY DOWN, a very good thing
+Single offscreen means flickering of selection no longer happens
+Single offscreen means slower drawing speed, only noticable on older Macs
+Windows zoom is now restricted to full line height at window creation
+Open/Save dialogs now get prompt at load, including Nav dialogs!
+Re-layed out window to handle files of huge size (ie, 8 chars for hex addresses!)
+Re-layed out header to reflect larger file size handling (8 chars per hex address!)
+Positioning of vertical lines now relative to body draw position (in code)
+Windows no longer grow below bottom of screen
+Fixed problem where data file w/no resource fork didn't display correct error message
+Cleaned up some opening code (to not duplicate functionality)
+Fixed a few memory leaks when failing to open a file's fork
+Fixed a possible condition that could leave files open
+No longer resize the window when you try to re-open an open file
+Max window sizes now take into account the doc in OS X
+Fixed update of outline in ascii area, bottom right edge was 1 pixel short
+Added an error specific to saving files when the original is moved or deleted
+Updated error message on missing resource forks so explain what's happening
+Scrolling speed of drags now gets faster the further from the window the mouse goes
+Fixed cut not copying selection deleted; it does now, just like copy :)
+Windows open to better default sizes now
+Alerts now belong to the window from which the error occurs
+File compare now uses currently open windows by default, when available
+Holding "Option" when selecting Compare Files menu option forces file selection dialogs
+Menu routines now passed the key modifiers state (see above, below)
+Holding "Option" when selecting a color will change the color of only the front window
+By default, changing the color now changes the color of all open windows!
+You can now go to the start/end of a file with Option-Up/Option-Down (Home/End)
+New option to cause page up/down to  only move display, not change edit cursor position
+Comparison mode now allows available menu command keys to work
+Non-Destructive delete in insert mode is now just that, non-destructive!
+Now accept "Clear" key and Option-Delete to "clear" a selection to zeros
+Added seperate color entry for dark body color (was based on bar color previously)
+Added a few new colors, and updated some of the other colors
+	(sure wish someone would create a set of colors that looked good :)
+Minimum Window size is now 10 lines
+Added EF's changes to the way window clicks are handled, for better OS X usage
+Added EF's carbon events code to allow mouse wheel to scroll window contents
+Trying to go to an address outside of the window's file size signals error with a beep
+Optimized some calculations of window display position
+When scrolling in very large files we now always position to the first byte of a display line
+Fixed problem with tabbing between hex and ascii fields, (boolean ops on non-booleans bad) 
+most enums are now typedefs so they can be used as data types (see above fix for example :)
+
+<unreleased> 1.77
+Incorporated file compare window changes from Nick Pissaro
+Major re-arrange of main.c to be easier to follow
+Removed all "CompareFlag" references, now pass type of window to functions
+	(effects SizeWindow, file open routines, etc.)
+
 03/20/02 Version 1.76
 fixed DisposeChunk to check for NULL window (fixes replace all crash) thanks to Ben H.
 fixed printing in classic (removed check for error on PrValidate, it doesn't return errors)
