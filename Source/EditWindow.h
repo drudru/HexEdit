@@ -76,17 +76,21 @@ typedef struct
 	long				startSel;		// First Character of Selection
 	long				endSel;			// First Character AFTER Selection
 	long				lastTypePos;	// Last Typing Insertion Point
+	long				workBytesWritten;	// Size of Work File
+	long				linesPerPage;	// Lines that fit in the theWin
+
 	short				refNum;			// File's Reference Number
 	short				workRefNum;		// Work File's Reference Number
-	short				workBytesWritten;	// Size of Work File
-	short				linesPerPage;	// Lines that fit in the theWin
 	short				editMode;		// 0=Hex, 1=Ascii
 	short				fork;			// 0=data 1=resource
 	short				lastNybble;		// Last Hex Edit Nibble
+
 	Boolean				loByteFlag;		// Editing Low Byte for Hex Editor
 	Boolean				dirtyFlag;		// File has been modified
 	Boolean				readOnlyFlag;	// File is read-only!
+
 //LR 180	GWorldPtr			offscreen;
+
 	short				csResID;		// LR: color table res ID for drawing theWin
 }	EditWindowRecord, *EditWindowPtr;
 
