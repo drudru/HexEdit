@@ -304,10 +304,11 @@ OSStatus AdjustMenus( void )
 	_enableMenuItem( findMenu, 0, isObjectWin || isFindWin || isGotoWin );
 /* 1.65
 	_enableMenuItem( findMenu, SM_Find, isObjectWin );
-	_enableMenuItem( findMenu, SM_FindForward, isObjectWin );
-	_enableMenuItem( findMenu, SM_FindBackward, isObjectWin );
 	_enableMenuItem( findMenu, SM_GotoAddress, isObjectWin );
 */
+	_enableMenuItem( findMenu, SM_FindForward, isObjectWin && dWin->fileSize && g.searchBuffer[0] );	//LR 1.72 -- only enable w/something to search :)
+	_enableMenuItem( findMenu, SM_FindBackward, isObjectWin && dWin->fileSize && g.searchBuffer[0] );
+
 	CheckMenuItem( optionsMenu, OM_HiAscii, prefs.asciiMode );
 	CheckMenuItem( optionsMenu, OM_DecimalAddr, prefs.decimalAddr );
 	CheckMenuItem( optionsMenu, OM_Backups, prefs.backupFlag );
