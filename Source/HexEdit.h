@@ -12,14 +12,19 @@
  * The Original Code is Copyright 1993 Jim Bumgardner.
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
- * Portions created by Lane Roathe are
+ * Portions created by Lane Roathe (LR) are
  * Copyright (C) Copyright © 1996-2000.
  * All Rights Reserved.
  * 
  * Contributor(s):
- *		Nick Shanks
+ *		Nick Shanks (NS)
+ *		Scott E. Lasley (SEL) 
  */
 
+
+#if TARGET_API_MAC_CARBON
+	#include <PMApplication.h>
+#endif
 
 #include <stdarg.h>
 #include <string.h>
@@ -46,7 +51,7 @@
 
 // Comatibility macros
 #if !TARGET_API_MAC_CARBON
-	#define SetPortDialogPort SetPort
+//LR: 1.7 - defined in Carbon.h now! (1.2)	#define SetPortDialogPort SetPort
 	#define GetPortBounds( p, rp ) *rp = (p)->portRect
 	#define GetWindowPortBounds( w, rp ) *rp = (w)->portRect
 	#define GetPortPixMap(p) p->portPixMap
@@ -122,6 +127,10 @@ typedef struct
 #if TARGET_API_MAC_OS8
 	THPrint		HPrint;
 #endif
+#if TARGET_API_MAC_CARBON	// SEL -- 1.7
+	PMPrintSettings	printSettings;
+	PMPageFormat	pageFormat;
+#endif
 }	globals;
 
 extern globals g;
@@ -174,7 +183,7 @@ enum StringIDs		{ strUndo = 128, strPrint, strHeader, strError, strColor, strPro
 
 enum ErrorIDs		{ errMemory = 1, errSeek, errRead, errSetFPos, errWrite, errPaste, errFindFolder,
 						errCreate, errOpen, errFileInfo, errPrintRange, errSetFileInfo, errBackup,
-						errRename, errDiskFull, errHexValues
+						errRename, errDiskFull, errHexValues, errDefaultPrinter, errGenericPrinting
 					};
 
 enum ChunkTypes		{ CT_Original, CT_Work, CT_Unwritten };

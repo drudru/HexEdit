@@ -12,12 +12,13 @@
  * The Original Code is Copyright 1993 Jim Bumgardner.
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
- * Portions created by Lane Roathe are
+ * Portions created by Lane Roathe (LR) are
  * Copyright (C) Copyright © 1996-2000.
  * All Rights Reserved.
  * 
  * Contributor(s):
- *		Nick Shanks
+ *		Nick Shanks (NS)
+ *		Scott E. Lasley (SEL) 
  */
 
 #include <debugging.h>
@@ -76,6 +77,11 @@ void main( void )	// LR: fix warnings
 
 	InitCursor();	// NS: v1.6.6, moved here from InitToolbox()
 	
+#if TARGET_API_MAC_CARBON  // SEL: 1.7 - carbon session based printing
+	g.pageFormat = kPMNoPageFormat;
+	g.printSettings = kPMNoPrintSettings;
+#endif
+
 	// main event loop
 	while( !g.quitFlag )
 		HandleEvent();
@@ -510,11 +516,8 @@ OSStatus DoOpenAppleEvent( const AppleEvent *theEvent )
 }
 
 /*** CORE EVENT HANDLER ***/
-#if TARGET_API_MAC_CARBON	//%% LR -- bug in Carbon SDK -- fix later! (should get a warning on future SDK, if fixing say which SDK version!)
-static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *reply, unsigned long refCon )
-#else
+// Requires Carbon SDK 1.2 or later!
 static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *reply, long refCon )
-#endif
 {
 	#pragma unused( reply, refCon )	// LR
 	DescType	actualType;
@@ -554,11 +557,7 @@ static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *re
 // LR --- handles only the VOODOO compare files AE
 
 /*** COMPARE EVENT HANDLER ***/
-#if TARGET_API_MAC_CARBON	//%% LR -- bug in Carbon SDK -- fix later! (should get a warning on future SDK, if fixing say which SDK version!)
-static pascal OSErr CompareEventHandler( const AppleEvent *theEvent, AppleEvent *reply, unsigned long refCon )
-#else
 static pascal OSErr CompareEventHandler( const AppleEvent *theEvent, AppleEvent *reply, long refCon )
-#endif
 {
 	#pragma unused( reply, refCon )			// LR
 	extern WindowRef CompWind1, CompWind2;	// set in OpenEditWindow
