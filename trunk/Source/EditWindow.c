@@ -391,7 +391,7 @@ static GWorldPtr _newCOffScreen( short width, short height )
 	Rect		rect;
 	
 	SetRect( &rect, 0, 0, width, height );
-	error = NewGWorld( &theGWorld, prefs.useColor? 0:1, &rect, NULL, NULL, keepLocal );
+	error = NewGWorld( &theGWorld, gPrefs.useColor? 0:1, &rect, NULL, NULL, keepLocal );
 	if( error != noErr ) return NULL;
 	return theGWorld;
 }
@@ -515,8 +515,8 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	objectWindow->Revert		= RevertContents;
 	objectWindow->Activate		= MyActivate;
 
-	if( prefs.useColor )
-		dWin->csResID = prefs.csResID;	// LR: 1.5 - color selection
+	if( gPrefs.useColor )
+		dWin->csResID = gPrefs.csResID;	// LR: 1.5 - color selection
 	else
 		dWin->csResID = -1;	// LR: if created w/o color then offscreen is 1 bit, NO COLOR possible!
 
@@ -1209,7 +1209,7 @@ OSStatus GetColorInfo( EditWindowPtr dWin )
 	RGBColor rgbBlack = { nixBlack, nixBlack, nixBlack };
 	RGBForeColor( &hilightColour );
 */	
-	if( prefs.useColor && dWin->csResID > 0 )
+	if( gPrefs.useColor && dWin->csResID > 0 )
 	{
 		ctHdl = (HEColorTableHandle) GetResource( 'HEct', dWin->csResID );
 		if( !ctHdl )
@@ -1264,7 +1264,7 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 						%d	identifies as a number (decimal)
 						%X	identifies as a number (hexadecimal)		*/
 	
-	GetIndString( (StringPtr) str, strHeader, prefs.decimalAddr? HD_Decimal : HD_Hex );
+	GetIndString( (StringPtr) str, strHeader, gPrefs.decimalAddr? HD_Decimal : HD_Hex );
 	CopyPascalStringToC( (StringPtr) str, str );
 //1.7	GetIndString( (StringPtr) str2, strHeader, dWin->fork );
 //1.7	CopyPascalStringToC( (StringPtr) str2, str2 );
@@ -1375,7 +1375,7 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	// draw each line of data
 	for( y = r->top + (kLineHeight - 2), j = 0; y < r->bottom && addr < eAddr; y += kLineHeight, j++ )
 	{
-		if( prefs.decimalAddr )
+		if( gPrefs.decimalAddr )
 			sprintf( (char *)&g.buffer[0], "%8ld:", addr );
 		else
 			sprintf( (char *)&g.buffer[0], " %07lX:", addr );
@@ -1454,7 +1454,7 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 
 	// Draw vertical bars?
 	// based on David Emme's vertical bar mod
-	if( prefs.vertBars )
+	if( gPrefs.vertBars )
 	{
 		if( ctHdl )
 			RGBForeColor( &( *ctHdl )->headerLine );	// LR: v1.6.5 LR - was barText
@@ -2373,7 +2373,7 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 					RememberOperation( dWin, EO_Typing, &gUndo );
 				if( dWin->endSel > dWin->startSel )
 					DeleteSelection( dWin );
-				if( prefs.overwrite && dWin->startSel < dWin->fileSize - 1 )
+				if( gPrefs.overwrite && dWin->startSel < dWin->fileSize - 1 )
 				{
 					++dWin->endSel;
 					DeleteSelection( dWin );
@@ -2416,7 +2416,7 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 				}
 				else
 				{
-					if( prefs.overwrite && dWin->startSel < dWin->fileSize - 1 )
+					if( gPrefs.overwrite && dWin->startSel < dWin->fileSize - 1 )
 					{
 						++dWin->endSel;
 						DeleteSelection( dWin );
@@ -2678,7 +2678,7 @@ void SaveContents( WindowRef theWin )
 			{
 				FSClose( dWin->refNum );
 
-				if( prefs.backupFlag )
+				if( gPrefs.backupFlag )
 				{
 					// Delete last backup file, if it exists
 					bSpec = dWin->destSpec;

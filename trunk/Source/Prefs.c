@@ -34,28 +34,29 @@ static Str63 prefsFName;
 static OSStatus _prefsInit( void )
 {
 	// bad version, create default
-	memset( &prefs, 0, sizeof( prefs ) );
+	memset( &gPrefs, 0, sizeof( gPrefs ) );
 
-	prefs.searchCase = false;
-	prefs.searchMode = EM_Ascii;
-	prefs.searchSize = CM_Byte;
-	prefs.searchType = CM_Different;
-	prefs.searchForward = true;
+	gPrefs.searchCase = false;
+	gPrefs.searchMode = EM_Ascii;
+	gPrefs.searchSize = CM_Byte;
+	gPrefs.searchType = CM_Different;
+	gPrefs.searchForward = true;
 
-	prefs.asciiMode = false;
-	prefs.decimalAddr = EM_Hex;
-	prefs.overwrite = false;
-	prefs.backupFlag = true;
-	prefs.vertBars = false;
+	gPrefs.asciiMode = false;
+	gPrefs.decimalAddr = EM_Hex;
+	gPrefs.overwrite = false;
+	gPrefs.backupFlag = true;
+	gPrefs.vertBars = false;
 
-	prefs.useColor = false;
+	gPrefs.useColor = false;
 
-	prefs.csMenuID = 3;	// default is 1'st color in menu
-	prefs.csResID = -1;
+	gPrefs.csMenuID = 3;	// default is 1'st color in menu
+	gPrefs.csResID = -1;
 
-	prefs.constrainSize = true;
+	gPrefs.constrainSize = true;
+	gPrefs.formatCopies = true;
 
-	prefs.version = PREFS_VERSION;
+	gPrefs.version = PREFS_VERSION;
 	return noErr;
 }
 
@@ -102,9 +103,9 @@ static OSStatus _prefsWrite( long *prefDirID, short *systemVolRef )
 		return error;
 	}
 	
-	byteCount = sizeof( prefs );
+	byteCount = sizeof( gPrefs );
 	
-	error = FSWrite( fileRefNum, &byteCount, (Ptr) &prefs );
+	error = FSWrite( fileRefNum, &byteCount, (Ptr) &gPrefs );
 	if( error != noErr )
 	{
 // 		ErrorExit( "\pPrefs FSWrite() Error", error );
@@ -147,9 +148,9 @@ static OSStatus _prefsRead( long *prefDirID, short *systemVolRef )
 		return error;
 	}
 	
-	byteCount = sizeof( prefs );
+	byteCount = sizeof( gPrefs );
 	
-	error = FSRead( fileRefNum, &byteCount, (Ptr) &prefs );
+	error = FSRead( fileRefNum, &byteCount, (Ptr) &gPrefs );
 	if( error != noErr )
 	{
 		if( error == eofErr )
@@ -200,12 +201,12 @@ Boolean PrefsSave( void )
 	if( !_prefsGetFSPath( &prefDirID, &systemVolRef ) )
 		return false;
 
-	// LR: v1.6.5 don't save a bad prefs structure!
-	if( PREFS_VERSION != prefs.version )
+	// LR: v1.6.5 don't save a bad gPrefs structure!
+	if( PREFS_VERSION != gPrefs.version )
 		_prefsInit();
 
-// LR: v1.6.5	prefs.csResID = prefs.csMenuID;	// LR: 1.5, yech!
-// LR: v1.6.5	prefs.version = PREFS_VERSION;
+// LR: v1.6.5	gPrefs.csResID = gPrefs.csMenuID;	// LR: 1.5, yech!
+// LR: v1.6.5	gPrefs.version = PREFS_VERSION;
 
 	if( noErr != _prefsWrite( &prefDirID, &systemVolRef ) )
 		return false;
@@ -223,7 +224,7 @@ Boolean PrefsLoad( void )
 
 	GetIndString( prefsFName, kPrefsStringsID, kPrefsFileNameIndex );	// LR: v1.6.5 (always run, so use by Save is OK!)
 
-	prefs.version = 0;	// failure flag
+	gPrefs.version = 0;	// failure flag
 
 	noProblems = _prefsGetFSPath( &prefDirID, &systemVolRef );
 	if( noProblems )
@@ -235,20 +236,20 @@ Boolean PrefsLoad( void )
 // LR: v1.6.5			return false;
 		}
 	}
-/* LR -- 1.5 prefs never worked...sigh
+/* LR -- 1.5 gPrefs never worked...sigh
 	else if( error != noErr )
 		return false;
 */
-	if( PREFS_VERSION != prefs.version )	// check for good version #
+	if( PREFS_VERSION != gPrefs.version )	// check for good version #
 	{
 		_prefsInit();					// !!! start from scratch!
 	}
 
 	// funky...but menus sorted by name mess me up!
-// LR: v1.6.5	prefs.version = prefs.csResID;
-	prefs.csResID = GetColorMenuResID( prefs.csMenuID );
+// LR: v1.6.5	gPrefs.version = gPrefs.csResID;
+	gPrefs.csResID = GetColorMenuResID( gPrefs.csMenuID );
 
-	if( prefs.asciiMode )	g.highChar = 0xFF;
+	if( gPrefs.asciiMode )	g.highChar = 0xFF;
 	else					g.highChar = 0x7F;
 	return true;
 }
