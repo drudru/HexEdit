@@ -64,7 +64,7 @@ extern WindowRef	CompWind1, CompWind2;
 static SInt32		caretTime;
 static Boolean		skipOpen = false;
 
-#define kOpenFileAtLaunchDelay 3
+#define kOpenFileAtLaunchDelay 3		//LR 187
 static UInt32		checkForOpen = 0;
 
 // 05/10/01 - GAB: qd must be supplied by Interface.o applications
@@ -124,7 +124,7 @@ OSStatus HandleEvent( void )
 	else if( ok )						DoEvent( &theEvent );
 	else								_idleObjects( &theEvent );
 
-	//LR -- 186: apple events came in after the open app event, so we delay a while now.
+	//LR 187 -- apple events came in after the open app event, so we delay a while now.
 	if( checkForOpen )
 	{
 		if( !--checkForOpen && !skipOpen )
@@ -556,13 +556,14 @@ static pascal OSErr _compareEventHandler( const AppleEvent *theEvent, AppleEvent
 	if( CompWind2 )	DisposeEditWindow( CompWind2 );
 	CompWind1 = CompWind2 = NULL;
 
+	// Get the Compare suite events (file list and options)
 	error = AEGetParamPtr( theEvent, kAENewFileParam, typeFSS, &actualType, &newSpec, sizeof( newSpec ), &actualSize );
 	if( error ) return error;
 
 	error = AEGetParamPtr( theEvent, kAEOldFileParam, typeFSS, &actualType, &oldSpec, sizeof( oldSpec ), &actualSize );
 	if( error ) return error;
 
-	//LR - 187: Options param is optional, and thus no error do we care about
+	//LR 187 -- Options param is optional, and thus no error do we care about
 	error = AEGetParamPtr( theEvent, kAECompOptParam, typeChar, &actualType, &options, sizeof( options ), &actualSize );
 	if( !error )
 	{
@@ -586,22 +587,23 @@ static pascal OSErr _compareEventHandler( const AppleEvent *theEvent, AppleEvent
 			else
 				result = PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 */
-			if( result )
+			//LR 187 -- always return success status if( result )
 			{
 				error = AEPutParamPtr( reply, keyDirectObject, typeBoolean, &result, sizeof( result ) );
 				return error;
 			}
-
-			if( CompWind2 )
-				DisposeEditWindow( CompWind2 );
 		}
-		if( CompWind1 )
-			DisposeEditWindow( CompWind1 );
 	}
 
+	//LR 187 --  cleanup nice on error
+	if( CompWind1 )	DisposeEditWindow( CompWind1 );
+	if( CompWind2 )	DisposeEditWindow( CompWind2 );
+
 	CompWind1 = CompWind2 = NULL;
-	result = false;
-	error = AEPutParamPtr( reply, keyDirectObject, typeBoolean, &result, sizeof( result ) );
+
+//LR 187 -- no result on error!
+//	result = false;
+//	error = AEPutParamPtr( reply, keyDirectObject, typeBoolean, &result, sizeof( result ) );
 
 	return error;
 }
