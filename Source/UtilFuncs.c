@@ -186,9 +186,6 @@ short ErrorAlert( short severity, short strid, ... )
 	{
 		switch (severity)
 		{
-		case ES_Message:
-			inAlertType  = kAlertPlainAlert;
-			break;
 		case ES_Note:
 			inAlertType  = kAlertNoteAlert;
 			break;
@@ -200,7 +197,7 @@ short ErrorAlert( short severity, short strid, ... )
 			break;
 		}
 			
-		StandardAlert(inAlertType, (StringPtr)tbuf, NULL, NULL, &itemHit);
+		StandardAlert( inAlertType, (StringPtr)tbuf, NULL, NULL, &itemHit );
 	}
 	else
 	{
@@ -208,10 +205,6 @@ short ErrorAlert( short severity, short strid, ... )
 		InitCursor();
 		switch( severity )
 		{
-		case ES_Message:
-			itemHit = Alert( alertMessage, NULL );
-			break;
-			
 		case ES_Note:
 			itemHit = NoteAlert( alertError, NULL );
 			break;

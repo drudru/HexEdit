@@ -31,6 +31,7 @@
 #include "Main.h"
 #include "Menus.h"
 #include "Prefs.h"
+#include "Utility.h"
 #include "EditWindow.h"
 #include "EditRoutines.h"
 #include "EditScrollbar.h"
@@ -185,8 +186,8 @@ OSStatus InitGlobals( void )
 	g.iBeam = GetCursor( iBeamCursor );
 	g.searchBuffer[0] = g.searchText[0] = g.gotoText[0] = 0;
 	g.searchDisabled = false;
-	g.searchWin = NULL;
-	g.gotoWin = NULL;
+	g.searchDlg = NULL;
+	g.gotoDlg = NULL;
 
 	//LR: 1.66 - clear undo/redo records
 	memset( &gUndo, sizeof(UndoRecord), 0 );
@@ -311,16 +312,16 @@ OSStatus DoEvent( EventRecord *theEvent )
 							{
 								CloseEditWindow( theWin );
 							}
-							else if( g.searchWin && theWin == GetDialogWindow( g.searchWin ) )		//LR: 1.7 -- compares also need GetDialogWindow!
+							else if( g.searchDlg && theWin == GetDialogWindow( g.searchDlg ) )		//LR: 1.7 -- compares also need GetDialogWindow!
 							{
-// LR: v1.6.5					DisposeDialog( g.searchWin );
-// LR: v1.6.5					g.searchWin = NULL;
+// LR: v1.6.5					DisposeDialog( g.searchDlg );
+// LR: v1.6.5					g.searchDlg = NULL;
 
-								HideWindow( GetDialogWindow( g.searchWin ) );
+								HideWindow( GetDialogWindow( g.searchDlg ) );
 							}
-							else if( g.gotoWin && theWin == GetDialogWindow( g.gotoWin ) )		// LR: v1.6.5
+							else if( g.gotoDlg && theWin == GetDialogWindow( g.gotoDlg ) )		// LR: v1.6.5
 							{
-								HideWindow( GetDialogWindow( g.gotoWin ) );
+								HideWindow( GetDialogWindow( g.gotoDlg ) );
 							}
 
 							AdjustMenus();
@@ -425,8 +426,16 @@ OSStatus DoEvent( EventRecord *theEvent )
 		// Force it to be redrawn
 		objectWindow = (ObjectWindowPtr)GetWRefCon( theWin );
 		if( GetWindowKind( theWin ) == kHexEditWindowTag && objectWindow->Activate )
-			objectWindow->Activate( theWin, (theEvent->modifiers & activeFlag) > 0 );
+		{
+			Boolean active = (theEvent->modifiers & activeFlag);
+			objectWindow->Activate( theWin, active );
 
+			if( active && g.searchDlg )	//LR 1.72 -- if activating, get text from search dialog
+			{
+				GetText( g.searchDlg, SearchTextItem, g.searchText );
+				StringToSearchBuffer( prefs.searchCase );
+			}
+		}
 		break;
 
 	case osEvt:

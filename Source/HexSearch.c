@@ -39,18 +39,18 @@
 void SetSearchButtons( void )
 {
 // Prevent flashing, adapted from Max Horn's mod
-	if( g.searchWin )
+	if( g.searchDlg )
 	{
 		if( *g.searchText && g.searchDisabled )
 		{
-			EnableButton( g.searchWin, SearchForwardItem );
-			EnableButton( g.searchWin, SearchBackwardItem );
+			EnableButton( g.searchDlg, SearchForwardItem );
+			EnableButton( g.searchDlg, SearchBackwardItem );
 			g.searchDisabled = false;
 		}
 		else if( !*g.searchText && !g.searchDisabled )
 		{
-			DisableButton( g.searchWin, SearchForwardItem );
-			DisableButton( g.searchWin, SearchBackwardItem );
+			DisableButton( g.searchDlg, SearchForwardItem );
+			DisableButton( g.searchDlg, SearchBackwardItem );
 			g.searchDisabled = true;
 		}
 	}
@@ -65,32 +65,32 @@ void OpenSearchDialog( void )
 		return;
 
 	// If Dialog Window isn't open
-	if( !g.searchWin )
-		g.searchWin = GetNewDialog( dlgSearch, NULL, kFirstWindowOfClass );
+	if( !g.searchDlg )
+		g.searchDlg = GetNewDialog( dlgSearch, NULL, kFirstWindowOfClass );
 
-	if( g.searchWin )
+	if( g.searchDlg )
 	{
 		// Convert Existing Search Scrap, if it exists to text
-		SetText( g.searchWin, SearchTextItem, g.searchText );
+		SetText( g.searchDlg, SearchTextItem, g.searchText );
 
 		// Set Radio Buttons
-		SetControl( g.searchWin, HexModeItem, prefs.searchMode == EM_Hex );
-		SetControl( g.searchWin, AsciiModeItem, prefs.searchMode == EM_Ascii );
-		SetControl( g.searchWin, MatchCaseItem, prefs.searchCase );
+		SetControl( g.searchDlg, HexModeItem, prefs.searchMode == EM_Hex );
+		SetControl( g.searchDlg, AsciiModeItem, prefs.searchMode == EM_Ascii );
+		SetControl( g.searchDlg, MatchCaseItem, prefs.searchCase );
 		if( EM_Hex == prefs.searchMode )
-			DisableButton( g.searchWin, MatchCaseItem );	// LR 1.65
+			DisableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
 		else
-			EnableButton( g.searchWin, MatchCaseItem );	// LR 1.65
+			EnableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
 
 		// NS: added disabling of buttons if no text is entered
-// LR: not needed			GetText( g.searchWin, SearchTextItem, g.searchText );
-		SelectDialogItemText( g.searchWin, SearchTextItem, 0, 32767 );	// LR: make immediately editable
+// LR: not needed			GetText( g.searchDlg, SearchTextItem, g.searchText );
+		SelectDialogItemText( g.searchDlg, SearchTextItem, 0, 32767 );	// LR: make immediately editable
 		g.searchDisabled = false;
 		SetSearchButtons();
 	}
 
-	SelectWindow( GetDialogWindow( g.searchWin ) );
-	ShowWindow( GetDialogWindow( g.searchWin ) );
+	SelectWindow( GetDialogWindow( g.searchDlg ) );
+	ShowWindow( GetDialogWindow( g.searchDlg ) );
 }
 
 /*** PERFORM TEXT SEARCH ***/
@@ -208,19 +208,19 @@ OSStatus OpenGotoAddress( void )
 	if( !FindFirstEditWindow() )
 		return paramErr;
 
-	if( !g.gotoWin )
-		g.gotoWin = GetNewDialog( dlgGoto, NULL, kFirstWindowOfClass );
-	if( !g.gotoWin )
+	if( !g.gotoDlg )
+		g.gotoDlg = GetNewDialog( dlgGoto, NULL, kFirstWindowOfClass );
+	if( !g.gotoDlg )
 		return paramErr;
 
-	SetText( g.gotoWin, GAddrItem, g.gotoText );
+	SetText( g.gotoDlg, GAddrItem, g.gotoText );
 	// Set Radio Buttons
-	SetControl( g.gotoWin, GHexItem, prefs.gotoMode == EM_Hex );
-	SetControl( g.gotoWin, GDecimalItem, prefs.gotoMode == EM_Decimal );
-	SelectDialogItemText( g.gotoWin, GAddrItem, 0, 32767 );
+	SetControl( g.gotoDlg, GHexItem, prefs.gotoMode == EM_Hex );
+	SetControl( g.gotoDlg, GDecimalItem, prefs.gotoMode == EM_Decimal );
+	SelectDialogItemText( g.gotoDlg, GAddrItem, 0, 32767 );
 
-	SelectWindow( GetDialogWindow( g.gotoWin ) );
-	ShowWindow( GetDialogWindow( g.gotoWin ) );
+	SelectWindow( GetDialogWindow( g.gotoDlg ) );
+	ShowWindow( GetDialogWindow( g.gotoDlg ) );
 
 	return noErr;
 }
@@ -254,8 +254,8 @@ void DoModelessDialogEvent( EventRecord *theEvent )
 /*LR - allow all menu options active
 			switch ( ( theEvent->message & keyCodeMask ) >> 8 ) {
 			case 0x0D:	// W
-				DisposeDialog( g.searchWin );
-				g.searchWin = NULL;
+				DisposeDialog( g.searchDlg );
+				g.searchDlg = NULL;
 				return;
 			case 0x0C:	// Q
 				if( CloseAllEditWindows() )
@@ -270,46 +270,46 @@ void DoModelessDialogEvent( EventRecord *theEvent )
 	}
 
 	// NS: added disabling of buttons if no text is entered
-	if( theEvent->what == nullEvent && whichDlog == g.searchWin )	// LR: v1.6.5 must check which dialog!
+	if( theEvent->what == nullEvent && whichDlog == g.searchDlg )	// LR: v1.6.5 must check which dialog!
 	{
-		GetText( g.searchWin, SearchTextItem, g.searchText );
+		GetText( g.searchDlg, SearchTextItem, g.searchText );
 		SetSearchButtons();
 	}
 
 	if( DialogSelect( theEvent, &whichDlog, &itemHit ) ) {
 ButtonHit:
-		if( whichDlog == g.searchWin )
+		if( whichDlog == g.searchDlg )
 		{
 			switch( itemHit )
 			{
 			case SearchForwardItem:
 			case SearchBackwardItem:
 				prefs.searchForward = ( itemHit == SearchForwardItem );
-				GetText( g.searchWin, SearchTextItem, g.searchText );
+				GetText( g.searchDlg, SearchTextItem, g.searchText );
 				if( StringToSearchBuffer( prefs.searchCase ) )
 					PerformTextSearch( NULL );
 				break;
 			case HexModeItem:
 				prefs.searchMode = EM_Hex;
-				DisableButton( g.searchWin, MatchCaseItem );	// LR 1.65
+				DisableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
 				goto setmode;
 
 			case AsciiModeItem:
 				prefs.searchMode = EM_Ascii;
-				EnableButton( g.searchWin, MatchCaseItem );	// LR 1.65
+				EnableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
 setmode:
-				SetControl( g.searchWin, HexModeItem, prefs.searchMode == EM_Hex );
-				SetControl( g.searchWin, AsciiModeItem, prefs.searchMode == EM_Ascii );
+				SetControl( g.searchDlg, HexModeItem, prefs.searchMode == EM_Hex );
+				SetControl( g.searchDlg, AsciiModeItem, prefs.searchMode == EM_Ascii );
 				break;
 			case MatchCaseItem:
 				prefs.searchCase ^= 1;
-				SetControl( g.searchWin, MatchCaseItem, prefs.searchCase );
+				SetControl( g.searchDlg, MatchCaseItem, prefs.searchCase );
 				break;
 			case SearchTextItem:
 				break;
 			}
 		}
-		else if( whichDlog == g.gotoWin )	// LR: v1.6.5 moved here to allow modeless dialog
+		else if( whichDlog == g.gotoDlg )	// LR: v1.6.5 moved here to allow modeless dialog
 		{
 			switch( itemHit )
 			{
@@ -322,7 +322,7 @@ setmode:
 					dWin = FindFirstEditWindow();
 					if( dWin )
 					{
-						GetText( g.gotoWin, GAddrItem, g.gotoText );
+						GetText( g.gotoDlg, GAddrItem, g.gotoText );
 
 						CopyPascalStringToC( g.gotoText, (char *)g.gotoText );
 
@@ -353,18 +353,18 @@ setmode:
 			case GDecimalItem:
 				prefs.gotoMode = EM_Decimal;
 setgmode:
-				SetControl( g.gotoWin, GHexItem, prefs.gotoMode == EM_Hex );
-				SetControl( g.gotoWin, GDecimalItem, prefs.gotoMode == EM_Decimal );
+				SetControl( g.gotoDlg, GHexItem, prefs.gotoMode == EM_Hex );
+				SetControl( g.gotoDlg, GDecimalItem, prefs.gotoMode == EM_Decimal );
 				break;
 			}
 		}
 	}
 	else if( theEvent->what == updateEvt )	// LR: v1.6.5
 	{
-		if( whichDlog == g.searchWin )
-			SetDialogDefaultItem( g.searchWin, SearchForwardItem );
-		else if( whichDlog == g.gotoWin )
-			SetDialogDefaultItem( g.gotoWin, GGotoAddr );
+		if( whichDlog == g.searchDlg )
+			SetDialogDefaultItem( g.searchDlg, SearchForwardItem );
+		else if( whichDlog == g.gotoDlg )
+			SetDialogDefaultItem( g.gotoDlg, GGotoAddr );
 	}
 }
 

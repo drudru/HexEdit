@@ -471,6 +471,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	dWin->linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - kHeaderHeight) / kLineHeight;
 	dWin->startSel = dWin->endSel = 0L;
 	dWin->editMode = EM_Hex;
+	dWin->lastTypePos = -1;	//LR 1.72 -- allow insertion before first char to get into undo buffer
 
 	//LR: 1.7 - what was this??? ((WStateData *) *((WindowPeek)theWin)->dataHandle)->stdState.left + kHexWindowWidth;
 
@@ -562,16 +563,16 @@ void CleanupEditor( void )
 	PrefsSave();
 
 	// LR: v1.6.5 now need to dispose of these at exit since they never truly "close"
-	if( g.searchWin )
+	if( g.searchDlg )
 	{
-		DisposeDialog( g.searchWin );
-		g.searchWin = NULL;
+		DisposeDialog( g.searchDlg );
+		g.searchDlg = NULL;
 	}
 
-	if( g.gotoWin )
+	if( g.gotoDlg )
 	{
-		DisposeDialog( g.gotoWin );
-		g.gotoWin = NULL;
+		DisposeDialog( g.gotoDlg );
+		g.gotoDlg = NULL;
 	}
 }
 
@@ -806,7 +807,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 			if( !showerr ) return error;
 			GetIndString( tempStr, strFiles, FN_DATA );
 			ParamText( fsSpec->name, tempStr, NULL, NULL );
-			if( CautionAlert( alertNoFork, NULL ) != 2 )
+			if( StopAlert( alertNoFork, NULL ) != 2 )
 				return error;
 
 			error = HCreate( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, 
@@ -840,7 +841,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 
 			GetIndString( tempStr, strFiles, FN_RSRC );
 			ParamText( fsSpec->name, tempStr, NULL, NULL );
-			if( CautionAlert( alertNoFork, NULL ) != 2 )
+			if( StopAlert( alertNoFork, NULL ) != 2 )
 				return error;
 
 			HCreateResFile( fsSpec->vRefNum, fsSpec->parID, fsSpec->name );
@@ -941,7 +942,7 @@ void DisposeEditWindow( WindowRef theWin )
 Boolean	CloseEditWindow( WindowRef theWin )
 {
 	short			i, n;
-	Str63			fileName;
+//	Str63			fileName;
 	Str255			windowName, menuItemTitle;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	MenuRef			windowMenu;
@@ -950,9 +951,9 @@ Boolean	CloseEditWindow( WindowRef theWin )
 
 	if( dWin->dirtyFlag )
 	{
-		GetWTitle( theWin, fileName );
-		ParamText( fileName, NULL, NULL, NULL );
-		switch( NoteAlert( alertSave, NULL ) )
+//LR 1.72		GetWTitle( theWin, fileName );
+		ParamText( dWin->fsSpec.name, NULL, NULL, NULL );
+		switch( CautionAlert( alertSave, NULL ) )
 		{
 			case ok:
 				SaveContents( theWin );	
@@ -986,10 +987,10 @@ Boolean	CloseEditWindow( WindowRef theWin )
 	// LR: v1.7 -- if no edit window available, close find windows
 	if( !FindFirstEditWindow() )
 	{
-		if( g.gotoWin )
-			HideWindow( GetDialogWindow( g.gotoWin ) );
-		if( g.searchWin )
-			HideWindow( GetDialogWindow( g.searchWin ) );
+		if( g.gotoDlg )
+			HideWindow( GetDialogWindow( g.gotoDlg ) );
+		if( g.searchDlg )
+			HideWindow( GetDialogWindow( g.searchDlg ) );
 	}
 
 	return true;
@@ -1007,10 +1008,10 @@ Boolean CloseAllEditWindows( void )
 		next = GetNextWindow( theWin );
 
 /*LR 1.7 -- now closed if no windows open!
-		if( (DialogPtr)theWin == g.searchWin )
+		if( (DialogPtr)theWin == g.searchDlg )
 		{
-			DisposeDialog( g.searchWin );
-			g.searchWin = NULL;
+			DisposeDialog( g.searchDlg );
+			g.searchDlg = NULL;
 		}
 		else*/
 		if( windowKind == kHexEditWindowTag )
@@ -1623,8 +1624,8 @@ void InvertSelection( EditWindowPtr	dWin )
 	if( start < 0 )
 		start = 0;
 	end = ( dWin->endSel-1 ) - dWin->editOffset;
-	if( end > ( dWin->linesPerPage * kBytesPerLine )-1 )
-		end = ( dWin->linesPerPage * kBytesPerLine )-1;
+	if( end > ( (dWin->linesPerPage + 1) * kBytesPerLine )-1 )
+		end = ( (dWin->linesPerPage + 1) * kBytesPerLine )-1;
 	
 	startX = COLUMN( start );
 	endX = COLUMN( end );
@@ -2717,6 +2718,8 @@ void RevertContents( WindowRef theWin )
 	// Reset scroll offset, if necessary
 	if( dWin->editOffset > dWin->fileSize - kBytesPerLine * dWin->linesPerPage )
 		dWin->editOffset = 0;
+
+	dWin->dirtyFlag = false;	//LR 1.72 -- no longer dirty :)
 
 	DrawPage( dWin );
 	UpdateOnscreen( theWin );
