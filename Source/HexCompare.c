@@ -278,6 +278,7 @@ void DoComparison( void )
 */
 	// show the contents of the windows
 	ShowWindow( GetDialogWindow( pDlg ) );
+	DrawDialog( pDlg );
 
 //LR 180	DrawPage( (EditWindowPtr) GetWRefCon( CompWind1 ) );
 	UpdateOnscreen( CompWind1 );
@@ -300,14 +301,10 @@ void DoComparison( void )
 		if( theEvent.what == mouseDown )
 			FindWindow( theEvent.where, &theWin );
 		
-		if ( GetDialogWindow( pDlg ) == theWin ||
-			IsDialogEvent( &theEvent ) )
+		if ( GetDialogWindow( pDlg ) == theWin && IsDialogEvent( &theEvent ) )
 		{
-			if( theWin != FrontNonFloatingWindow() )
-			{
-				// Make it so...
-				SelectWindow( theWin );
-			}
+//LR 180			if( theWin != FrontNonFloatingWindow() )
+//LR 180				SelectWindow( theWin );
 			
 			DialogSelect( &theEvent, &pDlg, &iType );
 		
@@ -333,7 +330,8 @@ void DoComparison( void )
 				SelectWindow( (WindowRef)pDlg );
 			}
 		}
-		else DoEvent( &theEvent );
+		else
+			DoEvent( &theEvent );
 
 	} while (!g.quitFlag && (iType != 2) && (iType != 4));	// 2 = Done, 4 = Drop out and edit
 			
