@@ -174,6 +174,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin, tWindowType type )
 {
 	WindowRef theWin;
 	ObjectWindowPtr objectWindow;
+	short size;
 	Rect r;
 
 	// NS 1.7.1; check for appearance and create appropriate window
@@ -226,8 +227,19 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin, tWindowType type )
 	LocalToGlobal( (Point *)&r.top );
 	LocalToGlobal( (Point *)&r.bottom );
 
-	//LR 180 -- restrict zoomed (1/2 size) state to full lines
-	r.bottom = (r.top + (((r.bottom - r.top) - kHeaderHeight) / (kLineHeight * 2)) * kLineHeight) + kHeaderHeight;
+	//LR 190 -- Zoom state is now smaller for large files (big window) and larger for small files (small window)
+	if( r.bottom - r.top < g.maxHeight / 2 )
+	{
+#if TARGET_API_MAC_CARBON
+		size = g.maxHeight - (r.top + 24);	// need menu bar
+#else
+		size = g.maxHeight - r.top;
+#endif
+	}
+	else
+		size = (r.bottom - r.top) / 2;
+
+	r.bottom = (r.top + ((size - kHeaderHeight) / kLineHeight) * kLineHeight) + kHeaderHeight;
 
 	SetWindowStandardState( theWin, &r );
 
@@ -577,20 +589,21 @@ void InitializeEditor( void )
 void SizeEditWindow( WindowRef theWin, tWindowType type )
 {
 	EditWindowPtr dWin = (EditWindowPtr)GetWRefCon( theWin );
-	short maxheight = g.maxHeight / 2 - 96;
+	short maxheight;
 	Rect r;
 
 	// LR:	Hack for comparing two files
 	if( kWindowCompareTop == type )
 	{
+		maxheight = g.maxHeight / 2 - 96;
 		MoveWindow( theWin, 14, 48, true );
 		CompWind1 = theWin;
 	}
 	else if( kWindowCompareBtm == type )
 	{
+		maxheight = g.maxHeight - 48;		//LR 180 -- required to keep window of correct height
 		MoveWindow( theWin, 14, maxheight + 48, true );
 		CompWind2 = theWin;
-		maxheight += (maxheight + 48);		//LR 180 -- required to keep window of correct height
 	}
 	else	// kWindowNormal
 	{
@@ -603,7 +616,7 @@ void SizeEditWindow( WindowRef theWin, tWindowType type )
 #if TARGET_API_MAC_CARBON
 		maxheight -= (r.top + 24);	// need menu bar
 #else
-		maxheight += r.top;
+		maxheight -= r.top;
 #endif
 
 	// Check for best window size
