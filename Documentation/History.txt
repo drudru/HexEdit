@@ -1,6 +1,6 @@
 HexEdit Revision History
 
-11/7/01 Version 1.75
+12/17/01 Version 1.75
 Added Replace and Replace All functionality! (Available the Find dialog)
 Can no longer open files twice
 All file access is now thru FSp calls
@@ -17,6 +17,9 @@ Fixed problem with scroll thumb moving when clicked on (but not dragged)
 Compare files now uses an open window if existing for a selected file
 Adjusted sizing of compare windows
 Adjusted size of HexEdit windows, fixing 10th column being squashed
+Added NEW pentagram icon by Lane Roathe
+Adjusted speed of about box text for MacOS X (Carbon)
+Adjusted find/replace dialog for MacOS X
 
 8/12/01 Version 1.74
 added live scrolling (based on code sent in by Brian Bergstrand <brianb@classicalguitar.net>
