@@ -5,7 +5,19 @@ This is to track changes made to files checked in. This is NOT the history file!
 This file will be culled to update the version history file for official releases. (ie, for each official release this file is emptied!)
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
+1.7
+2001-02-14 Lane Roathe <lane@roathe.com>
 
+Merged in Scott E. Lasley's printing code (what a guy!)
+Prettied up a bit of drawing/printing output
+First pass at cleaning up printing code so printing is actually usable :)
+Made a few local routines static and renamed to _functionName format
+Fixed about box not handling URL clicks (forgot to check in AboutBox.h)
+Fixed NULL window ptrs to CarbonLib in UpdateMenus (g.searcWin, etc.)
+
+
+ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
+1.66
 2001-02-10 Lane Roathe <lane@roathe.com>
 
 Fixed bad conversion of undo records to pointers (reverted to records)
