@@ -47,7 +47,7 @@ enum	{FM_New=1,FM_Open,FM_Close,FM_Sep1,
 enum 	{EM_Undo = 1, EM_Sep1, EM_Cut, EM_Copy,
 		 EM_Paste, EM_Clear, EM_Sep2, EM_SelectAll};
 		 
-enum	{SM_Find = 1, SM_FindForward, SM_FindBackward, SM_Sep1, SM_GotoAddress};
+enum	{SM_Find = 1, SM_FindForward, SM_FindBackward, SM_Replace, SM_Sep1, SM_GotoAddress};
 
 enum	{OM_HiAscii = 1, OM_DecimalAddr, OM_VertBars, OM_WinSize, OM_Overwrite, OM_NonDestructive, OM_MoveOnlyPaging,
 			OM_Unformatted, OM_Sep1, OM_Backups, OM_Sep2, OM_ComparePref};

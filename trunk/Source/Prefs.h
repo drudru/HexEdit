@@ -44,11 +44,11 @@ typedef struct
 	short	csResID;		// resource ID of default color table
 	short	csMenuID;		// 1.65 don't double use version!
 	
-	short	searchMode,
+	short	searchMode,		// Hex or ASCII searches
 			searchForward,	// false = backward
 			searchCase,		// true = match case
 			searchSize,		// byte, short or long
-			searchType;		// hex or ASCII
+			searchType;		// Find matches or differences
 
 	short	asciiMode;		// show high bit ascii chars (or substitute '.')?
 	short	gotoMode;		// hex or dec
@@ -63,10 +63,11 @@ typedef struct
 
 	short	useColor;		// true if we are using color windows
 
+	short	wrapFinds;		//LR 190 -- true to wrap finds when reaching end/beg of file
+
 	// spare prefs entries so version file can be updated
 	// w/o reseting prefs a few times :)
 	// NOTE: these default to FALSE in case they ever become used!
-	short	spare1;
 	short	spare2;
 	short	spare3;
 	short	spare4;
