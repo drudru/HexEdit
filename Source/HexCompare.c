@@ -47,7 +47,7 @@ Boolean			WeFoundWind1 = false,
 				WeFoundWind2 = false;
 
 /*** PERFORM TEXT COMPARE ***/
-//LR 181 -- this one routine now performs EITHER match or diff comparisons...and WAY faster :)
+//LR 185 -- this one routine now performs EITHER match or diff comparisons...and WAY faster :)
 Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 {
 //	returns differences in data of two edit windows
@@ -71,7 +71,7 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 	// 1 = byte, 2 = words, 4 = longs, ect...
 	matchCnt = gPrefs.searchSize;
 
-	//LR 181 -- we handle the chucks ourself to speed up searching!
+	//LR 185 -- we handle the chucks ourself to speed up searching!
 	//			get the chunk for the current address & load it.
 
 	c1 = GetChunkByAddr( dWin1, addr1 );
@@ -86,7 +86,7 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 	addr1 += adjust;
 	addr2 += adjust;
 
-	//LR 181 -- re-write of compare loop; it was pathetically slow, etc.
+	//LR 185 -- re-write of compare loop; it was pathetically slow, etc.
 	while( addr1 >= 0 && addr1 < dWin1->fileSize && addr2 >= 0 && addr2 < dWin2->fileSize )
 	{
 		if( !(addr1 % 4096) )		//LR 1.72 -- don't slow our searches down unnecessarily!
@@ -95,8 +95,8 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 				break;
 		}
 
-//181		ch1 = GetByte( dWin1, addr1 );
-//181		ch2 = GetByte( dWin2, addr2 );
+//185		ch1 = GetByte( dWin1, addr1 );
+//185		ch2 = GetByte( dWin2, addr2 );
 		ch1 = (Byte) (*(*c1)->data)[addr1 - (*c1)->addr];
 		ch2 = (Byte) (*(*c2)->data)[addr2 - (*c2)->addr];
 		if( (gPrefs.searchType == CM_Different && ch1 != ch2) || (gPrefs.searchType == CM_Match && ch1 == ch2) )
@@ -131,7 +131,7 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 		addr1 += adjust;
 		addr2 += adjust;
 
-		//LR 181 -- OK, here we must handle moving to a new chunk if outside current one
+		//LR 185 -- OK, here we must handle moving to a new chunk if outside current one
 		if( addr1 < (*c1)->addr )
 		{
 			UnloadChunk( dWin1, c1, true );
@@ -149,7 +149,6 @@ nc1:
 			LoadChunk( dWin1, c1 );	// no check, most likely not loaded, and checked in routine anyway
 		}
 
-		//LR 181 -- OK, here we must handle moving to a new chunk if outside current one
 		if( addr2 < (*c2)->addr )
 		{
 			UnloadChunk( dWin2, c2, true );
@@ -191,7 +190,7 @@ Success:
 }
 
 /*** PERFORM TEXT MATCH COMPARE ***/
-/*181
+/*185
 Boolean PerformTextMatchCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 {
 //	returns matches in data of two edit windows
@@ -359,7 +358,7 @@ void DoComparison( void )
 				gPrefs.searchForward = true;
 				PerformTextCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 
-/*181				if( gPrefs.searchType == CM_Match )
+/*185				if( gPrefs.searchType == CM_Match )
 					PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 				else
 					PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
@@ -371,7 +370,7 @@ void DoComparison( void )
 				gPrefs.searchForward = false;
 				PerformTextCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 
-/*181				if( gPrefs.searchType == CM_Match )
+/*185				if( gPrefs.searchType == CM_Match )
 					PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 				else
 					PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
