@@ -20,6 +20,7 @@
  *		Nick Shanks
  */
 
+#include "Prefs.h"
 #include "Menus.h"
 #include "EditWindow.h"
 #include "EditRoutines.h"
@@ -33,10 +34,6 @@ static MenuRef appleMenu, fileMenu, editMenu, findMenu, optionsMenu, colorMenu, 
 
 // Externals
 extern WindowRef CompWind1, CompWind2;
-
-extern globals g;
-extern prefs_t prefs;
-
 
 /*** INITALISE MENUBAR ***/
 OSStatus InitMenubar( void )
@@ -139,7 +136,7 @@ OSStatus AdjustMenus( void )
 	else
 		scrapExists = false;
 
-	undoExists = ( g.undo && g.undo->type != 0 );	// check for NULL g.undo!
+	undoExists = (gUndo.type != 0);	// check for NULL gUndo!
 	
 // LR: - enable file menu items during search, via Aaron D.
 // LR:	SmartEnableMenuItem( fileMenu, FM_New, g.searchWin == NULL );

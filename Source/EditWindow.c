@@ -29,9 +29,6 @@
 #include "Prefs.h"
 #include "Utility.h"
 
-extern globals g;
-extern prefs_t prefs;
-
 // Create a new main theWin using a 'WIND' template from the resource fork
 
 SInt16			CompareFlag = 0;
@@ -1833,8 +1830,8 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 			if( dWin->editMode == EM_Ascii )
 			{
 				if( (dWin->endSel != dWin->lastTypePos ||
-					dWin->startSel != dWin->lastTypePos) && g.undo )
-					RememberOperation( dWin, EO_Typing, g.undo );
+					dWin->startSel != dWin->lastTypePos) )
+					RememberOperation( dWin, EO_Typing, &gUndo );
 				if( dWin->endSel > dWin->startSel )
 					DeleteSelection( dWin );
 				if( prefs.overwrite && dWin->startSel < dWin->fileSize - 1 )
@@ -1862,10 +1859,10 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 				}
 
 				if( (dWin->endSel != dWin->lastTypePos ||
-					dWin->startSel != dWin->lastTypePos) && g.undo )
+					dWin->startSel != dWin->lastTypePos) )
 				{
 					dWin->loByteFlag = false;
-					RememberOperation( dWin, EO_Typing, g.undo );
+					RememberOperation( dWin, EO_Typing, &gUndo );
 				}
 				if( dWin->endSel > dWin->startSel )
 					DeleteSelection( dWin );

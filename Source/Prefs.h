@@ -20,8 +20,6 @@
  *		Nick Shanks
  */
 
-#include "HexEdit.h"
-
 #ifndef _HexEdit_Preferences_
 #define _HexEdit_Preferences_
 
@@ -32,7 +30,36 @@
 #define	kPrefsFolderIndex	1
 #define	kPrefsFileNameIndex	2
 
-// preferences
+// LR: preferences structure
+#define PREFS_VERSION 0x0204
+
+typedef struct
+{
+	short	csResID;		// resource ID of default color table
+	short	csMenuID;		// 1.65 don't double use version!
+	
+	short	searchMode,
+			searchForward,	// false = backward
+			searchCase,		// true = match case
+			searchSize,
+			searchType;
+
+	short	asciiMode;
+	short	gotoMode;		// hex or dec
+	short	decimalAddr;
+	short	overwrite;
+	short	backupFlag;		// from original (moved in 1.5)
+	short	vertBars;		// use David Emme's vertical bars
+
+	short	useColor;
+
+	short	version;
+}	prefs_t, *prefsPtr;
+
+extern prefs_t prefs;
+
+// --- Prototypes ---
+
 OSStatus InitPrefs( void );
 Boolean CanUseFindFolder( void );
 Boolean GetPrefsFPath( long *prefDirID, short *systemVolRef );

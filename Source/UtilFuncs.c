@@ -25,8 +25,6 @@
 
 #include "Utility.h"
 
-extern globals g;
-
 /*** SET CONTROL ***/
 void SetControl( DialogPtr dialog, short item, short value )
 {

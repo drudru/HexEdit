@@ -24,10 +24,8 @@
 #include "EditRoutines.h"
 #include "EditScrollbar.h"
 #include "Main.h"
+#include "Prefs.h"
 #include "Utility.h"
-
-extern globals g;
-extern prefs_t prefs;
 
 // variables
 extern short CompareFlag;

@@ -23,9 +23,6 @@
 #include "Prefs.h"
 #include "Menus.h"
 
-extern globals g;
-extern prefs_t prefs;
-
 static Str63 prefsFName;
 
 /*** INIT PREFS ***/

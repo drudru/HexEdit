@@ -26,10 +26,8 @@
 #define _HexEdit_EditRoutines_
 
 /*** UNDO RECORD ***/
-// LR -- NOTE: this is declared is this backwards way because of the previous
-//		definition in "HexEdit.h" Please fix me!
-
-struct UndoRecord
+//LR: 1.66 - get rid of back-ass delcaration method
+typedef struct
 {
 	short			type;				// Type of operation
 	short			reserved;
@@ -38,7 +36,13 @@ struct UndoRecord
 	long			fileSize;			// File Size for Undo Op
 	EditChunk		**undoScrap;
 	EditWindowPtr	theWin;
-};
+}UndoRecord, *UndoPtr;
+
+// --- Global vars ---
+
+extern UndoRecord gUndo, gRedo;
+
+// --- Prototypes ---
 
 void LoadFile( EditWindowPtr dWin );
 void UnloadFile( EditWindowPtr dWin );
@@ -63,7 +67,7 @@ void PasteSelection( EditWindowPtr dWin );
 Boolean HexConvertScrap( EditWindowPtr dWin, EditChunk **scrapChunk );
 void PasteOperation( EditWindowPtr dWin, EditChunk **scrapChunk );
 void ClearSelection( EditWindowPtr dWin );
-void RememberOperation( EditWindowPtr dWin, short opType, UndoRecord *ur );
+void RememberOperation( EditWindowPtr dWin, short opType, UndoPtr ur );
 void UndoOperation( void );
 
 #endif

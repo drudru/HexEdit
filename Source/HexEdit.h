@@ -57,9 +57,6 @@
 	#define MenuRef MenuHandle
 #endif
 
-/*** UNDO RECORD ***/
-typedef struct UndoRecord	UndoRecord, *UndoPtr;
-
 /*** COLOUR TABLE ***/
 typedef struct
 {
@@ -77,7 +74,8 @@ typedef struct
 }	HEColorTable_t, *HEColorTablePtr, **HEColorTableHandle;
 
 /*** GLOBAL VARIABLES ***/
-typedef struct globals
+//LR: 1.66 -- removed undo ptrs
+typedef struct
 {
 	// system info
 	Boolean		quitFlag;
@@ -108,9 +106,6 @@ typedef struct globals
 	UInt8		gotoText[256];
 	Boolean		searchDisabled;
 
-	UndoPtr		undo;
-	UndoPtr		redo;
-
 #ifndef __MC68K__
 	ICInstance	icRef;
 #endif
@@ -129,32 +124,7 @@ typedef struct globals
 #endif
 }	globals;
 
-// LR: preferences structure
-#define PREFS_VERSION 0x0204
-
-/*** PREFERENCES ***/
-typedef struct
-{
-	short	csResID;		// resource ID of default color table
-	short	csMenuID;		// 1.65 don't double use version!
-	
-	short	searchMode,
-			searchForward,	// false = backward
-			searchCase,		// true = match case
-			searchSize,
-			searchType;
-
-	short	asciiMode;
-	short	gotoMode;		// hex or dec
-	short	decimalAddr;
-	short	overwrite;
-	short	backupFlag;		// from original (moved in 1.5)
-	short	vertBars;		// use David Emme's vertical bars
-
-	short	useColor;
-
-	short	version;
-}	prefs_t, *prefsPtr;
+extern globals g;
 
 // make some things a bit easier to read
 #define kAppCreator		FOUR_CHAR_CODE('hDmp')
@@ -212,7 +182,7 @@ enum ForkType 		{ FT_Data, FT_Resource };
 enum ForkModes		{ FM_Data, FM_Rsrc, FM_Smart };
 enum AsciiModes		{ AM_Lo, AM_Hi };
 enum EditMode 		{ EM_Hex, EM_Decimal, EM_Ascii };
-enum EditOperation	{ EO_Typing=1, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete };
+enum EditOperation	{ EO_Undo = 1, EO_Redo, EO_Typing, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete };
 enum ErrorSeverity	{ ES_Message, ES_Note, ES_Caution, ES_Stop };
 enum CursorNumbers	{ C_Arrow, C_Watch, C_IBeam };
 enum CompModeSize 	{ CM_Byte, CM_Word, CM_Long };
