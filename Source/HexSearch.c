@@ -74,10 +74,10 @@ void OpenSearchDialog( void )
 		SetText( g.searchDlg, SearchTextItem, g.searchText );
 
 		// Set Radio Buttons
-		SetControl( g.searchDlg, HexModeItem, prefs.searchMode == EM_Hex );
-		SetControl( g.searchDlg, AsciiModeItem, prefs.searchMode == EM_Ascii );
-		SetControl( g.searchDlg, MatchCaseItem, prefs.searchCase );
-		if( EM_Hex == prefs.searchMode )
+		SetControl( g.searchDlg, HexModeItem, gPrefs.searchMode == EM_Hex );
+		SetControl( g.searchDlg, AsciiModeItem, gPrefs.searchMode == EM_Ascii );
+		SetControl( g.searchDlg, MatchCaseItem, gPrefs.searchCase );
+		if( EM_Hex == gPrefs.searchMode )
 			DisableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
 		else
 			EnableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
@@ -109,7 +109,7 @@ void PerformTextSearch( EditWindowPtr dWin )
 
 	// Get starting index into file
 	addr = dWin->startSel;
-	if( prefs.searchForward )
+	if( gPrefs.searchForward )
 		adjust = 1;
 	else
 		adjust = -1;
@@ -129,7 +129,7 @@ void PerformTextSearch( EditWindowPtr dWin )
 		}
 
 		ch = GetByte( dWin, addr );
-		if( !prefs.searchCase && prefs.searchMode != EM_Hex )
+		if( !gPrefs.searchCase && gPrefs.searchMode != EM_Hex )
 			ch = toupper( ch );
 		if( ch == g.searchBuffer[matchIdx+1] )
 		{
@@ -215,8 +215,8 @@ OSStatus OpenGotoAddress( void )
 
 	SetText( g.gotoDlg, GAddrItem, g.gotoText );
 	// Set Radio Buttons
-	SetControl( g.gotoDlg, GHexItem, prefs.gotoMode == EM_Hex );
-	SetControl( g.gotoDlg, GDecimalItem, prefs.gotoMode == EM_Decimal );
+	SetControl( g.gotoDlg, GHexItem, gPrefs.gotoMode == EM_Hex );
+	SetControl( g.gotoDlg, GDecimalItem, gPrefs.gotoMode == EM_Decimal );
 	SelectDialogItemText( g.gotoDlg, GAddrItem, 0, 32767 );
 
 	SelectWindow( GetDialogWindow( g.gotoDlg ) );
@@ -284,26 +284,26 @@ ButtonHit:
 			{
 			case SearchForwardItem:
 			case SearchBackwardItem:
-				prefs.searchForward = ( itemHit == SearchForwardItem );
+				gPrefs.searchForward = ( itemHit == SearchForwardItem );
 				GetText( g.searchDlg, SearchTextItem, g.searchText );
-				if( StringToSearchBuffer( prefs.searchCase ) )
+				if( StringToSearchBuffer( gPrefs.searchCase ) )
 					PerformTextSearch( NULL );
 				break;
 			case HexModeItem:
-				prefs.searchMode = EM_Hex;
+				gPrefs.searchMode = EM_Hex;
 				DisableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
 				goto setmode;
 
 			case AsciiModeItem:
-				prefs.searchMode = EM_Ascii;
+				gPrefs.searchMode = EM_Ascii;
 				EnableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
 setmode:
-				SetControl( g.searchDlg, HexModeItem, prefs.searchMode == EM_Hex );
-				SetControl( g.searchDlg, AsciiModeItem, prefs.searchMode == EM_Ascii );
+				SetControl( g.searchDlg, HexModeItem, gPrefs.searchMode == EM_Hex );
+				SetControl( g.searchDlg, AsciiModeItem, gPrefs.searchMode == EM_Ascii );
 				break;
 			case MatchCaseItem:
-				prefs.searchCase ^= 1;
-				SetControl( g.searchDlg, MatchCaseItem, prefs.searchCase );
+				gPrefs.searchCase ^= 1;
+				SetControl( g.searchDlg, MatchCaseItem, gPrefs.searchCase );
 				break;
 			case SearchTextItem:
 				break;
@@ -326,7 +326,7 @@ setmode:
 
 						CopyPascalStringToC( g.gotoText, (char *)g.gotoText );
 
-						if( prefs.gotoMode == EM_Hex )
+						if( gPrefs.gotoMode == EM_Hex )
 							r = sscanf( (char *) g.gotoText, "%lx", &addr );
 						else
 							r = sscanf( (char *) g.gotoText, "%ld", &addr );
@@ -346,15 +346,15 @@ setmode:
 				break;
 				
 			case GHexItem:
-				prefs.gotoMode = EM_Hex;
+				gPrefs.gotoMode = EM_Hex;
 				goto setgmode;
 				break;
 				
 			case GDecimalItem:
-				prefs.gotoMode = EM_Decimal;
+				gPrefs.gotoMode = EM_Decimal;
 setgmode:
-				SetControl( g.gotoDlg, GHexItem, prefs.gotoMode == EM_Hex );
-				SetControl( g.gotoDlg, GDecimalItem, prefs.gotoMode == EM_Decimal );
+				SetControl( g.gotoDlg, GHexItem, gPrefs.gotoMode == EM_Hex );
+				SetControl( g.gotoDlg, GDecimalItem, gPrefs.gotoMode == EM_Decimal );
 				break;
 			}
 		}
@@ -384,7 +384,7 @@ Boolean StringToSearchBuffer( Boolean matchCase )
 	}
 
 	// Convert String to g.searchBuffer
-	if( prefs.searchMode == EM_Hex )
+	if( gPrefs.searchMode == EM_Hex )
 	{
 		sp = (Ptr) &g.searchText[1];
 		dp = (Ptr) &g.searchBuffer[1];

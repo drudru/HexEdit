@@ -49,9 +49,9 @@ Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 
 	MySetCursor( C_Watch );
 
-	// Search in Direction prefs.searchForward for text gSearchBuffer
+	// Search in Direction gPrefs.searchForward for text gSearchBuffer
 
-	if( prefs.searchForward )
+	if( gPrefs.searchForward )
 	{
 		addr = dWin->endSel;
 		addr2 = dWin2->endSel;
@@ -65,8 +65,8 @@ Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 	}
 	
 	// 1 = byte, 2 = words, 4 = longs, ect...
-	matchCnt = prefs.searchSize+1;
-	if( prefs.searchSize == CM_Long ) matchCnt += 1;
+	matchCnt = gPrefs.searchSize+1;
+	if( gPrefs.searchSize == CM_Long ) matchCnt += 1;
 
 
 	matchIdx = 0;
@@ -97,7 +97,7 @@ Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 				addr = matchAddr;
 			}
 		}
-		if( prefs.searchForward )
+		if( gPrefs.searchForward )
 		{
 			++addr;
 			++addr2;
@@ -125,14 +125,14 @@ Failure:
 Success:
 	SelectWindow( dWin->oWin.theWin );
 	dWin->startSel = matchAddr;
-	dWin->endSel = dWin->startSel + prefs.searchSize + 1;
-	if( prefs.searchSize==CM_Long ) dWin->endSel += 1;
+	dWin->endSel = dWin->startSel + gPrefs.searchSize + 1;
+	if( gPrefs.searchSize==CM_Long ) dWin->endSel += 1;
 	ScrollToSelection( dWin, dWin->startSel, true, true );
 
 	SelectWindow( dWin2->oWin.theWin );
 	dWin2->startSel = matchAddr;
-	dWin2->endSel = dWin2->startSel + prefs.searchSize + 1;
-	if( prefs.searchSize==CM_Long ) dWin2->endSel += 1;
+	dWin2->endSel = dWin2->startSel + gPrefs.searchSize + 1;
+	if( gPrefs.searchSize==CM_Long ) dWin2->endSel += 1;
 	ScrollToSelection( dWin2, dWin2->startSel, true, true );
 
 	MySetCursor( C_Arrow );
@@ -149,10 +149,10 @@ Boolean PerformTextMatchCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 
 	MySetCursor( C_Watch );
 
-	// Search in Direction prefs.searchForward
+	// Search in Direction gPrefs.searchForward
 	// for text gSearchBuffer
 
-	if( prefs.searchForward )
+	if( gPrefs.searchForward )
 	{
 		addr = dWin->endSel;
 		addr2 = dWin2->endSel;
@@ -166,8 +166,8 @@ Boolean PerformTextMatchCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 	}
 	
 	// 1 = byte, 2 = words, 4 = longs, ect...
-	matchCnt=prefs.searchSize+1;
-	if( prefs.searchSize==CM_Long ) matchCnt += 1;
+	matchCnt=gPrefs.searchSize+1;
+	if( gPrefs.searchSize==CM_Long ) matchCnt += 1;
 
 	matchIdx = 0;
 	while ( !CheckForAbort() )		// LR: 1.7 -- allow aborting compares!
@@ -197,7 +197,7 @@ Boolean PerformTextMatchCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 				addr = matchAddr;
 			}
 		}
-		if( prefs.searchForward )
+		if( gPrefs.searchForward )
 		{
 			++addr;
 			++addr2;
@@ -225,14 +225,14 @@ Failure:
 Success:
 	SelectWindow( dWin->oWin.theWin );
 	dWin->startSel = matchAddr;
-	dWin->endSel = dWin->startSel + prefs.searchSize + 1;
-	if( prefs.searchSize==CM_Long ) dWin->endSel += 1;
+	dWin->endSel = dWin->startSel + gPrefs.searchSize + 1;
+	if( gPrefs.searchSize==CM_Long ) dWin->endSel += 1;
 	ScrollToSelection( dWin, dWin->startSel, true, true );
 
 	SelectWindow( dWin2->oWin.theWin );
 	dWin2->startSel = matchAddr;
-	dWin2->endSel = dWin2->startSel + prefs.searchSize + 1;
-	if( prefs.searchSize==CM_Long ) dWin2->endSel += 1;
+	dWin2->endSel = dWin2->startSel + gPrefs.searchSize + 1;
+	if( gPrefs.searchSize==CM_Long ) dWin2->endSel += 1;
 	ScrollToSelection( dWin2, dWin2->startSel, true, true );
 
 	MySetCursor( C_Arrow );
@@ -246,7 +246,7 @@ void DoComparison( void )
 	DialogPtr	pDlg;
 // LR: v1.6.5	Handle 		iHandle;
 // LR: v1.6.5	Rect 		iRect;
-	short iType, oldDir = prefs.searchForward;
+	short iType, oldDir = gPrefs.searchForward;
 	EventRecord	theEvent;
 
 	// put up dialog and let user shorteract
@@ -290,8 +290,8 @@ void DoComparison( void )
 		
 			if( iType==1 )			// handle find forward here
 			{
-				prefs.searchForward = true;
-				if( prefs.searchType == CM_Match )
+				gPrefs.searchForward = true;
+				if( gPrefs.searchType == CM_Match )
 					PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 				else
 					PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
@@ -300,9 +300,9 @@ void DoComparison( void )
 			}
 			if( iType==3 )			// handle find backward here
 			{
-				prefs.searchForward = false;
+				gPrefs.searchForward = false;
 
-				if( prefs.searchType == CM_Match )
+				if( gPrefs.searchType == CM_Match )
 					PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 				else
 					PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
@@ -325,7 +325,7 @@ void DoComparison( void )
 	}
 
 	CompWind1 = CompWind2 = NULL;
-	prefs.searchForward = oldDir;
+	gPrefs.searchForward = oldDir;
 }
 
 /**** GET COMPARE FILES ***/
@@ -396,16 +396,16 @@ void ComparisonPreferences( void )
 
 	SetPortDialogPort( pDlg );
 
-	radio1 = prefs.searchSize;
-	radio2 = prefs.searchType;
+	radio1 = gPrefs.searchSize;
+	radio2 = gPrefs.searchType;
 
 	// init radio buttons to current settings...
-	SetControl( pDlg, CP_Bytes, prefs.searchSize == CM_Byte );
-	SetControl( pDlg, CP_Words, prefs.searchSize == CM_Word );
-	SetControl( pDlg, CP_Longs, prefs.searchSize == CM_Long );
-	SetControl( pDlg, CP_Different, prefs.searchType == CM_Different );
-	SetControl( pDlg, CP_Match, prefs.searchType == CM_Match );
-	SetControl( pDlg, CP_Case, prefs.searchCase );
+	SetControl( pDlg, CP_Bytes, gPrefs.searchSize == CM_Byte );
+	SetControl( pDlg, CP_Words, gPrefs.searchSize == CM_Word );
+	SetControl( pDlg, CP_Longs, gPrefs.searchSize == CM_Long );
+	SetControl( pDlg, CP_Different, gPrefs.searchType == CM_Different );
+	SetControl( pDlg, CP_Match, gPrefs.searchType == CM_Match );
+	SetControl( pDlg, CP_Case, gPrefs.searchCase );
 
 	SetDialogDefaultItem( pDlg, CP_Done );	// LR: v1.6.5 LR -- correct way of showing default button
 
@@ -452,8 +452,8 @@ void ComparisonPreferences( void )
 				break;
 
 			case CP_Case:
-				prefs.searchCase ^= 1;
-				SetControl( pDlg, CP_Case, prefs.searchCase );
+				gPrefs.searchCase ^= 1;
+				SetControl( pDlg, CP_Case, gPrefs.searchCase );
 				break;
 		}
 	} while( ( iType != CP_Done ) && ( iType != CP_Cancel ) );
@@ -461,8 +461,8 @@ void ComparisonPreferences( void )
 	if( iType==CP_Done )
 	{
 		// change flags based on which one is selected
-		prefs.searchSize = radio1;
-		prefs.searchType = radio2;
+		gPrefs.searchSize = radio1;
+		gPrefs.searchType = radio2;
 	}		
 	// close theWin
 	DisposeDialog( pDlg );

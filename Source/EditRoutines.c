@@ -30,6 +30,7 @@
 
 #include "EditScrollbar.h"
 #include "Menus.h"
+#include "Prefs.h"
 #include "Utility.h"
 
 #include "EditRoutines.h"
@@ -516,8 +517,6 @@ void CopySelection( EditWindowPtr dWin )
 	CopyOperation( dWin, &gScrapChunk );
 	if( gScrapChunk )
 	{
-		KeyMap keys;	//LR 1.72 - shift to copy hex w/o formatting.
-		Boolean shift;
 		OSErr anErr;
 
 #if TARGET_API_MAC_CARBON
@@ -531,16 +530,13 @@ void CopySelection( EditWindowPtr dWin )
 #endif
 
 		// LR: -- sure wish I remembered who sent me this code!!!
-		// LR: v1.6.5 Now a menu selection, with ASCII the default :)
-		GetKeys( keys );
-		shift =  keys[1] & (1<<0);
 
 		if( EM_Hex == dWin->editMode )
 		{
 			Handle tmp;
 			const char *src;
 			char *dest, bit;
-			long i, len = ( *gScrapChunk )->size * (shift ? 2 : 3);	//LR 1.72 -- size depends on how copied
+			long i, len = ( *gScrapChunk )->size * (gPrefs.formatCopies ? 3 : 2);	//LR 1.72 -- size depends on how copied
 
 			tmp = NewHandle( len );
 			if( tmp )
@@ -558,7 +554,7 @@ void CopySelection( EditWindowPtr dWin )
 					 *dest++ = bit > 9 ? ( bit-10+'A' ) : ( bit+'0' );
 					 bit = ( src[0] & 0x0F );
 					 *dest++ = bit > 9 ? ( bit-10+'A' ) : ( bit+'0' );
-					 if( !shift )
+					 if( gPrefs.formatCopies )
 						 *dest++ = (i + 1) % kBytesPerLine == 0 ? '\r' : ' ';
 				}
 

@@ -309,27 +309,28 @@ OSStatus AdjustMenus( void )
 	_enableMenuItem( findMenu, SM_FindForward, isObjectWin && dWin->fileSize && g.searchBuffer[0] );	//LR 1.72 -- only enable w/something to search :)
 	_enableMenuItem( findMenu, SM_FindBackward, isObjectWin && dWin->fileSize && g.searchBuffer[0] );
 
-	CheckMenuItem( optionsMenu, OM_HiAscii, prefs.asciiMode );
-	CheckMenuItem( optionsMenu, OM_DecimalAddr, prefs.decimalAddr );
-	CheckMenuItem( optionsMenu, OM_Backups, prefs.backupFlag );
-	CheckMenuItem( optionsMenu, OM_WinSize, prefs.constrainSize );
-	CheckMenuItem( optionsMenu, OM_Overwrite, prefs.overwrite );
-	CheckMenuItem( optionsMenu, OM_VertBars, prefs.vertBars );
+	CheckMenuItem( optionsMenu, OM_HiAscii, gPrefs.asciiMode );
+	CheckMenuItem( optionsMenu, OM_DecimalAddr, gPrefs.decimalAddr );
+	CheckMenuItem( optionsMenu, OM_Backups, gPrefs.backupFlag );
+	CheckMenuItem( optionsMenu, OM_WinSize, gPrefs.constrainSize );
+	CheckMenuItem( optionsMenu, OM_Overwrite, gPrefs.overwrite );
+	CheckMenuItem( optionsMenu, OM_Unformatted, !gPrefs.formatCopies );
+	CheckMenuItem( optionsMenu, OM_VertBars, gPrefs.vertBars );
 
 	// LR: v1.6.5 Lots of re-writing on handling the color scheme menu
 #if !TARGET_API_MAC_CARBON
 	// no color usage if not displayable!
 	if( !g.colorQDFlag )
-		prefs.useColor = false;
+		gPrefs.useColor = false;
 #endif
 
-// LR: v1.6.5	CheckMenuItem( gColorMenu, CM_UseColor, prefs.useColor );	// allow turning on even if not usable
+// LR: v1.6.5	CheckMenuItem( gColorMenu, CM_UseColor, gPrefs.useColor );	// allow turning on even if not usable
 // LR: v1.6.5 Try to show status of color in new windows to help "intuitive" nature of menu
-	GetIndString( menuStr, strColor, (prefs.useColor) ? 2 : 1 );
+	GetIndString( menuStr, strColor, (gPrefs.useColor) ? 2 : 1 );
 
 	SetMenuItemText( colorMenu, CM_UseColor, menuStr );
 
-	selection = prefs.useColor && isObjectWin && dWin->csResID > 0;
+	selection = gPrefs.useColor && isObjectWin && dWin->csResID > 0;
 	i = CountMenuItems( colorMenu );
 	do
 	{
@@ -564,7 +565,7 @@ OSStatus HandleMenu( long mSelect )
 			case SM_FindForward:
 				if( dWin )
 				{
-					prefs.searchForward = true;
+					gPrefs.searchForward = true;
 					PerformTextSearch( dWin );
 				}
 				break;
@@ -572,7 +573,7 @@ OSStatus HandleMenu( long mSelect )
 			case SM_FindBackward:
 				if( dWin )
 				{
-					prefs.searchForward = false;
+					gPrefs.searchForward = false;
 					PerformTextSearch( dWin );
 				}
 				break;
@@ -587,31 +588,35 @@ OSStatus HandleMenu( long mSelect )
 		switch ( menuItem )
 		{
 			case OM_HiAscii:
-				prefs.asciiMode = !prefs.asciiMode;
-				if( prefs.asciiMode )	g.highChar = 0xFF;
+				gPrefs.asciiMode = !gPrefs.asciiMode;
+				if( gPrefs.asciiMode )	g.highChar = 0xFF;
 				else					g.highChar = 0x7F;
 				UpdateEditWindows();
 				break;
 
 			case OM_DecimalAddr:
-				prefs.decimalAddr = !prefs.decimalAddr;
+				gPrefs.decimalAddr = !gPrefs.decimalAddr;
 				UpdateEditWindows();
 				break;
 
 			case OM_Backups:
-				prefs.backupFlag = !prefs.backupFlag;
+				gPrefs.backupFlag = !gPrefs.backupFlag;
 				break;
 
 			case OM_WinSize:
-				prefs.constrainSize = !prefs.constrainSize;
+				gPrefs.constrainSize = !gPrefs.constrainSize;
 				break;
 
 			case OM_Overwrite:
-				prefs.overwrite = !prefs.overwrite;
+				gPrefs.overwrite = !gPrefs.overwrite;
+				break;
+
+			case OM_Unformatted:
+				gPrefs.formatCopies = !gPrefs.formatCopies;
 				break;
 
 			case OM_VertBars:
-				prefs.vertBars = !prefs.vertBars;
+				gPrefs.vertBars = !gPrefs.vertBars;
 				UpdateEditWindows();
 				break;
 
@@ -624,16 +629,16 @@ OSStatus HandleMenu( long mSelect )
 	// LR: Add color scheme menu
 	case kColorMenu:
 		if( menuItem == CM_UseColor )
-			prefs.useColor = !prefs.useColor;
+			gPrefs.useColor = !gPrefs.useColor;
 		else if( dWin && dWin->csResID > 0 )		// can't color B&W windows!
 		{
-			CheckMenuItem( colorMenu, prefs.csMenuID, false );
+			CheckMenuItem( colorMenu, gPrefs.csMenuID, false );
 
-			prefs.csResID = GetColorMenuResID( menuItem );
-			prefs.csMenuID = menuItem;
+			gPrefs.csResID = GetColorMenuResID( menuItem );
+			gPrefs.csMenuID = menuItem;
 			
 			if( GetWindowKind( dWin->oWin.theWin ) == kHexEditWindowTag )
-				dWin->csResID = prefs.csResID;
+				dWin->csResID = gPrefs.csResID;
 		}
 		UpdateEditWindows();
 		break;

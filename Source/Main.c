@@ -39,9 +39,9 @@
 #include "HexCompare.h"
 #include "HexSearch.h"
 
-// set up global & prefs structures here
+// set up global & gPrefs structures here
 globals g;
-prefs_t prefs;
+prefs_t gPrefs;
 
 // LR: --- These are used to setup new UPP stuff ---
 AEEventHandlerUPP AEHandlerUPP, AECompareHandlerUPP;
@@ -356,7 +356,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 
 						// LR: 1.7 - see if user wants sizing restricted to full lines
 						GetWindowPortBounds( theWin, &r );
-						if( prefs.constrainSize )
+						if( gPrefs.constrainSize )
 						{
 							int h = (r.bottom - r.top);
 
@@ -445,7 +445,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 			if( active && g.searchDlg )	//LR 1.72 -- if activating, get text from search dialog
 			{
 				GetText( g.searchDlg, SearchTextItem, g.searchText );
-				if( !StringToSearchBuffer( prefs.searchCase ) )
+				if( !StringToSearchBuffer( gPrefs.searchCase ) )
 				{
 					g.searchText[0] = g.searchBuffer[0] = 0;	//LR 1.73 -- on error, keep from repeating!
 					SetText( g.searchDlg, SearchTextItem, g.searchText );
@@ -654,7 +654,7 @@ static pascal OSErr CompareEventHandler( const AppleEvent *theEvent, AppleEvent 
 		error = OpenEditWindow( &oldSpec, false );
 		if( !error )
 		{
-			if( prefs.searchType == CM_Match )
+			if( gPrefs.searchType == CM_Match )
 				result = PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 			else
 				result = PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
