@@ -10,21 +10,30 @@ I hope you find HexEdit useful! If you have suggestions or bug reports please fe
 
 HexEdit is distributed under the Mozilla Public License. Please refere to the file "license.txt" for details. Use of these sources is an implied agreement to the terms of the license.
 
-Notice of NO Warranty
+* Notice of NO Warranty *
 This program is distributed in the hope that it will be useful, but without any warranty; without even the warranty of merchantability or fitness for any purpose. The entire risk of operation this program, as well as the risk of quality and performance, resides soley with you! In no event with any of the program authors be liable for any damage caused by the operation, or non-operation, of this program!
 
-USING A HEX EDITOR IS DANGEROUS!
+* USING A HEX EDITOR IS DANGEROUS! *
 Be sure to backup your data before operating this program. It is possible to loose the entire  contents of a hard drive (or data on any type of storage device) by using this program!
 
-New features
+* New features *
 Too many to list! (Really!) Please see the History.txt file in the Documentation folder if you really want to see how things have evolved.
 
-Compiling the Code
+* Compiling the Code *
 The latest code and HexEdit development community can be found on <http://hexedit.sourceforget.net>. The latest version of CodeWarrior is the "Official" development environment, including the set of Apple's Universal Headers and so forth that shipped with the latest version and all of it's updates.
 
 Other development environments may be supported, just not "officially" :)
 
-From Jim's original Docs
+* File Mappings *
+Several people have noticed that .dmg and other OS X files are being mapped to HexEdit when downloaded. This is a major pain, hopefully this section will be able to tell you why it is happening and impart enough information that you will be able to correct it on your system.
+
+Apple has decided that Microsoft has the correct idea, and all file should be typed by their 3 letter extension, and that the old reliable file types are a bad idea. The result is that all Apple programs now do NOT assign the file types and so if your web browser, ftp client or the system settings do know know the 3 letter extension then it will (in most cases) get mapped to the HexEdit file type. The system settings are changed in File Exchange in OS 9, you can't set these in OS X...yes, that's correct; in OS X only 3 letter file extensions control file types, but you are not allowed to edit those assignments!
+
+In Internet Explorer, you can set these by going to "Preferences" and the "File Helpers" pane. You will notice that "Untyped binary data" is set to "HexEdit", and that there is not a listing for ".dmg" extensions (you can click on the Extension word to sort by extensions). To fix this, simply create a new entry, describe it as "Disk Image", the the extension to ".dmg" and make sure you set it be a Macintosh file of binary (not text) persuasion.
+
+Anyway, no one is more annoyed with this entire problem than me (Lane), because I get the blame and yet I have no control over the situation!
+
+* From Jim's original Docs *
 HexEdit is a hexdump viewer and editor that works similarly to the hex editor provided with Apple's ResEdit.  It allows you to edit either the data fork or the resource fork of a file.
 
 I wrote HexEdit because I needed to be able to insert/delete bytes from the data fork of files I was testing, and tools like FEdit don't have insert/deletion.
