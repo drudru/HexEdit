@@ -1394,7 +1394,7 @@ void MyDraw( WindowRef theWin )
 {
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	DrawControls( theWin );
-	DrawGrowIcon( theWin );
+//	DrawGrowIcon( theWin );
 
 	// EraseRect( &theWin->portRect );
 	DrawPage( dWin );
