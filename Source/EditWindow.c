@@ -420,14 +420,14 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 
 	// Check for best window size
 	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
-		maxheight = (((dWin->fileSize / kBytesPerLine) + 1) * kLineHeight) + kHeaderHeight;
+		maxheight = (((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) * kLineHeight);	//LR 1.72 + kHeaderHeight;
 //LR 1.7		r.bottom = (kLineHeight * (((dWin->linesPerPage - 1) * kBytesPerLine) - dWin->fileSize)) / kLineHeight;
 
-	if( maxheight < (kHeaderHeight + (kLineHeight * 5)) )
-		maxheight = (kHeaderHeight + (kLineHeight * 5));
+	if( maxheight < (kLineHeight * 5) )
+		maxheight = (kLineHeight * 5);
 
 	// LR: v1.6.5 round this to a size showing only full lines
-	maxheight = (((maxheight - 1) / kLineHeight) * kLineHeight) + kHeaderHeight;
+	maxheight = ((maxheight / kLineHeight) * kLineHeight) + kHeaderHeight;
 
 	SizeWindow( theWin, kHexWindowWidth - 1, maxheight, true );
 
@@ -466,7 +466,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	GetWindowPortBounds( theWin, &r );
 
 //LR: 1.7 -fix lpp calculation!	dWin->linesPerPage = ( r.bottom - TopMargin - BotMargin - ( kHeaderHeight-1 ) ) / kLineHeight + 1;
-	dWin->linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - kHeaderHeight) / kLineHeight;
+	dWin->linesPerPage = (/*(r.bottom - r.top) + 3)*/maxheight - kHeaderHeight) / kLineHeight;
 	dWin->startSel = dWin->endSel = 0L;
 	dWin->editMode = EM_Hex;
 	dWin->lastTypePos = -1;	//LR 1.72 -- allow insertion before first char to get into undo buffer
@@ -1393,11 +1393,11 @@ void DrawPage( EditWindowPtr dWin )
 		}
 
 		// Erase only that part of the buffer that isn't drawn to!
-		if( dWin->fileSize / kBytesPerLine < dWin->linesPerPage )
+		if( (dWin->fileSize - dWin->editOffset) / kBytesPerLine <= dWin->linesPerPage )
 		{
 			Rect er = r;
 
-			er.top = ((dWin->fileSize / kBytesPerLine) * kLineHeight);	//LR 1.72 -- need line height!
+			er.top = (((dWin->fileSize - dWin->editOffset) / kBytesPerLine) * kLineHeight);	//LR 1.72 -- need line height!
 			if( (dWin->fileSize % kBytesPerLine) )	//LR 1.72 -- if not an empty line, no need to erase current line
 				er.top += kLineHeight;
 			EraseRect( &er );
@@ -2726,6 +2726,10 @@ void RevertContents( WindowRef theWin )
 		dWin->editOffset = 0;
 
 	dWin->dirtyFlag = false;	//LR 1.72 -- no longer dirty :)
+
+	//LR 1.72 -- release undo if associated with this window
+	if( dWin == gUndo.theWin )
+		ReleaseEditScrap( dWin, &gUndo.undoScrap );
 
 	DrawPage( dWin );
 	UpdateOnscreen( theWin );

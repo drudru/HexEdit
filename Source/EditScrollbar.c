@@ -67,11 +67,11 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 	{
 		// Adjust Lines Per Page
 //LR: 1.7 -fix lpp calculation!		dWin->linesPerPage = ( ( ( r.bottom - kSBarSize ) - ( kHeaderHeight + 1 ) - TopMargin - BotMargin ) / kLineHeight );
-		dWin->linesPerPage = (((r.bottom - r.top) + (kLineHeight / 2) - (kHeaderHeight)) / kLineHeight);
+		dWin->linesPerPage = (((r.bottom - r.top - (kLineHeight - 1)) + kLineHeight - kHeaderHeight) / kLineHeight);
 
 		// Move sliders to new position
 		// LR: per Shanks, control below theWin's header
-		MoveControl( dWin->vScrollBar, r.right - (kSBarSize - 1), r.top + ( kHeaderHeight - 1 ) );	
+		MoveControl( dWin->vScrollBar, r.right - (kSBarSize - 1), r.top + (kHeaderHeight - 1) );	
 
 		// Change their sizes to fit new theWin dimensions
 		SizeControl( dWin->vScrollBar, kSBarSize, h );
@@ -79,7 +79,8 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 
 	// Reposition painting if you have resized or scrolled past the legal
 	// bounds	Note: this call will usually be followed by an update
-	limit = ( ( dWin->fileSize+15 ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
+	limit = dWin->fileSize - (dWin->fileSize % kBytesPerLine) - (dWin->linesPerPage * kBytesPerLine);
+//LR 1.72	limit = ((dWin->fileSize + 15) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
 	if( dWin->editOffset > limit )
 		dWin->editOffset = limit;
 	if( dWin->editOffset < 0 )
@@ -114,18 +115,19 @@ pascal void MyScrollAction( ControlHandle theControl, short thePart )
 
 	long		curPos, newPos;
 	short		pageWidth;
-	Rect		myRect;
+//1.72	Rect		myRect;
 
 	WindowRef	gp = gDWin->oWin.theWin;
 
 	curPos = gDWin->editOffset;
 	newPos = curPos;
 
+/*LR 1.72 -- not used!
 	GetWindowPortBounds( gp, &myRect );
 
 	myRect.right -= kSBarSize-1;
 	myRect.bottom -= kSBarSize-1;
-
+*/
 	pageWidth = (gDWin->linesPerPage - 1) * kBytesPerLine;
 
 	switch( thePart )
@@ -187,15 +189,16 @@ Boolean MyHandleControlClick( WindowRef window, Point mouseLoc )
 		vPos = GetControlValue( dWin->vScrollBar );
 
 		GetWindowPortBounds( window, &winRect );
-		h = winRect.bottom - winRect.top - ( kGrowIconSize - 1 ) - ( kHeaderHeight - 1 );
+		h = winRect.bottom - winRect.top - (kGrowIconSize - 1) - (kHeaderHeight - 1);
 
-		limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage << 4);
+		limit = dWin->fileSize - (dWin->fileSize % kBytesPerLine) - (dWin->linesPerPage * kBytesPerLine);
+//LR 1.72		limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
 		if( vPos == h )
 			newPos = limit;	// LR: v1.6.5 LR already computed! ( ( dWin->fileSize+( kSBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
 		else if( limit < 64000L )		// JAB 12/10 Prevent Overflow in Calcuation
-			newPos = ( vPos*limit )/h;
+			newPos = (vPos * limit) / h;
 		else
-			newPos = vPos*( limit/h );
+			newPos = vPos * (limit / h);
 
 		newPos -= newPos & 0x0F;
 
@@ -210,7 +213,7 @@ void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boole
 {
 	long	curAddr;
 	curAddr = dWin->editOffset;
-	if( pos >= curAddr && pos < curAddr+( dWin->linesPerPage << 4 ) )
+	if( pos >= curAddr && pos < curAddr + (dWin->linesPerPage * kBytesPerLine) )
 	{
 		if( forceUpdate )
 		{
@@ -233,13 +236,13 @@ void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boole
 		{
 			// Scroll Up
 			curAddr = pos;
-			curAddr -= ( curAddr % kBytesPerLine );
+			curAddr -= (curAddr % kBytesPerLine);
 		}
 		else
 		{
 			// Scroll Down
-			curAddr = pos - ( dWin->linesPerPage -1 ) * kBytesPerLine;
-			curAddr -= ( curAddr % kBytesPerLine );
+			curAddr = pos - (dWin->linesPerPage - 1) * kBytesPerLine;
+			curAddr -= (curAddr % kBytesPerLine);
 		}
 	}
 	HEditScrollToPosition( dWin, curAddr );
@@ -253,7 +256,8 @@ void HEditScrollToPosition( EditWindowPtr dWin, long newPos )
 	SetPortWindowPort( dWin->oWin.theWin );
 
 	// Constrain scrolling position to legal limits
-	limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage << 4);
+		limit = (dWin->fileSize + kBytesPerLine) - (dWin->fileSize % kBytesPerLine) - (dWin->linesPerPage * kBytesPerLine);
+//LR 1.72	limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
 	if( newPos > limit )
 		newPos = limit;
 	if( newPos < 0 )
