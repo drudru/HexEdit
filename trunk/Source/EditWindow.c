@@ -756,7 +756,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 // LR: 1.5	WindowRef	theWin;
 	EditWindowPtr		dWin;
 	OSStatus			error;
-	short				refNum=0, redo = false;
+	short				refNum=0;	//LR 181 -- , redo = false;
 //LR 175	Point				where={-1, -1};
 	HParamBlockRec		pb;
 	FSSpec				workSpec;
@@ -904,8 +904,25 @@ contRsrc:
 		dWin->fileSize = pb.fileParam.ioFlRLgLen;
 	}
 
-	dWin->refNum = refNum;
+	/* if we get here, we have a valid file and data to read, or an empty file to work with */
+	/* now, for OS X, we need to get the catalog information for later restoration when saving (file permissions) */
 
+#if !defined(__MC68K__) && !defined(__SC__)
+	if( FSGetCatalogInfo )	/* not available in all systems (OS 9 and later only it seems) */
+	{
+		FSRef ref;
+
+		error = FSpMakeFSRef( fsSpec, &ref );
+		if( !error )
+		{
+			error = FSGetCatalogInfo( &ref, kFSCatInfoGettableInfo, &dWin->catinfo, NULL/*name*/, NULL/*FSSpec*/, NULL/*parent*/ );
+			dWin->OKToSetCatInfo = !error;
+		}
+	}
+#endif
+
+	/* Get a working file, in the temporary folder */
+	dWin->refNum = refNum;
 	workSpec = *fsSpec;
 	error = FindFolder( kOnSystemDisk, kTemporaryFolderType, kCreateFolder, &workSpec.vRefNum, &workSpec.parID );
 	if( error != noErr )
@@ -932,7 +949,7 @@ contRsrc:
 			ErrorAlert( ES_Caution, errCreate, error );
 		return error;
 	}
-	redo = false;
+//LR 181	redo = false;
 
 //LR 175	error = HOpen( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
 	error = FSpOpenDF( &workSpec, fsRdWrPerm, &refNum );
@@ -943,6 +960,7 @@ contRsrc:
 		return error;
 	}
 
+	/* setup our window varaiables */
 	dWin->workSpec = workSpec;
 	dWin->workRefNum = refNum;
 	dWin->workBytesWritten = 0L;
@@ -3011,6 +3029,20 @@ void SaveContents( WindowRef theWin )
 			}
 		}
 
+		/* now, for OS X, we need to get the catalog information for later restoration when saving (file permissions) */
+
+#if !defined(__MC68K__) && !defined(__SC__)
+		if( FSSetCatalogInfo && dWin->OKToSetCatInfo )	/* not available in all systems (OS 9 and later only it seems) */
+		{
+			FSRef ref;
+
+			error = FSpMakeFSRef( &tSpec, &ref );
+			if( !error )
+			{
+				error = FSSetCatalogInfo( &ref, kFSCatInfoSettableInfo, &dWin->catinfo );
+			}
+		}
+#endif
 		// Rename temp file to correct name
 //LR 175			error = HRename( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->destSpec.name );
 		error = FSpRename( &tSpec, dWin->destSpec.name );
