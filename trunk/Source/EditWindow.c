@@ -1237,29 +1237,43 @@ static void _offsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFla
 	}
 }
 
+//LR 185 -- macros to easy playing with hiliting
+//#define SETHILITE()	{char c = LMGetHiliteMode(); BitClr( &c, pHiliteBit ); LMSetHiliteMode( c ); }
+//#define SETHILITE()
+#define HILITERECT(r) PaintRect(r)
+//#define HILITERECT(r) SETHILITE(); InvertRect(r)
+
 /*** INVERT SELECTION ***/
 //LR 180 -- changes to draw offscreen instead of directly to window
-static void _invertSelection( EditWindowPtr	dWin )
+static void _hiliteSelection( EditWindowPtr	dWin )
 {
 	Rect	r;
 	long	start, end;
 	short	startX, endX;
 	Boolean	frontFlag;
-	RGBColor invertColor;
+	RGBColor hColor;
+//185	RGBColor invertColor;
 
 	frontFlag = (dWin->oWin.theWin == FrontNonFloatingWindow() && dWin->oWin.active);
 
 	if( dWin->endSel <= dWin->startSel )
 		return;
 
+	GetPortHiliteColor( GetWindowPort( dWin->oWin.theWin ), &hColor );
+	RGBForeColor( &hColor );
+	PenMode( adMin );
+
 	// Set our inversion color
+	if( ctHdl )
+		RGBBackColor( &(*ctHdl)->body );
+/*185
 	if( ctHdl )
 		invertColor = ( *ctHdl )->body;
 	else
 		invertColor = white;
 	
 	InvertColor( &invertColor );
-	
+*/	
 	start = dWin->startSel - dWin->editOffset;
 	if( start < 0 )
 		start = 0;
@@ -1282,7 +1296,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 				r.bottom = r.top + kLineHeight;
 				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
 				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-				InvertRect( &r );
+				HILITERECT( &r );
 
 				// Outline Box around Ascii
 				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
@@ -1298,14 +1312,14 @@ static void _invertSelection( EditWindowPtr	dWin )
 					MoveTo( r.right, r.top );
 				LineTo( r.right, r.bottom );
 	
-				// Invert Hex portion partials
+				// Invert Hex portion block (ie, multiple lines)
 				if( LINENUM( start ) < LINENUM( end )-1 )
 				{
 					r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
 					r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
 					r.left = kDataDrawPos - 3;
 					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-					InvertRect( &r );
+					HILITERECT( &r );
 	
 					r.left = kTextDrawPos - 1;
 					r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
@@ -1318,7 +1332,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 				r.bottom = r.top + kLineHeight;
 				r.left = kDataDrawPos - 3;
 				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-				InvertRect( &r );
+				HILITERECT( &r );
 	
 				r.left = kTextDrawPos - 1;
 				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
@@ -1339,8 +1353,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 				r.bottom = r.top + kLineHeight;
 				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
 				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-
-				InvertRect( &r );
+				HILITERECT( &r );
 	
 				r.left = kTextDrawPos + CHARPOS( startX )-1;
 				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
@@ -1384,7 +1397,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 				// Invert Ascii
 				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
 				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-				InvertRect( &r );
+				HILITERECT( &r );
 	
 				if( LINENUM( start ) < LINENUM( end )-1 )
 				{
@@ -1399,7 +1412,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 	
 					r.left = kTextDrawPos - 1;
 					r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-					InvertRect( &r );
+					HILITERECT( &r );
 				}
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
@@ -1418,7 +1431,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 	
 				r.left = kTextDrawPos - 1;
 				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
-				InvertRect( &r );
+				HILITERECT( &r );
 			}
 			else	// one line only
 			{
@@ -1442,7 +1455,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 	
 				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
 				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;
-				InvertRect( &r );
+				HILITERECT( &r );
 			}
 		}
 	}
@@ -1556,8 +1569,14 @@ static void _invertSelection( EditWindowPtr	dWin )
 					LineTo( r.left, r.top );
 			}
 		}
-	
 	}
+
+	//LR 185 -- Ensure normal draws after we are done!
+	if( ctHdl )
+		RGBBackColor( &white );
+
+	RGBForeColor( &black );
+	PenMode( srcCopy );
 }
 
 /*** INIT COLOUR TABLE ***/
@@ -1922,7 +1941,7 @@ static void _drawPage( EditWindowPtr dWin )
 
 		//LR: 180 -- we can now draw the selection offscreen since we always do full updates
 		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) )
-			_invertSelection( dWin );
+			_hiliteSelection( dWin );
 
 		UnlockPixels( thePixMapH ); // sel
 		SetPort( savePort );
@@ -1981,7 +2000,7 @@ void UpdateOnscreen( WindowRef theWin )
 
 		//%% LR: 1.7 -- needs to be done offscreen, but then it's  not erased -- this is a new shell todo item :)
 //LR 180		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) )
-//LR 180			_invertSelection( dWin );
+//LR 180			_hiliteSelection( dWin );
 
 		UnlockPixels( thePixMapH );
 		SetPort( oldPort );
