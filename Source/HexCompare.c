@@ -301,10 +301,10 @@ void DoComparison( void )
 		if( theEvent.what == mouseDown )
 			FindWindow( theEvent.where, &theWin );
 		
-		if ( GetDialogWindow( pDlg ) == theWin && IsDialogEvent( &theEvent ) )
+		if ( GetDialogWindow( pDlg ) == theWin || IsDialogEvent( &theEvent ) )
 		{
-//LR 180			if( theWin != FrontNonFloatingWindow() )
-//LR 180				SelectWindow( theWin );
+			if( theWin != FrontNonFloatingWindow() )
+				SelectWindow( theWin );
 			
 			DialogSelect( &theEvent, &pDlg, &iType );
 		
