@@ -52,6 +52,5 @@ Examples of what HexEdit has been/can be used for:
 		Figure out how Kanji is encoded in a text file.
 		Compare MS-Word format to RTF format.
 		Examine the data fork of MS-Word Application
-        (Owner Name is stored there in easily decrypted format)
     Recovery of damaged files, or at least portions of data therefrom.
 	
