@@ -26,7 +26,7 @@
 #include "EditScrollbar.h"
 #include "Utility.h"
 
-extern globals g;
+UndoRecord gUndo, gRedo;
 
 EditChunk	**gScrapChunk;
 
@@ -640,14 +640,11 @@ void CopyOperation( EditWindowPtr dWin, EditChunk ***scrapChunk )
 /*** CUT SELECTION ***/
 void CutSelection( EditWindowPtr dWin )
 {
-	if( g.undo )
-	{
-		RememberOperation( dWin, EO_Cut, g.undo );
-		CopyOperation( dWin, &gScrapChunk );		// Copy shorto paste buffer
-		DeleteSelection( dWin );
-		dWin->dirtyFlag = true;
-		ScrollToSelection( dWin, dWin->startSel, true, false );
-	}
+	RememberOperation( dWin, EO_Cut, &gUndo );
+	CopyOperation( dWin, &gScrapChunk );		// Copy shorto paste buffer
+	DeleteSelection( dWin );
+	dWin->dirtyFlag = true;
+	ScrollToSelection( dWin, dWin->startSel, true, false );
 }
 
 // LR: v1.6.5 -- New code for getting scrap in Carbon & Classic styles. Here
@@ -723,8 +720,7 @@ void PasteSelection( EditWindowPtr dWin )
 	}
 
 	// Do actual paste
-	if( g.undo )
-		RememberOperation( dWin, EO_Paste, g.undo );
+	RememberOperation( dWin, EO_Paste, &gUndo );
 
 	PasteOperation( dWin, gScrapChunk );
 	dWin->dirtyFlag = true;
@@ -876,9 +872,7 @@ void PasteOperation( EditWindowPtr dWin, EditChunk **scrapChunk )
 /*** CLEAR SELECTION ***/
 void ClearSelection( EditWindowPtr dWin )
 {
-	if( g.undo )
-		RememberOperation( dWin, EO_Clear, g.undo );
-
+	RememberOperation( dWin, EO_Clear, &gUndo );
 	DeleteSelection( dWin );
 	dWin->dirtyFlag = true;
 	ScrollToSelection( dWin, dWin->startSel, true, false );
@@ -887,33 +881,35 @@ void ClearSelection( EditWindowPtr dWin )
 // Remember current state for Undo of following operation
 
 /*** REMEMBER OPERATION ***/
-void RememberOperation( EditWindowPtr dWin, short opType, UndoRecord *ur )
+void RememberOperation( EditWindowPtr dWin, short opType, UndoPtr ur )
 {
-	// Forget Last stuff
-	MenuRef editMenu = GetMenuRef( kEditMenu );
-	if( ur == g.redo )
+	Str31	undoStr, menuStr;
+	MenuRef editMenu;
+
+	//LR: 1.66 - total re-write to be localizable!
+
+	// Assume undo
+	GetIndString( menuStr, strUndo, EO_Undo );
+
+	// check for Redo (ie, if Undo change to Redo)
+	editMenu = GetMenuRef( kEditMenu );
+	if( ur == &gRedo )
 	{
-		// Reset menu text to Redo
-		Str31	menuStr;
-		GetMenuItemText( editMenu, EM_Undo, menuStr );
-		if( menuStr[1] == 'R' )
-			BlockMove( "Un", &menuStr[1], 2 );
-		else
-			BlockMove( "Re", &menuStr[1], 2 );
-		SetMenuItemText( editMenu, EM_Undo, menuStr );
-	}
-	else
-	{
-		Str31	undoStr;
-		Str31	menuStr;
-		GetIndString( undoStr, strUndo, opType );
-		BlockMove( "\pUndo ", menuStr, 6 );
-		BlockMove( &undoStr[1], &menuStr[6], undoStr[0] );
-		menuStr[0] += undoStr[0];
-		SetMenuItemText( editMenu, EM_Undo, menuStr );
+		Str31 tempStr;
+
+		GetMenuItemText( editMenu, EM_Undo, tempStr );
+		if( tempStr[1] == 'U' )
+			GetIndString( menuStr, strUndo, EO_Redo );
 	}
 
+	// Now, get operation string and create menu string
+	GetIndString( undoStr, strUndo, opType );
+	BlockMove( &undoStr[1], &menuStr[menuStr[0] + 1], undoStr[0] );
+	menuStr[0] += undoStr[0];
+	SetMenuItemText( editMenu, EM_Undo, menuStr );
+
 	ReleaseEditScrap( dWin, &ur->undoScrap );
+
 	// Clear Undo Stuff
 	ur->undoScrap = NULL;
 	ur->type = opType;
@@ -921,8 +917,11 @@ void RememberOperation( EditWindowPtr dWin, short opType, UndoRecord *ur )
 	ur->endSel = dWin->endSel;
 	ur->fileSize = dWin->fileSize;
 	ur->theWin = dWin;
+
 	CopyOperation( dWin, &ur->undoScrap );
+
 	( *ur->undoScrap )->lastCtr= 0;
+
 	dWin->lastTypePos = -1;	// Clear Special Editing Modes
 	dWin->loByteFlag = false;
 }
@@ -933,44 +932,40 @@ void UndoOperation( void )
 	WindowRef win;
 	EditWindowPtr dWin;
 
-	if( !g.undo )	//LR: 1.66 -- can be NULL!
+	if( !gUndo.theWin )	//LR: 1.66 -- can be NULL!
 		return;
 
-	dWin = g.undo->theWin;
-	if( g.undo->type == 0 ) return;
+	dWin = gUndo.theWin;
+	if( gUndo.type == 0 ) return;
 
 	//LR: 1.66 check for null front window!
 	win = FrontWindow();
 	if( !win || dWin != (EditWindowPtr)GetWRefCon( win ) )
 		SelectWindow( dWin->oWin.theWin );
 	
-	switch( g.undo->type )
+	switch( gUndo.type )
 	{
 		case EO_Typing:
 		case EO_Paste:
 		case EO_Insert:
-			dWin->startSel = g.undo->startSel;
-			dWin->endSel = dWin->fileSize - ( g.undo->fileSize - g.undo->endSel );
-			if( g.redo )
-				RememberOperation( dWin, EO_Delete, g.redo );
+			dWin->startSel = gUndo.startSel;
+			dWin->endSel = dWin->fileSize - ( gUndo.fileSize - gUndo.endSel );
+			RememberOperation( dWin, EO_Delete, &gRedo );
 			DeleteSelection( dWin );
-			PasteOperation( dWin, g.undo->undoScrap );
+			PasteOperation( dWin, gUndo.undoScrap );
 			break;
 		case EO_Cut:
 		case EO_Clear:
 		case EO_Delete:
-			dWin->startSel = dWin->endSel = g.undo->startSel;
-			if( g.redo )
-				RememberOperation( dWin, EO_Insert, g.redo );
-			PasteOperation( dWin, g.undo->undoScrap );
+			dWin->startSel = dWin->endSel = gUndo.startSel;
+			RememberOperation( dWin, EO_Insert, &gRedo );
+			PasteOperation( dWin, gUndo.undoScrap );
 			break;
 	}
 
-	if( g.redo )
-	{
-		ReleaseEditScrap( dWin, &g.undo->undoScrap );
-		g.undo = g.redo;
-		g.redo->undoScrap = NULL;
-	}
+	ReleaseEditScrap( dWin, &gUndo.undoScrap );
+	gUndo = gRedo;
+	gRedo.undoScrap = NULL;
+
 	ScrollToSelection( dWin, dWin->startSel, true, false );
 }

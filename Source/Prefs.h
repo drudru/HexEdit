@@ -27,8 +27,8 @@
 #define	kPrefFileType		FOUR_CHAR_CODE('BINA')
 
 #define	kPrefsStringsID		strFiles
-#define	kPrefsFolderIndex	1
-#define	kPrefsFileNameIndex	2
+#define	kPrefsFolderIndex	FN_PrefsFolder
+#define	kPrefsFileNameIndex	FN_PrefsFile
 
 // LR: preferences structure
 #define PREFS_VERSION 0x0204
