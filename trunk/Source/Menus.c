@@ -328,7 +328,7 @@ OSStatus AdjustMenus( void )
 	CheckMenuItem( optionsMenu, OM_Backups, gPrefs.backupFlag );
 	CheckMenuItem( optionsMenu, OM_WinSize, gPrefs.constrainSize );
 	CheckMenuItem( optionsMenu, OM_Overwrite, gPrefs.overwrite );
-	CheckMenuItem( optionsMenu, OM_NonDestructive, gPrefs.nonDestructive );	//LR 174 -- optional non-destructive deletes
+	CheckMenuItem( optionsMenu, OM_NonDestructive, !gPrefs.nonDestructive );	//LR 190 -- REVERSE (updated text, not code)
 	CheckMenuItem( optionsMenu, OM_MoveOnlyPaging, gPrefs.moveOnlyPaging );	//LR 180 -- optional move only paging
 	CheckMenuItem( optionsMenu, OM_Unformatted, !gPrefs.formatCopies );
 	CheckMenuItem( optionsMenu, OM_VertBars, gPrefs.vertBars );
@@ -351,7 +351,7 @@ OSStatus AdjustMenus( void )
 	_cmCheckedItem = isObjectWin ? dWin->csMenuID : gPrefs.csMenuID;
 	CheckMenuItem( colorMenu, _cmCheckedItem, true );
 
-	selection = gPrefs.useColor;	//LR 1.899 -- && isObjectWin && dWin->csResID > 0;
+	selection = gPrefs.useColor;	//LR 1.90 -- && isObjectWin && dWin->csResID > 0;
 	i = CountMenuItems( colorMenu );
 	do
 	{
@@ -701,7 +701,7 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 		}
 		else
 		{
-savepref:	//LR 1.899 -- no window open == set preferred color
+savepref:	//LR 1.90 -- no window open == set preferred color
 			gPrefs.csResID = colorResID;	//LR 180 -- save prefs when changing all
 			gPrefs.csMenuID = menuItem;
 		}
