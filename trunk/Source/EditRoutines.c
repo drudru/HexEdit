@@ -126,12 +126,10 @@ EditChunk** NewChunk( long size, long addr, long filePos, short type )
 /*** DISPOSE CHUNK ***/
 void DisposeChunk( EditWindowPtr dWin, EditChunk **cc )
 {
-	if( ( *cc )->loaded )
-	{
-		if( ( *cc )->loaded )
+	if( dWin && (*cc)->loaded )
 			UnloadChunk( dWin, cc, false );
-	}
-	DisposeHandle( (Handle) cc );
+
+	DisposeHandle( (Handle)cc );
 }
 
 /*** APPEND CHUNK ***/
