@@ -50,7 +50,7 @@ static OSStatus _prefsInit( void )
 	gPrefs.decimalAddr = EM_Hex;
 	gPrefs.overwrite = false;
 	gPrefs.backupFlag = true;
-	gPrefs.vertBars = false;
+	gPrefs.vertBars = true;
 
 	gPrefs.useColor = true;
 
