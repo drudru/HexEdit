@@ -1,5 +1,26 @@
 HexEdit Revision History
 
+8/12/01 Version 1.74
+added live scrolling (based on code sent in by Brian Bergstrand <brianb@classicalguitar.net>
+Cleaned up ControlActionProc, now properly local
+major cleanup to live scrolling code (added CalcScrollPosition)
+Fixed not saving resource fork when updating files
+Fixed not setting EOF when saving files
+Fixed infinite loop when swapping search dialog to back w/invalid data
+Fixed crashing about box (although it may be that the fix was a new CarbonLib!)
+Fixed crash when closing one of the compare files windows
+Added some compile-time checks for 68K and non CW items
+NEW option to copy data unformatted:
+	formatted (default) = AA AA AA
+	unformatted (option) = AAAAAA
+(NOTE: only applies to HEX copies, ASCII copies always copy raw binary data!)
+Cleaned up some scrap usage in carbon builds
+Window dirty flag is set at lowest modification levels instead of a bunch of higher levels
+NEW option, "Non-Destructive Delete" which is only available in overwrite mode
+	(when editing this mode causes "Delete" to zero the byte behind the cursor,
+		or the current selection if there is one, instead of deleting the byte/selection).
+Added a few "spare" pref enteries so that we can add prefs w/o reseting them in future builds
+
 6/6/01 Version 1.72
 Modified options menu to be a bit more understandable
 Find menu options now match dialog buttons

@@ -2,12 +2,19 @@ HexEdit Documentation
 
 About this Document
 
-The main purpose of this file is to document the UI for HexEdit. It does not attempt to describe the source code, how to modify the program, or what to use HexEdit for. The best resource for information regarding HexEdit development is the SourceForge site: <http://sourceforge.net/projects/hexedit/>.
+The main purpose of this file is to document the UI for HexEdit. It does not attempt to describe the source code, how to modify the program, or what to use HexEdit for. The best resource for information regarding HexEdit development is the SourceForge site:
+
+<http://hexedit.sourceforge.net/>
 
 In order to be brief, features which are similar to the ResEdit hex editor are not described. (If you aren't familiar with ResEdit, you probably shouldn't be using HexEdit).
 
 
 System Requirements
+
+Macintosh (68K or PowerPC based)
+MacOS version 7.5 or later
+2MB of HD space
+1MB of RAM
 
 HexEdit can edit very large files (they don't need to fit into memory).  At it's current memory setting of 600k-5000K, it can handle files of hundreds of megs in size.  If you need to edit a larger file, increase HexEdit's memory partition.  
 
@@ -16,7 +23,7 @@ Note that when HexEdit saves a file, it will (temporarily or permanetaly, depend
 Memory usage and Color Schemes: when using color schemes (Use Color is checked, and windows are in color) memory usage is MUCH higher! For instance, on a 1600x1280 screen at 16bit color depth you can only have 4 HexEdit windows open in the prefered 5MB partition! On the same system, you can have over 40 black and white windows open!
 
 
-Program Menus
+Opening and Saving Files
 
 Opening a File
 
@@ -35,6 +42,8 @@ Saving a File
 
 When you save a file with HexEdit, it automatically backs up the last version of the file, renaming it to OriginalName~  (the original name with a tilde (~) after it). You can turn this backup feature off in the Options menu.
 
+
+Program Menus
 
 The File Menu
 
@@ -81,17 +90,23 @@ Goto Address - This brings up a dialog which allows you to specify an address, e
 
 The Options Menu
 
-Hi Order Ascii - This displays ascii values in the ascii part of the dump which are higher than 80h - you will see the accents, diacriticals and symbols that are in the monaco font that HexEdit uses.  This also makes it a little harder to pick out English text if you are searching for it in a large binary.
+Show Extended Chars - This displays ascii values in the ascii part of the dump which are higher than 80h - you will see the accents, diacriticals and symbols that are in the monaco font that HexEdit uses.  This also makes it a little harder to pick out English text if you are searching for it in a large binary.
 
 Decimal Addresses - This causes the addresses to be displayed in decimal, rather than hex.
 
+Vertical Bars - If checked, vertical bars are drawn between four (4) byte boundries in the hex editing pane of the window. This makes it easier to reference where you are in each line. The bar is drawn in the header bar color.
+
+Full Lines - if checked, windows are forced to a size that displays only full lines, and scrolling is set to not display partial lines at the top and/or bottom of windows.\
+
 Overwrite - This toggles between insert mode (the default) and overwrite mode.  Overwrite mode allows you to replace a sequence of bytes without affecting the offset of the subsequent bytes.
+
+Non-Destructive Delete - Option is only active when Ovewrite is checked. When this option is checked, and you are in Overwrite mode, the Delete key is "non-destructive" in that it does not change the size of the file, instead of actually removing bytes it replaces them with zeros.
+
+Unformatted Copies - when checked copies of Hex data are made without any formatting (ie, AAAAAA instead of AA AA AA) which is useful when pasting into certain applications. ASCII copies (made from the right side of the window) are always raw binary data.
 
 Make Backups - If checked, when saving a file ("filename"), rename the original file to "filename~" before saving the new data using the original filename. If not checked, the original file is overwritten and can not be restored.
 
-Vertical Bars - If checked, vertical bars are drawn between four (4) byte boundries in the hex editing pane of the window. This makes it easier to reference where you are in each line. The bar is drawn in the header bar color.
-
-Compare Options - This dialog lets you choose how file compares are performed. You can choose the data size as well as if you want to display where files are similiar or where they differ.
+Compare Options - Brings up a dialog that lets you choose how file compares are performed. You can choose the data size as well as if you want to display where files are similiar or where they differ.
 
 
 The Color Schemes Menu
@@ -101,7 +116,7 @@ Use Color Schemes - If selected, then all of the schemes below this item will be
 
 Program Notes
 
-To help you in your perusal, I have (tried to) marked all of my changes by //LR (usually followed by a descriptive comment, but not if it's "obvious", ha ha) Recently I've changed to adding just the version # for my changes
+To help you in your perusal, I have (tried to) marked all of my changes by //LR (usually followed by a descriptive comment, but not if it's "obvious", ha ha) Recently I've changed to adding the version # for my changes.
 
 The original idea and implementation of file comparison was made by Jeff Smith.
 
@@ -111,7 +126,7 @@ Thanks to Jim for releasing such a fine program, and even more so for the source
 
 <http://www.roathe.com/mac.html>		// mac site
 <http://www.roathe.com/lane.html>	// my site (interlinks abound)
-<http://www.monkeybyte.com> 				// we're working on cool stuff!
+<http://www.ifd.com>              // we're working on cool stuff!
 
 <lane@roathe.com>
 
