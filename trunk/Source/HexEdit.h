@@ -62,79 +62,6 @@
 	#define MenuRef MenuHandle
 #endif
 
-/*** COLOUR TABLE ***/
-typedef struct
-{
-	RGBColor	header;
-	RGBColor	headerLine;
-	RGBColor	headerText;
-
-	RGBColor	bar;
-	RGBColor	barLine;
-	RGBColor	barText;
-
-	RGBColor	body;
-	RGBColor	text;
-
-}	HEColorTable_t, *HEColorTablePtr, **HEColorTableHandle;
-
-/*** GLOBAL VARIABLES ***/
-//LR: 1.66 -- removed undo ptrs
-typedef struct
-{
-	// system info
-	Boolean		quitFlag;
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
-	Boolean		WNEImplemented;
-	Boolean		sys7Flag;
-	Boolean		colorQDFlag;
-#endif
-	Boolean		dragAvailable;
-	Boolean		translucentDrag;
-	Boolean		navAvailable;
-	Boolean		appearanceAvailable;
-	
-	// debugging prefs
-	Boolean		useAppleEvents;
-	Boolean		useAppearance;
-	Boolean		useNavServices;
-	
-	// application globals
-	Boolean 	cursorFlag;
-	Rect		cursRect;
-	UInt8		forkMode;
-	UInt8		highChar;
-	SInt8		buffer[512];
-	UInt16		maxHeight;
-	UInt8		searchBuffer[256];
-	UInt8		searchText[256];
-	UInt8		gotoText[256];
-	Boolean		searchDisabled;
-
-#ifndef __MC68K__
-	ICInstance	icRef;
-#endif
-
-	// cursors
-	CursHandle	watch;
-	CursHandle	iBeam;
-	
-	// dialogs
-	DialogPtr	searchWin;
-	DialogPtr	gotoWin;
-	
-	// printing
-#if TARGET_API_MAC_OS8
-	THPrint		HPrint;
-#endif
-#if TARGET_API_MAC_CARBON	// SEL -- 1.7
-	PMPrintSettings	printSettings;
-	PMPageFormat	pageFormat;
-#endif
-}	globals;
-
-extern globals g;
-
 // make some things a bit easier to read
 
 #define kAppCreator		FOUR_CHAR_CODE('hDmp')
@@ -160,7 +87,9 @@ extern globals g;
 #define kStringTextPos	(kStringHexPos+(kBytesPerLine*3)+1)
 #define kBodyStrLen		(kStringTextPos+kBytesPerLine-kStringHexPos)	// LR: 1.7 was 75 - (kStringHexPos -  2) in EditWindow.c
 
-#define kLineHeight		11
+#define kFontFace		"\pMonaco"
+#define kFontSize		9
+#define kLineHeight		11	//%% make flexible (and char width?)
 #define kCharWidth		6
 #define kHexWidth		(kCharWidth*3)
 
@@ -221,5 +150,81 @@ enum CompPref { CP_Done=1,CP_Cancel,CP_Bytes,CP_Words,CP_Longs,CP_Different,CP_M
 #define	kMainWIND		128
 
 #define kHexEditWindowTag		1000
+
+/*** COLOUR TABLE ***/
+typedef struct
+{
+	RGBColor	header;
+	RGBColor	headerLine;
+	RGBColor	headerText;
+
+	RGBColor	bar;
+	RGBColor	barLine;
+	RGBColor	barText;
+
+	RGBColor	body;
+	RGBColor	text;
+
+}	HEColorTable_t, *HEColorTablePtr, **HEColorTableHandle;
+
+/*** GLOBAL VARIABLES ***/
+//LR: 1.66 -- removed undo ptrs
+typedef struct
+{
+	// system info
+	Boolean		quitFlag;
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
+	Boolean		WNEImplemented;
+	Boolean		sys7Flag;
+	Boolean		colorQDFlag;
+#endif
+	Boolean		dragAvailable;
+	Boolean		translucentDrag;
+	Boolean		navAvailable;
+	Boolean		appearanceAvailable;
+	
+	// debugging prefs
+	Boolean		useAppleEvents;
+	Boolean		useAppearance;
+	Boolean		useNavServices;
+	
+	// application globals
+	Boolean 	cursorFlag;
+	Rect		cursRect;
+	UInt8		forkMode;
+	UInt8		highChar;
+	SInt8		buffer[512];
+	UInt16		maxHeight;
+	UInt8		searchBuffer[256];
+	UInt8		searchText[256];
+	UInt8		gotoText[256];
+	Boolean		searchDisabled;
+
+	short		fontFaceID;
+	short		fontSize;
+
+#ifndef __MC68K__
+	ICInstance	icRef;
+#endif
+
+	// cursors
+	CursHandle	watch;
+	CursHandle	iBeam;
+	
+	// dialogs
+	DialogPtr	searchWin;
+	DialogPtr	gotoWin;
+	
+	// printing
+#if TARGET_API_MAC_OS8
+	THPrint		HPrint;
+#endif
+#if TARGET_API_MAC_CARBON	// SEL -- 1.7
+	PMPrintSettings	printSettings;
+	PMPageFormat	pageFormat;
+#endif
+}	globals;
+
+extern globals g;
 
 #endif
