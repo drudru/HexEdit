@@ -6,6 +6,18 @@ This file will be culled to update the version history file for official release
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
 
+2001-02-10 Lane Roathe <lane@roathe.com>
+
+Fixed bad conversion of undo records to pointers (reverted to records)
+Fixed various NULL reference potentials having to do with using FrontWindow
+Fixed a few bogus uses of ObjectWindow refs from a non-edit window via GetWRefCon
+Added ability to cancel searches with Command-. or Escape
+Removed the last of the english strings to the resource file
+Re-wrote unique name routine to create more readable filenames
+Display new window filenames (instead of a bogus generic name)
+Fixed new windows not being able to edit other fork (fsSpec not initialized!)
+
+
 2001-01-25 Lane Roathe <lane@roathe.com>
 
 cleaned up sources for SourceForge CVS
