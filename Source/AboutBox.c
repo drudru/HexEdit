@@ -34,11 +34,7 @@ static short endText;
 static unsigned long prevTicks;
 
 //LR 1.75 -- only bad on MacOS X, and the PPC version is default in OS 8/9
-#if TARGET_API_MAC_CARBON
-	#define SCROLLDELAY 0
-#else
-	#define SCROLLDELAY 3
-#endif
+#define SCROLLDELAY 3
 
 //LR 1.73 -- make code more readable
 #ifdef __MC68K__
@@ -61,7 +57,9 @@ pascal void DrawTEText( DialogPtr whichDialog, short itemNr )
 //	dialog filter for about box (used to scroll TE contents)
 pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
 {
+//#if !TARGET_API_MAC_CARBON	//LR 1.76 slow enough in OS X!
 	if( TickCount() - prevTicks >= SCROLLDELAY )		// don't scroll too fast!
+//#endif
 	{
 		prevTicks = TickCount();
 
@@ -73,13 +71,16 @@ pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *i
 	
 			(*hTE)->destRect.top = (*hTE)->viewRect.top + startOffset;	// start over
 			(*hTE)->destRect.bottom = (*hTE)->viewRect.bottom + startOffset;
+#if TARGET_API_MAC_CARBON	//LR 1.76 slow enough in OS X!
+			InvalWindowRect( GetDialogWindow( whichDialog ), &(*hTE)->viewRect );
+#endif
 		}
 	}
 	return StdFilterProc( whichDialog, event, itemHit );
 }
 
 /*** HEX EDIT ABOUT BOX ***/
-//	code stolen from ResCon sources
+//	code stolen from Lane's ResCon sources
 void HexEditAboutBox( void )
 {
 	#define TEITEM		2
