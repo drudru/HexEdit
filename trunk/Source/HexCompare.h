@@ -20,11 +20,14 @@
  *		Nick Shanks
  */
 
+#ifndef _HexEdit_HexCompare_
+#define _HexEdit_HexCompare_
+
 #include "HexEdit.h"
 #include "EditWindow.h"
 
-#ifndef _HexEdit_HexCompare_
-#define _HexEdit_HexCompare_
+
+extern WindowRef CompWind1, CompWind2;
 
 Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 );
 Boolean PerformTextMatchCompare( EditWindowPtr dWin, EditWindowPtr dWin2 );
