@@ -251,30 +251,31 @@ OSStatus DoEvent( EventRecord *theEvent )
 					{
 						windowKind = GetWindowKind( theWin );
 						objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
-						if( windowKind == HexEditWindowID )
+						if( windowKind == HexEditWindowID && objectWindow->HandleClick )
 							objectWindow->HandleClick( theWin, theEvent->where, theEvent );
 						break;
 					}
 
 					case inDrag:
-						{
-							Rect	dragRect;
+					{
+						Rect	dragRect;
 #if TARGET_API_MAC_CARBON	// LR: v1.6
-							BitMap qdScreenBits;
+						BitMap qdScreenBits;
 
-							GetQDGlobalsScreenBits( &qdScreenBits );
-							dragRect = qdScreenBits.bounds;
+						GetQDGlobalsScreenBits( &qdScreenBits );
+						dragRect = qdScreenBits.bounds;
 #else
-							dragRect = qd.screenBits.bounds;	// LR: qd.
+						dragRect = qd.screenBits.bounds;	// LR: qd.
 #endif
-							// Handle the dragging of the theWin
-							DragWindow( theWin, theEvent->where, &dragRect );
+						// Handle the dragging of the theWin
+						DragWindow( theWin, theEvent->where, &dragRect );
 
-							objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
-							if( !objectWindow->floating )
-								SelectWindow( theWin );
-						}
+						objectWindow = (ObjectWindowPtr)GetWRefCon( theWin );
+						if( GetWindowKind( theWin ) == HexEditWindowID && !objectWindow->floating )	//LR: 1.66 don't deref non-edit windows!
+							SelectWindow( theWin );
+
 						break;
+					}
 
 					 case inGoAway:
 						if( TrackGoAway( theWin, theEvent->where ) )
@@ -308,29 +309,29 @@ OSStatus DoEvent( EventRecord *theEvent )
 						break;
 
 					case inGrow:
-						{
-							long growResult;
-							Rect r;
+					{
+						long growResult;
+						Rect r;
 
-							SelectWindow( theWin );
-							SetRect( &r, MaxWindowWidth /*+ ( SBarSize-1 ) */, 64, MaxWindowWidth /*+ ( SBarSize-1 ) */, g.maxHeight );
+						SelectWindow( theWin );
+						SetRect( &r, MaxWindowWidth /*+ ( SBarSize-1 ) */, 64, MaxWindowWidth /*+ ( SBarSize-1 ) */, g.maxHeight );
 
-							// Handle the mouse tracking for the resizing
-							growResult = GrowWindow( theWin, theEvent->where, &r );
+						// Handle the mouse tracking for the resizing
+						growResult = GrowWindow( theWin, theEvent->where, &r );
 
-							// Change the size of the theWin
-							SizeWindow( theWin, LoWord( growResult ), HiWord( growResult ), true );
-							AdjustScrollBars( theWin, true );
+						// Change the size of the theWin
+						SizeWindow( theWin, LoWord( growResult ), HiWord( growResult ), true );
+						AdjustScrollBars( theWin, true );
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
 // LR: 1.5					DrawPage( (EditWindowPtr) GetWRefCon( theWin ) );
 #endif
 
-							// Redraw the theWin
-							GetWindowPortBounds( theWin, &r );
-							SetPortWindowPort( theWin );
-							InvalWindowRect( theWin, &r );
-						}
+						// Redraw the theWin
+						GetWindowPortBounds( theWin, &r );
+						SetPortWindowPort( theWin );
+						InvalWindowRect( theWin, &r );
 						break;
+					}
 
 					case inZoomIn:
 					case inZoomOut:
@@ -365,13 +366,15 @@ OSStatus DoEvent( EventRecord *theEvent )
 		}
 		else
 		{
-			theWin = FrontWindow();
-
-			windowKind = GetWindowKind( theWin );
-			objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
+			theWin = FrontWindow();	//LR: 1.66 don't use NULL window!
+			if( theWin )
+			{
+				windowKind = GetWindowKind( theWin );
+				objectWindow = (ObjectWindowPtr)GetWRefCon( theWin );
 // LR: v1.6.5 WHAT THE???			objectWindow->Dispose( theWin );
-			if( windowKind == HexEditWindowID && objectWindow->ProcessKey != NULL )
-				objectWindow->ProcessKey( theWin, theEvent );
+				if( windowKind == HexEditWindowID && objectWindow->ProcessKey != NULL )
+					objectWindow->ProcessKey( theWin, theEvent );
+			}
 		}
 		break;
 
@@ -381,7 +384,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 		theWin = (WindowRef) theEvent->message;
 
 		objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
-		if( GetWindowKind( theWin ) == HexEditWindowID )
+		if( GetWindowKind( theWin ) == HexEditWindowID && objectWindow->Update )
 			objectWindow->Update( theWin );
 		break;
 	}
@@ -391,8 +394,8 @@ OSStatus DoEvent( EventRecord *theEvent )
 		theWin = (WindowRef) theEvent->message;
 
 		// Force it to be redrawn
-		objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
-		if( GetWindowKind( theWin ) == HexEditWindowID )
+		objectWindow = (ObjectWindowPtr)GetWRefCon( theWin );
+		if( GetWindowKind( theWin ) == HexEditWindowID && objectWindow->Activate )
 			objectWindow->Activate( theWin, (theEvent->modifiers & activeFlag) > 0 );
 
 		break;
@@ -406,7 +409,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 				{
 					objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
 					windowKind = GetWindowKind( theWin );
-					if( windowKind == HexEditWindowID )
+					if( windowKind == HexEditWindowID && objectWindow->Activate )
 						objectWindow->Activate( theWin, (theEvent->message & resumeFlag) > 0 );
 				}
 				if( theEvent->message & resumeFlag && ( CompWind1 && CompWind2 ) )
@@ -430,14 +433,18 @@ OSStatus DoEvent( EventRecord *theEvent )
 OSStatus IdleObjects( EventRecord *er )
 {
 	WindowRef theWin = FrontWindow();
-	ObjectWindowPtr objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
+	ObjectWindowPtr objectWindow;
+
 	while( theWin )
 	{
+		objectWindow = (ObjectWindowPtr)GetWRefCon( theWin );	//LR: 1.66 - don't use NULL window, and update for all windows!
+
 		if( GetWindowKind( theWin ) == HexEditWindowID && objectWindow->Idle )
 			objectWindow->Idle( theWin, er );
+
 		theWin = GetNextWindow( theWin );
 	}
-	return noErr;
+	return( noErr );
 }
 
 /*** GOT REQUIRED PARAMS ***/

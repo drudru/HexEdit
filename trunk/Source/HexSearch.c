@@ -255,7 +255,7 @@ void DoModelessDialogEvent( EventRecord *theEvent )
 #endif
 
 	// Do Event Filtering
-	if( theEvent->what == keyDown )
+	if( whichDlog && theEvent->what == keyDown )	//LR: 1.66 avoid NULL reference
 	{
 		// Process Edit Keys
 		if( ((theEvent->message & charCodeMask) == kReturnCharCode) ||
