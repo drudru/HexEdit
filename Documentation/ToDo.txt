@@ -7,17 +7,8 @@ Now that HexEdit is easily localizable, it would make sense to have those resour
 
 The files would simply contain those resources that need localization. For instance, DLOG, ALRT, DITL, TEXT, STR#, etc. One problem is that the folder could be seperated from the application, and thus required resources could be missing. So, I could make the English resources embedded within the program, and selecting English would simply close any open external language resource file.
 
-System 6 Support
-Remove system 6 support (7.1+ calls are made without checking OS)
-
 Help
 A help option would be fairly easy to implement. I have the code for a modeless dialog that does this; the problem is that the code relies on a lot of support code for modeless dialogs (including modal filter and list procs) that do not exist in HexEdit. Hmmm....more thinking to do on a new GUI shell for HexEdit.
 
 New GUI Shell
 The HexEdit GUI code is pretty hacked up at this point, and could really use some extended functionality. The best solution seems to be to use an existing framework to design and implement the GUI shell, and then move the HexEdit chunk and hex editing code over.
-
-Carbon Printing
-Need to get printing code in for Carbon apps. No idea on this one.
-
-About Box
-Cannot get clicks on static text items within the about box
