@@ -61,20 +61,16 @@ QDGlobals	qd;
 /*** MAIN ***/
 void main( void )	// LR: fix warnings
 {
-	// get system version		// NS 1.7.1
-	OSStatus error = Gestalt( gestaltSystemVersion, &g.systemVersion );		// this loads HIToolbox.framework on OS X
-	if( error ) return;
-	
 	// Standard Mac Initialization
 	InitToolbox();
 
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
 	// Check if Multifinder ( WaitNextEvent ) is implemented
 	InitMultifinder();
-
-	// Check if System 7
-	CheckEnvironment();
 #endif
+
+	// Check running environment
+	CheckEnvironment();
 
 	InitGlobals();
 	InitAppleEvents();
@@ -680,19 +676,25 @@ OSStatus InitAppleEvents( void )
 	return noErr;
 }
 
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
 
 /*** CHECK ENVIRONMENT ***/
 OSStatus CheckEnvironment( void )
 {
-	SysEnvRec	sEnv;
 	OSStatus	error;
 
-	error = SysEnvirons( 1, &sEnv );
+	// get system version	// NS 1.7.1
+	error = Gestalt( gestaltSystemVersion, &g.systemVersion );		// this loads HIToolbox.framework on OS X
 
-	g.sys7Flag = sEnv.systemVersion >= 0x0700;
-	g.colorQDFlag = sEnv.hasColorQD;
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
+	if( !error )
+	{
+		SysEnvRec	sEnv;
+
+		error = SysEnvirons( 1, &sEnv );
+		g.colorQDFlag = sEnv.hasColorQD;
+		g.sys7Flag = sEnv.systemVersion >= 0x0700;
+	}
+#endif
+
 	return error;
 }
-
-#endif
