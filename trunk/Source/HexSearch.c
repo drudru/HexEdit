@@ -123,7 +123,7 @@ void PerformTextSearch( EditWindowPtr dWin )
 	MySetCursor( C_Watch );
 
 	matchIdx = 0;
-	while( true )
+	while( !CheckForAbort() )	//LR: 1.66 - allow user to abort the search
 	{
 		ch = GetByte( dWin, addr );
 		if( !prefs.searchCase && prefs.searchMode != EM_Hex )
