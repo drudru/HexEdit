@@ -6,8 +6,23 @@ This file will be culled to update the version history file for official release
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
 1.7
-2001-02-14 Lane Roathe <lane@roathe.com>
+2001-02-17 Lane Roathe <lane@roathe.com>
+Fixed all the lines per page calculations! Many a bug are fixed :)
+	(inspired by Scott, who sent in a try at a printed page lines per page fix)
+Printing errors in Carbon now report error code
+Removed MaxWindowHeight constant since this is calculated now
+Renamed MaxWindowWidth to HexWindowWidth since it's a constant (not sizeable)
+Added new pref, partialLines, to control constraining window resizing to full lines (or not)
+Fixed zoom to be 1/2 height, not moving to the right ... huh?
+Min window height no longer based on scroll bar size (not there!)
+Major cleanup to the drawing code ... what a mess :(
+Got tired of not knowing what was a constant and what wasn't (use kConstant, MACRO)
+Dang, SBarSize was being used for the # of bytes per line! Fixed!
+Added Zoom ability to carbon build
+Fixed Zoom - it was flat broke! (no idea why moving it right was considered a "zoom")
+	(note: Window's actually start fully zoomed, and zooming unzooms...should this be changed?)
 
+2001-02-14 Lane Roathe
 Merged in Scott E. Lasley's printing code (what a guy!)
 Prettied up a bit of drawing/printing output
 First pass at cleaning up printing code so printing is actually usable :)
@@ -18,8 +33,8 @@ Fixed NULL window ptrs to CarbonLib in UpdateMenus (g.searcWin, etc.)
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
 1.66
-2001-02-10 Lane Roathe <lane@roathe.com>
 
+2001-02-10 Lane Roathe <lane@roathe.com>
 Fixed bad conversion of undo records to pointers (reverted to records)
 Fixed various NULL reference potentials having to do with using FrontWindow
 Fixed a few bogus uses of ObjectWindow refs from a non-edit window via GetWRefCon
@@ -31,7 +46,6 @@ Fixed new windows not being able to edit other fork (fsSpec not initialized!)
 
 
 2001-01-25 Lane Roathe <lane@roathe.com>
-
 cleaned up sources for SourceForge CVS
 new text files and names for easier use
 new directory structure for SF
