@@ -130,13 +130,13 @@ void PostPrintingErrors( OSStatus status )
 
 
 /* --------------------
-| GetColorMenuResID -- return resID of a color menu item
-|						( also, marks the menu item passed in as checked )
-|	ENTRY:	menu item
-|	 EXIT:	resID
+ Return resID of a color menu item
+	( also, marks the menu item passed in as checked )
+
+	ENTRY:	menu item
+	 EXIT:	resID
 */
 
-/*** GET COLOUR MENU RES ID ***/
 short GetColorMenuResID( short menuItem )
 {
 	Handle	h;
@@ -155,6 +155,30 @@ short GetColorMenuResID( short menuItem )
 	else
 		return( CM_StartingResourceID );
 }
+
+/* --------------------
+	Return the ID of the window menu item with the passed title
+
+	ENTRY:	ptr to pascal string to match
+	 EXIT:	item ID, or 0 if not found
+*/
+
+short GetWindowMenuItemID( StringPtr title )
+{
+	short i;
+	Str255 menuItemTitle;
+
+	i = CountMenuItems( windowMenu );
+	while( i )
+	{
+		GetMenuItemText( windowMenu, i, menuItemTitle );		// if you open more than one file with the same name (or edit the other fork)É
+		if( EqualPStrings( title, menuItemTitle ) )
+			break;
+		i--;
+	}
+	return( i );
+}
+
 
 /*** INITALISE MENUBAR ***/
 OSStatus InitMenubar( void )
@@ -399,7 +423,7 @@ OSStatus HandleMenu( long mSelect )
 				else
 					fork = FT_Data;
 
-				if( (Boolean) (ewin = LocateEditWindow( &dWin->fsSpec, fork )) )
+				if( NULL != (ewin = LocateEditWindow( &dWin->fsSpec, fork )) )	// LR: 1.7 - boolean typecast causes failure!
 				{
 					SelectWindow( ewin->oWin.theWin );	// just select existing theWin
 				}
@@ -609,17 +633,21 @@ OSStatus HandleMenu( long mSelect )
 		}
 		UpdateEditWindows();
 		break;
-	
+
+	// LR : 1.7 - rewrite with bug checking (could crash accessing NULL window)
 	case kWindowMenu:
 		GetMenuItemText( windowMenu, menuItem, newFrontWindowName );
 		currentWindow = GetWindowList();
-		GetWTitle( currentWindow, currentWindowName );
-		while( !EqualPStrings( currentWindowName, newFrontWindowName ) )
+		while( currentWindow )
 		{
-			currentWindow = GetNextWindow( currentWindow );
 			GetWTitle( currentWindow, currentWindowName );
+			if( EqualPStrings( currentWindowName, newFrontWindowName ) )
+			{
+				SelectWindow( currentWindow );
+				break;
+			}
+			currentWindow = GetNextWindow( currentWindow );
 		}
-		SelectWindow( currentWindow );
 		break;
 	}
 
