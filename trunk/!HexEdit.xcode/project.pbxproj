@@ -195,6 +195,8 @@
 			children = (
 				F0FB35DE05BC26FC00673008,
 				F0FB35DC05BC26EA00673008,
+				3DE55CFC07F5CBC50046B497,
+				3DE55CFD07F5CBC50046B497,
 				3DEA78EB07354D4000F21B22,
 				F0FB35D205BC26B200673008,
 				F0FB35D405BC26CA00673008,
@@ -258,6 +260,34 @@
 //3D2
 //3D3
 //3D4
+		3DE55CFC07F5CBC50046B497 = {
+			isa = PBXFileReference;
+			lastKnownFileType = image.icns;
+			name = DocumentBinary.icns;
+			path = Resources/Icons/DocumentBinary.icns;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		3DE55CFD07F5CBC50046B497 = {
+			isa = PBXFileReference;
+			lastKnownFileType = image.icns;
+			name = DocumentText.icns;
+			path = Resources/Icons/DocumentText.icns;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		3DE55CFE07F5CBC50046B497 = {
+			fileRef = 3DE55CFC07F5CBC50046B497;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		3DE55CFF07F5CBC50046B497 = {
+			fileRef = 3DE55CFD07F5CBC50046B497;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		3DEA78EB07354D4000F21B22 = {
 			isa = PBXFileReference;
 			lastKnownFileType = image.icns;
@@ -417,6 +447,8 @@
 			files = (
 				3DFAAE2A06EFD3EF00753EF0,
 				3DEA78EC07354D4000F21B22,
+				3DE55CFE07F5CBC50046B497,
+				3DE55CFF07F5CBC50046B497,
 			);
 			isa = PBXResourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;

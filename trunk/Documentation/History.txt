@@ -1,5 +1,17 @@
 HexEdit Revision History
 
+
+--- 03/25/05 1.92
+Fixed replace text, is no longer converted to upper case
+	(basically, my 1.90 fix broke this; it worked ... what was I thinking?)
+Fixed replace not pasting hex values in (also broke by 1.90 "fix" ... ouch!)
+Fixed crash in find dialog with key presses (window check moved to top layer)
+Updated Mac OS X icons (got corrupted at some point)
+Added option to turn on/off Opening the File Dialog at launch
+Fixed problem where resizing a window more than once could cause multiple scrollbars
+	(as seen in comparing files where after finishing scrolling no longer worked)
+Minor cleanups to project files
+
 --- 10/31/04 1.91
 Added bundle information to allow Mach-O build to handle drag-n-drop files
 Added Anton Rang's fix for bad characters in a menu name. Much better solution :)

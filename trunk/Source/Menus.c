@@ -334,6 +334,7 @@ OSStatus AdjustMenus( void )
 	CheckMenuItem( optionsMenu, OM_MoveOnlyPaging, gPrefs.moveOnlyPaging );	//LR 180 -- optional move only paging
 	CheckMenuItem( optionsMenu, OM_Unformatted, !gPrefs.formatCopies );
 	CheckMenuItem( optionsMenu, OM_VertBars, gPrefs.vertBars );
+ 	CheckMenuItem( optionsMenu, OM_OpenOnLaunch, gPrefs.dialogAtLaunch );	//WD_rpw 12-18-04
 
 	// LR: v1.6.5 Lots of re-writing on handling the color scheme menu
 #if !TARGET_API_MAC_CARBON
@@ -688,6 +689,10 @@ openfind:
 			case OM_ComparePref:	// LR: compare options
 				ComparisonPreferences();
 				break;
+
+ 			case OM_OpenOnLaunch:
+ 				gPrefs.dialogAtLaunch = !gPrefs.dialogAtLaunch;	//LR -- 192
+ 				break;
 		}
 		break;
 

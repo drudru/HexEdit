@@ -127,7 +127,7 @@ OSStatus HandleEvent( void )
 	//LR 187 -- apple events came in after the open app event, so we delay a while now.
 	if( checkForOpen )
 	{
-		if( !--checkForOpen && !skipOpen )
+		if( !--checkForOpen && !skipOpen && gPrefs.dialogAtLaunch )	//LR 192 -- allows skipping at open
 			AskEditWindow( kWindowNormal );	// LR: -- voodoo can't have this
 	}
 
