@@ -561,7 +561,7 @@ static pascal OSErr _compareEventHandler( const AppleEvent *theEvent, AppleEvent
 		if( !error )
 		{
 			result = PerformTextCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
-/* 181			if( gPrefs.searchType == CM_Match )
+/* 185			if( gPrefs.searchType == CM_Match )
 				result = PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 			else
 				result = PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );

@@ -142,7 +142,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 	matchIdx = 0;
 	addr += adjust;
 
-	//LR 181 -- we handle the chucks ourself to speed up searching!
+	//LR 185 -- we handle the chucks ourself to speed up searching!
 	//			get the chunk for the current address & load it.
 
 	cc = GetChunkByAddr( dWin, addr );
@@ -160,7 +160,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 				break;
 		}
 
-//LR 181		ch = GetByte( dWin, addr );
+//LR 185		ch = GetByte( dWin, addr );
 		ch = (Byte) (*(*cc)->data)[addr - (*cc)->addr];
 		if( !gPrefs.searchCase && gPrefs.searchMode != EM_Hex )
 			ch = toupper( ch );
@@ -187,7 +187,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 		}
 		addr += adjust;
 
-		//LR 181 -- OK, here we must handle moving to a new chunk if outside current one
+		//LR 185 -- OK, here we must handle moving to a new chunk if outside current one
 		if( addr < (*cc)->addr )
 		{
 			UnloadChunk( dWin, cc, true );
