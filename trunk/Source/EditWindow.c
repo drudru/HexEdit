@@ -378,6 +378,7 @@ short AskEditWindowNav( tWindowType type )
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
 	dialogOptions.dialogOptionFlags |= kNavNoTypePopup+kNavAllowInvisibleFiles; // BB: allow invisible files - fixes bug #425256
+	dialogOptions.dialogOptionFlags |= kNavSupportPackages+kNavAllowOpenPackages;   // benh57: allow browsing into packages. (496196)
 	GetIndString( dialogOptions.message, strPrompt, type + 2 );	//LR 180 -- modify prompt
 
 	error = NavGetFile( NULL, &reply, &dialogOptions, eventProc, previewProc, filterProc, openTypeList, kNavOpenDialogType);
