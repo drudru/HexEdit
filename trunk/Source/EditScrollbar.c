@@ -51,7 +51,6 @@ static long _calcScrollPosition( EditWindowPtr dWin )
 	Rect	winRect;
 	short	vPos = GetControlValue( dWin->vScrollBar );
 	float	numer;
-	float	denom;
 	float	result;
 
 	GetWindowPortBounds( dWin->oWin.theWin, &winRect );
@@ -61,9 +60,9 @@ static long _calcScrollPosition( EditWindowPtr dWin )
 		newPos = vPos * kBytesPerLine;
 	else
 	{	numer = vPos;
-		denom = S_INT16_MAX;
-		result = numer / denom;
-		newPos = result * NON_VIEWABLE_LINES * kBytesPerLine;
+		result = numer / (float)S_INT16_MAX;
+		newPos = (long)(result * NON_VIEWABLE_LINES * kBytesPerLine);
+		newPos -= newPos % kBytesPerLine;	//LR 180 -- always start at the beginning of a line!
 	}
 
 	return( newPos );
