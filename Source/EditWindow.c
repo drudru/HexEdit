@@ -672,13 +672,15 @@ void NewEditWindow( void )
 	GetIndString( workSpec.name, strFiles, FN_Untitled );
 //LR: 1.66	BlockMove( "\pUntitledw", workSpec.name, 10 );
 	_ensureNameIsUnique( &workSpec );
-	HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
+//LR 175	HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
+	error = FSpCreate( &workSpec, kAppCreator, '????', smSystemScript );
 	if( error != noErr )
 	{
 		ErrorAlert( ES_Caution, errCreate, error );
 		return;
 	}
-	error = HOpenDF( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
+//LR 175	error = HOpenDF( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
+	error = FSpOpenDF( &workSpec, fsRdWrPerm, &refNum );
 	if( error != noErr )
 	{
 		ErrorAlert( ES_Caution, errOpen, error );
@@ -869,7 +871,8 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	{
 		// Open Data Fork
 		dWin->fork = FT_Data;
-		error = HOpenDF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+//LR 175		error = HOpenDF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+		error = FSpOpenDF( fsSpec, fsRdWrPerm, &refNum );
 		if( error == fnfErr )
 		{
 			if( !showerr ) return error;
@@ -878,16 +881,15 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 			if( StopAlert( alertNoFork, NULL ) != 2 )
 				return error;
 
-			error = HCreate( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, 
-						pb.fileParam.ioFlFndrInfo.fdCreator, 
-						pb.fileParam.ioFlFndrInfo.fdType );
-
+//LR 175			error = HCreate( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, 
+			error = FSpCreate( fsSpec, pb.fileParam.ioFlFndrInfo.fdCreator, pb.fileParam.ioFlFndrInfo.fdType, smSystemScript );
 			if( error != noErr )
 			{
 				ErrorAlert( ES_Caution, errCreate, error );
 				return error;
 			}
-			error = HOpenDF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+//LR 175			error = HOpenDF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+			error = FSpOpenDF( fsSpec, fsRdWrPerm, &refNum );
 		}
 		if( error != noErr )
 		{
@@ -901,7 +903,8 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	{
 		// Open Resource Fork
 		dWin->fork = FT_Resource;
-		error = HOpenRF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+//LR 175		error = HOpenRF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+		error = FSpOpenRF( fsSpec, fsRdWrPerm, &refNum );
 		if( error == fnfErr )
 		{
 			if( !showerr )
@@ -912,13 +915,15 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 			if( StopAlert( alertNoFork, NULL ) != 2 )
 				return error;
 
-			HCreateResFile( fsSpec->vRefNum, fsSpec->parID, fsSpec->name );
+//LR 175			HCreateResFile( fsSpec->vRefNum, fsSpec->parID, fsSpec->name );
+			FSpCreateResFile( fsSpec, pb.fileParam.ioFlFndrInfo.fdCreator, pb.fileParam.ioFlFndrInfo.fdType, smSystemScript );
 			if( ( error = ResError() ) != noErr )
 			{
 				ErrorAlert( ES_Caution, errCreate, error );
 				return error;
 			}
-			error = HOpenRF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+//LR 175			error = HOpenRF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+			error = FSpOpenRF( fsSpec, fsRdWrPerm, &refNum );
 		}
 		if( error != noErr )
 		{
@@ -949,7 +954,8 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 		workSpec.name[31] ^= 0x10;
 
 	_ensureNameIsUnique( &workSpec );
-	error = HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
+//LR 175	error = HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
+	error = FSpCreate( &workSpec, kAppCreator, '????', smSystemScript );
 	if( error != noErr )
 	{
 		if( showerr )
@@ -958,7 +964,8 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	}
 	redo = false;
 
-	error = HOpen( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
+//LR 175	error = HOpen( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
+	error = FSpOpenDF( &workSpec, fsRdWrPerm, &refNum );
 	if( error != noErr )
 	{
 		if( showerr )
@@ -994,7 +1001,8 @@ void DisposeEditWindow( WindowRef theWin )
 	if( dWin->workRefNum )
 	{
 		FSClose( dWin->workRefNum );
-		HDelete( dWin->workSpec.vRefNum, dWin->workSpec.parID, dWin->workSpec.name );
+		FSpDelete( &dWin->workSpec );
+//LR 175		HDelete( dWin->workSpec.vRefNum, dWin->workSpec.parID, dWin->workSpec.name );
 	}
 
 	//LR 1.72 -- release undo if associated with this window
@@ -2526,13 +2534,15 @@ OSStatus CopyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
 	}
 	if( forkType == FT_Resource )
 	{
-		error = HOpenRF( srcSpec->vRefNum, srcSpec->parID, srcSpec->name, fsRdPerm, &sRefNum );
+//LR 175		error = HOpenRF( srcSpec->vRefNum, srcSpec->parID, srcSpec->name, fsRdPerm, &sRefNum );
+		error = FSpOpenRF( srcSpec, fsRdPerm, &sRefNum );
 		if( error != noErr )
 		{
 			ErrorAlert( ES_Caution, errOpen, error );
 			return error;
 		}
-		error = HOpenRF( dstSpec->vRefNum, dstSpec->parID, dstSpec->name, fsWrPerm, &dRefNum );
+//LR 175		error = HOpenRF( dstSpec->vRefNum, dstSpec->parID, dstSpec->name, fsWrPerm, &dRefNum );
+		error = FSpOpenRF( dstSpec, fsWrPerm, &dRefNum );
 		if( error != noErr )
 		{
 			ErrorAlert( ES_Caution, errOpen, error );
@@ -2541,13 +2551,15 @@ OSStatus CopyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
 	}
 	else
 	{
-		error = HOpen( srcSpec->vRefNum, srcSpec->parID, srcSpec->name, fsRdPerm, &sRefNum );
+//LR 175		error = HOpen( srcSpec->vRefNum, srcSpec->parID, srcSpec->name, fsRdPerm, &sRefNum );
+		error = FSpOpenDF( srcSpec, fsRdPerm, &sRefNum );
 		if( error != noErr )
 		{
 			ErrorAlert( ES_Caution, errOpen, error );
 			return error;
 		}
-		error = HOpen( dstSpec->vRefNum, dstSpec->parID, dstSpec->name, fsWrPerm, &dRefNum );
+//LR 175		error = HOpen( dstSpec->vRefNum, dstSpec->parID, dstSpec->name, fsWrPerm, &dRefNum );
+		error = FSpOpenDF( dstSpec, fsWrPerm, &dRefNum );
 		if( error != noErr )
 		{
 			ErrorAlert( ES_Caution, errOpen, error );
@@ -2615,8 +2627,10 @@ void SaveContents( WindowRef theWin )
 		}
 //LR 1.73 -- delete temp files!		_ensureNameIsUnique( &tSpec );
 
-		HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
-		error = HCreate( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->creator, dWin->fileType );
+//LR 175		HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
+		FSpDelete( &tSpec );
+//LR 175		error = HCreate( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->creator, dWin->fileType );
+		error = FSpCreate( &tSpec, dWin->creator, dWin->fileType, smSystemScript );
 		if( error != noErr )
 		{
 			ErrorAlert( ES_Caution, errCreate, error );
@@ -2654,7 +2668,8 @@ void SaveContents( WindowRef theWin )
 		// Open the temp file
 		if( dWin->fork == FT_Resource )
 		{
-			error = HOpenRF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsWrPerm, &tRefNum );
+//LR 175			error = HOpenRF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsWrPerm, &tRefNum );
+			error = FSpOpenRF( &tSpec, fsWrPerm, &tRefNum );
 			if( error != noErr )
 			{
 				ErrorAlert( ES_Caution, errOpen, error );
@@ -2663,7 +2678,8 @@ void SaveContents( WindowRef theWin )
 		}
 		else
 		{
-			error = HOpenDF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsWrPerm, &tRefNum );
+//LR 175			error = HOpenDF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsWrPerm, &tRefNum );
+			FSpOpenDF( &tSpec, fsWrPerm, &tRefNum );
 			if( error != noErr )
 			{
 				ErrorAlert( ES_Caution, errOpen, error );
@@ -2685,7 +2701,8 @@ void SaveContents( WindowRef theWin )
 				if( error == dskFulErr )
 				{
 					ErrorAlert( ES_Stop, errDiskFull );
-					HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
+					FSpDelete( &tSpec );
+//LR 175					HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
 				}
 				else
 					ErrorAlert( ES_Caution, errWrite, error );
@@ -2707,7 +2724,8 @@ void SaveContents( WindowRef theWin )
 			bSpec = dWin->destSpec;
 
 			// If it exists under current name
-			if( ( error = HOpen( bSpec.vRefNum, bSpec.parID, bSpec.name, fsRdPerm, &dWin->refNum ) ) == noErr )
+//LR 175			if( ( error = HOpen( bSpec.vRefNum, bSpec.parID, bSpec.name, fsRdPerm, &dWin->refNum ) ) == noErr )
+			if( ( error = FSpOpenDF( &bSpec, fsRdPerm, &dWin->refNum ) ) == noErr )
 			{
 				FSClose( dWin->refNum );
 
@@ -2718,28 +2736,33 @@ void SaveContents( WindowRef theWin )
 					if( bSpec.name[0] < 31 )	// LR: 000505 -- don't go beyond 31 chars!
 						bSpec.name[0]++;
 					bSpec.name[bSpec.name[0]] = '~';
-					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );	// backup files end with ~
+					FSpDelete( &bSpec );
+//LR 175					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );	// backup files end with ~
 		
 					// Rename original file to backup name
-					error = HRename( dWin->destSpec.vRefNum, dWin->destSpec.parID, dWin->destSpec.name, bSpec.name );
+//LR 175					error = HRename( dWin->destSpec.vRefNum, dWin->destSpec.parID, dWin->destSpec.name, bSpec.name );
+					FSpRename( &dWin->destSpec, bSpec.name );
 					if( error != noErr )
 					{
 						// Backup is probably open, just delete original
 						ErrorAlert( ES_Caution, errBackup, error );
-						bSpec = dWin->destSpec;
-						HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
+//LR 175						bSpec = dWin->destSpec;
+						FSpDelete( &dWin->destSpec );
+//LR 175						HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
 					}
 				}
 				else
 				{
 					// Delete Original if backup flag is false
-					bSpec = dWin->destSpec;
-					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
+//LR 175					bSpec = dWin->destSpec;
+					FSpDelete( &dWin->destSpec );
+//LR 175					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
 				}
 			}
 
 			// Rename temp file to correct name
-			error = HRename( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->destSpec.name );
+//LR 175			error = HRename( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->destSpec.name );
+			error = FSpRename( &tSpec, dWin->destSpec.name );
 			if( error != noErr )
 				ErrorAlert( ES_Stop, errRename, error );
 		}
@@ -2748,13 +2771,15 @@ void SaveContents( WindowRef theWin )
 		tSpec = dWin->destSpec;
 		if( dWin->fork == FT_Resource )
 		{
-			error = HOpenRF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsRdPerm, &dWin->refNum );
+//LR 175			error = HOpenRF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsRdPerm, &dWin->refNum );
+			error = FSpOpenRF( &tSpec, fsRdWrPerm, &dWin->refNum );
 			if( error != noErr )
 				ErrorAlert( ES_Stop, errOpen, error );
 		}
 		else
 		{
-			error = HOpenDF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsRdPerm, &dWin->refNum );
+//LR 175			error = HOpenDF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsRdPerm, &dWin->refNum );
+			error = FSpOpenDF( &tSpec, fsRdWrPerm, &dWin->refNum );
 			if( error != noErr )
 				ErrorAlert( ES_Stop, errOpen, error );
 		}
