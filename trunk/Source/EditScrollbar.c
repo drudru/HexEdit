@@ -32,29 +32,35 @@
 
 static ControlActionUPP _trackActionUPP = NULL;		//LR 1.73 -- properly local, must be NULL ast startup!
 
-#define LIMIT_CALC ((((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) - dWin->linesPerPage) * kBytesPerLine)
+#define GET_LINE(x) ((x + kBytesPerLine - 1) / kBytesPerLine) 
+#define TOTAL_LINES GET_LINE(dWin->fileSize)
+#define NON_VIEWABLE_LINES (TOTAL_LINES - dWin->linesPerPage)
+#define LIMIT_CALC (NON_VIEWABLE_LINES * kBytesPerLine)
+
+#define S_INT16_MAX	0x7FFF	// maximum value to be used in an SInt16
 
 /*** Calc Scroll Position ***/
 //LR 1.73 -- simplify some code
 static long _calcScrollPosition( EditWindowPtr dWin )
 {
-	long	newPos, h, limit;
+	long	newPos, h;
 	Rect	winRect;
 	short	vPos = GetControlValue( dWin->vScrollBar );
+	float	numer;
+	float	denom;
+	float	result;
 
 	GetWindowPortBounds( dWin->oWin.theWin, &winRect );
 	h = winRect.bottom - winRect.top - (kGrowIconSize - 1) - (kHeaderHeight - 1);
 
-	limit = LIMIT_CALC;
-//LR 1.72		limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
-	if( vPos >= h )
-		newPos = limit;	// LR: v1.6.5 LR already computed! ( ( dWin->fileSize+( kSBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
-	else if( limit < 64000L )		// JAB 12/10 Prevent Overflow in Calcuation
-		newPos = (vPos * limit) / h;
+	if (NON_VIEWABLE_LINES < S_INT16_MAX)
+		newPos = vPos * kBytesPerLine;
 	else
-		newPos = vPos * (limit / h);
-
-	newPos -= newPos % kBytesPerLine;
+	{	numer = vPos;
+		denom = S_INT16_MAX;
+		result = numer / denom;
+		newPos = result * NON_VIEWABLE_LINES * kBytesPerLine;
+	}
 
 	return( newPos );
 }
@@ -127,6 +133,12 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 	long			limit;
 	Rect			r;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+	short			maxValue;
+	unsigned long	curLine;
+	short			curValue;
+	float			ratio;
+	float			numer;
+	float			denom;
 
 	GetWindowPortBounds( theWin, &r );
 
@@ -156,19 +168,36 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 		dWin->editOffset = limit;
 	if( dWin->editOffset < 0 )
 		dWin->editOffset = 0;
+		
 
 	// Set the value of the sliders accordingly
 	if( limit > 0 )
 	{
-		SetControlMaximum( dWin->vScrollBar, h );
-
+		curLine = GET_LINE(dWin->editOffset);
+		
+		if (NON_VIEWABLE_LINES > S_INT16_MAX)
+		{
+			numer = curLine;
+			denom = NON_VIEWABLE_LINES;
+			ratio = numer / denom;
+			maxValue = (NON_VIEWABLE_LINES > S_INT16_MAX) ? S_INT16_MAX : NON_VIEWABLE_LINES;
+			
+			curValue = (ratio * maxValue);
+		}
+		else
+		{
+			maxValue = NON_VIEWABLE_LINES;
+			curValue = curLine;
+		}
+		
+		SetControlMaximum( dWin->vScrollBar, maxValue);
+			
 #if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
 		// BB: Set up proportional scroll bar if we can
         if (SetControlViewSize != (void*)kUnresolvedCFragSymbolAddress)
-            SetControlViewSize( dWin->vScrollBar, h );
+            SetControlViewSize( dWin->vScrollBar, dWin->linesPerPage);
 #endif
-		SetControlValue( dWin->vScrollBar,
-						(short)(dWin->editOffset < 64000L ? ((dWin->editOffset * h) / limit) : (dWin->editOffset / (limit / h))) );
+		SetControlValue( dWin->vScrollBar, curValue);
 	}
 	else
 	{
