@@ -433,19 +433,20 @@ OSStatus HandleMenu( long mSelect )
 			if( dWin )
 			{
 				short fork;
-				EditWindowPtr ewin;
+//LR 180				EditWindowPtr ewin;
 
 				if( dWin->fork == FT_Data )
 					fork = FT_Resource;
 				else
 					fork = FT_Data;
 
+/*LR 180 -- OpenEditWindow checks for this
 				if( NULL != (ewin = LocateEditWindow( &dWin->fsSpec, fork )) )	// LR: 1.7 - boolean typecast causes failure!
 				{
 					SelectWindow( ewin->oWin.theWin );	// just select existing theWin
 				}
 				else	// try to open other fork in new theWin!
-				{
+*/				{
 					g.forkMode = fork;
 					OpenEditWindow( &dWin->fsSpec, kWindowNormal, true );
 				}

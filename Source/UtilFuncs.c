@@ -193,20 +193,31 @@ short ErrorAlert( short severity, short strid, ... )
 
 	if (g.appearanceAvailable)
 	{
+		AlertStdAlertParamRec params;
+
 		switch (severity)
 		{
 		case ES_Note:
 			inAlertType  = kAlertNoteAlert;
 			break;
+
 		case ES_Caution:
 			inAlertType  = kAlertCautionAlert;
 			break;
+
 		case ES_Stop:
+		case ES_Fatal:
 			inAlertType  = kAlertStopAlert;
 			break;
 		}
-			
-		StandardAlert( inAlertType, (StringPtr)tbuf, NULL, NULL, &itemHit );
+
+		//LR 180 -- I want alerts to belong to the error window!
+		memset( &params, 0, sizeof(params) );
+		params.defaultText = "\pBummer!";
+		params.defaultButton = ok;
+		params.position = kWindowAlertPositionParentWindow;
+		
+		StandardAlert( inAlertType, (StringPtr)tbuf, NULL, &params, &itemHit );
 	}
 	else
 	{
@@ -223,6 +234,7 @@ short ErrorAlert( short severity, short strid, ... )
 			break;
 
 		case ES_Stop:
+		case ES_Fatal:
 			itemHit = StopAlert( alertError, NULL );
 			break;
 		}
@@ -244,7 +256,7 @@ short ErrorAlert( short severity, short strid, ... )
 #endif
 	}
 
-	if(  severity == ES_Stop )
+	if(  severity == ES_Fatal )
 		ExitToShell();
 	
 	return itemHit;

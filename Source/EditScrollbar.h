@@ -32,7 +32,7 @@
 void SetupScrollBars( EditWindowPtr dWin );
 void AdjustScrollBars( WindowRef theWin, short resizeFlag );
 Boolean MyHandleControlClick( WindowRef window, Point mouseLoc );
-void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boolean centerFlag );
+void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean centerFlag );
 void ScrollToPosition( EditWindowPtr dWin, long newPos );
 void AutoScroll( EditWindowPtr dWin, Point pos );
 

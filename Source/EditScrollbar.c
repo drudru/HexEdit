@@ -266,17 +266,21 @@ Boolean MyHandleControlClick( WindowRef window, Point mouseLoc )
 }
 
 /*** SCROLL TO SELECTION ***/
-void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boolean centerFlag )
+//LR 180 -- removed forceUpdate flag, we always do a full  update as we
+//			no longer have an offscreen buffer for each window!
+void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean centerFlag )
 {
 	long	curAddr;
 	curAddr = dWin->editOffset;
 
 	if( pos >= curAddr && pos < curAddr + (dWin->linesPerPage * kBytesPerLine) )
 	{
+/*LR 180
 		if( forceUpdate )
 		{
 			DrawPage( dWin );
 		}
+*/
 		UpdateOnscreen( dWin->oWin.theWin );
 		AdjustScrollBars( dWin->oWin.theWin, false );
 		return;
@@ -332,21 +336,28 @@ void ScrollToPosition( EditWindowPtr dWin, long newPos )
 		// 12/10/93 - Optimize Drawing
 		SetCurrentChunk( dWin, dWin->editOffset );
 
-		DrawPage( dWin );
+//LR 180		DrawPage( dWin );
 		UpdateOnscreen( dWin->oWin.theWin );
 	}
 }
 
 /*** AUTO SCROLL ***/
+//LR 180 -- adjust scroll amount by pos from top/bottom of window
+
 void AutoScroll( EditWindowPtr dWin, Point pos )
 {
 	short offset;
-	if( pos.v < ( kHeaderHeight + 1 ) )
-		offset = -kBytesPerLine;
-	else if( pos.v >= ( kHeaderHeight + 1 ) + dWin->linesPerPage * kLineHeight )
-		offset = kBytesPerLine;
+
+	if( pos.v < (kHeaderHeight + 1) )
+	{
+		offset = kBytesPerLine * (((pos.v - (kHeaderHeight + 1)) / 2) + 1);
+	}
+	else if( pos.v >= (kHeaderHeight + 1) + dWin->linesPerPage * kLineHeight )
+	{
+		offset = kBytesPerLine * (((pos.v - ((kHeaderHeight + 1) + dWin->linesPerPage * kLineHeight)) / 2) + 1);
+	}
 	else
-		return;
+		return;	// wasn't off top or bottom.
 
 	ScrollToPosition( dWin, dWin->editOffset+offset );
 }
