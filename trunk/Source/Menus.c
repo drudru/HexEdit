@@ -309,7 +309,7 @@ OSStatus AdjustMenus( void )
 	_enableMenuItem( editMenu, EM_Undo, isDA || undoExists );
 	_enableMenuItem( editMenu, EM_Cut,  isDA || (selection && (!gPrefs.overwrite || (gPrefs.overwrite && !gPrefs.nonDestructive))) );
 	_enableMenuItem( editMenu, EM_Copy, isDA || selection );
-	_enableMenuItem( editMenu, EM_Paste, isDA || scrapExists );
+	_enableMenuItem( editMenu, EM_Paste, isDA || (scrapExists && (!gPrefs.overwrite || (gPrefs.overwrite && !gPrefs.nonDestructive))) );
 	_enableMenuItem( editMenu, EM_Clear, isDA || selection );
 
 	_enableMenuItem( editMenu, EM_SelectAll, isDA || isObjectWin || isFindWin || isGotoWin );
