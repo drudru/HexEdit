@@ -136,32 +136,32 @@
 */
 
 // LR: 1.6.5 -- better ID defs, and include all references
-enum AlertIDs		{ alertSave = 10000, alertError, alertNoFork, alertRevert };
-enum DialogIDs		{ dlgSearch = 128, dlgGoto, dlgAbout, dlgCompare, dlgComparePref, dlgGetFile = 1401 };
-enum StringIDs		{ strUndo = 128, strPrint, strHeader, strError, strColor, strPrompt, strFiles, strURLs, strFont };
+typedef enum { alertSave = 10000, alertError, alertNoFork, alertRevert  }AlertIDs;
+typedef enum { dlgSearch = 128, dlgGoto, dlgAbout, dlgCompare, dlgComparePref, dlgGetFile = 1401 } DialogIDs;
+typedef enum { strUndo = 128, strPrint, strHeader, strError, strColor, strPrompt, strFiles, strURLs, strFont } StringIDs;
 
-enum ErrorIDs		{ errMemory = 1, errSeek, errRead, errSetFPos, errWrite, errPaste, errFindFolder,
+typedef enum { errMemory = 1, errSeek, errRead, errSetFPos, errWrite, errPaste, errFindFolder,
 						errCreate, errOpen, errFileInfo, errPrintRange, errSetFileInfo, errBackup,
 						errRename, errDiskFull, errHexValues, errDefaultPrinter, errGenericPrinting,
 						errSave, errReadOnly
-					};
+					} ErrorIDs;
 
-enum ChunkTypes		{ CT_Original, CT_Work, CT_Unwritten };
-enum ForkType 		{ FT_Data = 1, FT_Resource };
-enum ForkModes		{ FM_Data = 1, FM_Rsrc, FM_Smart };
-enum Headers		{ HD_Decimal = FT_Resource + 1, HD_Hex, HD_Footer };
-enum Filenames		{ FN_PrefsFolder = 1, FN_PrefsFile, FN_Untitled, FN_DATA, FN_RSRC };
-enum AsciiModes		{ AM_Lo, AM_Hi };
-enum EditMode 		{ EM_Hex, EM_Decimal, EM_Ascii };
-enum EditOperation	{ EO_Undo = 1, EO_Redo, EO_Typing, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete };
-enum ErrorSeverity	{ ES_Note, ES_Caution, ES_Stop, ES_Fatal };
-enum CursorNumbers	{ C_Arrow, C_Watch, C_IBeam };
-enum CompModeSize 	{ CM_Byte, CM_Word, CM_Long };
-enum CompModeType 	{ CM_Different, CM_Match };
+typedef enum { CT_Original, CT_Work, CT_Unwritten } ChunkTypes;
+typedef enum { FT_Data = 1, FT_Resource } ForkType;
+typedef enum { FM_Data = 1, FM_Rsrc, FM_Smart } ForkModes;
+typedef enum { HD_Decimal = FT_Resource + 1, HD_Hex, HD_Footer } Headers;
+typedef enum { FN_PrefsFolder = 1, FN_PrefsFile, FN_Untitled, FN_DATA, FN_RSRC } Filenames;
+typedef enum { AM_Lo, AM_Hi } AsciiModes;
+typedef enum { EM_Hex, EM_Decimal, EM_Ascii } EditMode;
+typedef enum { EO_Undo = 1, EO_Redo, EO_Typing, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete } EditOperation;
+typedef enum { ES_Note, ES_Caution, ES_Stop, ES_Fatal } ErrorSeverity;
+typedef enum { C_Arrow, C_Watch, C_IBeam } CursorNumbers;
+typedef enum { CM_Byte, CM_Word, CM_Long } CompModeSize;
+typedef enum { CM_Different, CM_Match } CompModeType;
 
 // preferences Dialog items
-enum CompPref { CP_Done=1,CP_Cancel,CP_Bytes,CP_Words,CP_Longs,CP_Different,CP_Match,
-								CP_text1, CP_text2, CP_Case };
+typedef enum { CP_Done=1,CP_Cancel,CP_Bytes,CP_Words,CP_Longs,CP_Different,CP_Match,
+								CP_text1, CP_text2, CP_Case } CompPref;
 
 // Color table resources MUST start @ 128 & advance by 1
 #define CM_StartingResourceID 128

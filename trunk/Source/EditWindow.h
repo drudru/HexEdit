@@ -81,7 +81,7 @@ typedef struct
 
 	short				refNum;			// File's Reference Number
 	short				workRefNum;		// Work File's Reference Number
-	short				editMode;		// 0=Hex, 1=Ascii
+	EditMode			editMode;		// defines whether we are in the hex or ascii portion
 	short				fork;			// 0=data 1=resource
 	short				lastNybble;		// Last Hex Edit Nibble
 

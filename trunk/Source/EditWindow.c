@@ -2095,7 +2095,11 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 		case kTabCharCode:
 		case kReturnCharCode:
 		case kEnterCharCode:
-			dWin->editMode = !dWin->editMode;	// NS: v1.6.6, switch edit mode on tab or return
+			if( EM_Hex == dWin->editMode )	//NP 180 -- fix editMode = !editMode as editMode is not a boolean!!!
+				dWin->editMode = EM_Ascii;
+			else
+				dWin->editMode = EM_Hex;
+
 			UpdateOnscreen( dWin->oWin.theWin );
 			break;
 		
