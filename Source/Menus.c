@@ -376,7 +376,7 @@ OSStatus AdjustMenus( void )
 
 /*** HANDLE MENU ***/
 // LR 1.66 -- complete rewrite (basically) of this entire routine...it was UGLY!
-OSStatus HandleMenu( long mSelect )
+OSStatus HandleMenu( long mSelect, short modifiers )
 {
 	short			menuID = HiWord( mSelect );
 	short			menuItem = LoWord( mSelect );
@@ -453,8 +453,8 @@ OSStatus HandleMenu( long mSelect )
 			}
 			break;
 
-		case FM_CompareFiles:		// LR: file compares
-			if( GetCompareFiles() )
+		case FM_CompareFiles:		//LR 180 -- now pass in modifiers to allow select override
+			if( GetCompareFiles( modifiers ) )
 				DoComparison();
 			break;
 
@@ -647,16 +647,35 @@ OSStatus HandleMenu( long mSelect )
 	// LR: Add color scheme menu
 	case kColorMenu:
 		if( menuItem == CM_UseColor )
-			gPrefs.useColor = !gPrefs.useColor;
+		{
+			gPrefs.useColor = !gPrefs.useColor;		// toggle color usage
+		}
 		else if( dWin && dWin->csResID > 0 )		// can't color B&W windows!
 		{
+			short colorResID = GetColorMenuResID( menuItem );;
+
 			CheckMenuItem( colorMenu, gPrefs.csMenuID, false );
 
-			gPrefs.csResID = GetColorMenuResID( menuItem );
-			gPrefs.csMenuID = menuItem;
-			
-			if( GetWindowKind( dWin->oWin.theWin ) == kHexEditWindowTag )
-				dWin->csResID = gPrefs.csResID;
+			if( (modifiers & optionKey) )	// option down == do only front window!
+			{
+				if( GetWindowKind( dWin->oWin.theWin ) == kHexEditWindowTag )
+					dWin->csResID = colorResID;
+			}
+			else	//LR 180 -- default is to change color of ALL windows!
+			{
+				EditWindowPtr eWin = FindFirstEditWindow();
+
+				gPrefs.csResID = colorResID;	//LR 180 -- save prefs when changing all
+				gPrefs.csMenuID = menuItem;
+
+				while( eWin )
+				{
+					if( GetWindowKind( eWin->oWin.theWin ) == kHexEditWindowTag )
+						eWin->csResID = gPrefs.csResID;
+
+					eWin = FindNextEditWindow( eWin );
+				}
+			}
 		}
 		UpdateEditWindows();
 		break;
