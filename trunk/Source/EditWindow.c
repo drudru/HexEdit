@@ -31,6 +31,7 @@
 #include "EditWindow.h"
 #include "EditRoutines.h"
 #include "EditScrollbar.h"
+#include "HexSearch.h"
 #include "Menus.h"
 #include "Prefs.h"
 #include "Utility.h"
@@ -398,6 +399,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 {
 	WindowRef theWin;
 	ObjectWindowPtr objectWindow;
+	short maxheight = g.maxHeight / 2 - 32;	//LR .72 -- simplify height settings
 	Rect r;
 
 	// NS 1.7.1; check for appearance and create appropriate window
@@ -408,27 +410,28 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	// LR:	Hack for comparing two files
 	if( CompareFlag == 1 )
 	{
-		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight / 2 - 64 );
 		CompWind1 = theWin;
 	}
 	else if( CompareFlag == 2 )
 	{
-		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight / 2 - 64 );
-		MoveWindow( theWin, 14, g.maxHeight/2, true );
+		MoveWindow( theWin, 14, g.maxHeight / 2, true );
 		CompWind2 = theWin;
 	}
 	else
-		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight - 64 );
+		maxheight = g.maxHeight - 64;
 
 	// Check for best window size
 	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
-		r.bottom = (((dWin->fileSize / kBytesPerLine) + 1) * kLineHeight) + kHeaderHeight;
+		maxheight = (((dWin->fileSize / kBytesPerLine) + 1) * kLineHeight) + kHeaderHeight;
 //LR 1.7		r.bottom = (kLineHeight * (((dWin->linesPerPage - 1) * kBytesPerLine) - dWin->fileSize)) / kLineHeight;
 
-	if( r.bottom < (kHeaderHeight + (kLineHeight * 5)) )
-		r.bottom = (kHeaderHeight + (kLineHeight * 5));
+	if( maxheight < (kHeaderHeight + (kLineHeight * 5)) )
+		maxheight = (kHeaderHeight + (kLineHeight * 5));
 
-	SizeWindow( theWin, r.right, r.bottom, true );
+	// LR: v1.6.5 round this to a size showing only full lines
+	maxheight = (((maxheight - 1) / kLineHeight) * kLineHeight) + kHeaderHeight;
+
+	SizeWindow( theWin, kHexWindowWidth - 1, maxheight, true );
 
 	// LR: 1.7 set window title & get text for window menu
 	_setWindowTitle( dWin );
@@ -444,8 +447,6 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	objectWindow->SaveAs		= SaveAsContents;
 	objectWindow->Revert		= RevertContents;
 	objectWindow->Activate		= MyActivate;
-	
-// LR: 1.5	SetRect( &offRect, 0, 0, kHexWindowWidth, g.maxHeight );
 
 	if( prefs.useColor )
 		dWin->csResID = prefs.csResID;	// LR: 1.5 - color selection
@@ -476,7 +477,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	LocalToGlobal( (Point *)&r.top );
 	LocalToGlobal( (Point *)&r.bottom );
 
-	r.bottom /= 2;		// zoom'd state is 1/2 of normal (actually the reverse of standard zoom!)
+	r.bottom /= 2;		// zoom'd state is 1/2 normal (assume we want as large a window as possible!)
 
 	SetWindowStandardState( theWin, &r );
 
@@ -490,6 +491,8 @@ void InitializeEditor( void )
 	CursHandle	cursorHandle = NULL;
 	Str255		str;
 	SInt32		val;
+	FontInfo	finfo;
+	WindowRef	newWin;
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
 	PScrapStuff			ScrapInfo;
 #endif
@@ -521,18 +524,23 @@ void InitializeEditor( void )
 	g.maxHeight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - 24;	// LR: add 'qd.'
 #endif
 
+	//LR 1.72 -- more flexability in font usage, get from string and find width/height from actual data
+
+	newWin = GetNewCWindow( kSystem7Window, NULL, kLastWindowOfClass );					//LR 1.72 don't change system font!
+	SetPortWindowPort( newWin );
+
 	GetIndString( str, strFont, 1 );
 	GetFNum( str, &g.fontFaceID );		// 1.7 carsten-unhardcoded font name & size
 	GetIndString( str, strFont, 2 );
 	StringToNum( str, &val );			//LR 1.72 -- get font info from resource
 	g.fontSize = (short)val;
-	g.lineHeight = (short)((float)(val) * 1.2f + 0.5f);	//LR 1.72 -- estimate line height
 	TextFont( g.fontFaceID );
 	TextSize( g.fontSize );
-	g.charWidth = StringWidth( "\pM" );	//LR 1.72 -- more flexability in font usage
+	GetFontInfo( &finfo );
+	g.charWidth = CharWidth( '0' );	//LR -- should, but doesn't, work -> finfo.widMax;
+	g.lineHeight = finfo.ascent + finfo.descent;
 
-	// LR: v1.6.5 round this to a size showing only full lines
-	g.maxHeight = (((g.maxHeight - 1) / kLineHeight) * kLineHeight) + kHeaderHeight;
+	DisposeWindow( newWin );	// done w/temp window, get rid of it
 
 #if TARGET_API_MAC_CARBON	// LR: v1.6
 // bug: carbon printing not written

@@ -66,37 +66,31 @@ void OpenSearchDialog( void )
 
 	// If Dialog Window isn't open
 	if( !g.searchWin )
+		g.searchWin = GetNewDialog( dlgSearch, NULL, kFirstWindowOfClass );
+
+	if( g.searchWin )
 	{
-		// Open Dialog Window
-		g.searchWin = GetNewDialog( dlgSearch, NULL, (WindowRef) -1L );
-		if( g.searchWin )
-		{
-			// Convert Existing Search Scrap, if it exists to text
-			SetText( g.searchWin, SearchTextItem, g.searchText );
+		// Convert Existing Search Scrap, if it exists to text
+		SetText( g.searchWin, SearchTextItem, g.searchText );
 
-			// Set Radio Buttons
-			SetControl( g.searchWin, HexModeItem, prefs.searchMode == EM_Hex );
-			SetControl( g.searchWin, AsciiModeItem, prefs.searchMode == EM_Ascii );
-			SetControl( g.searchWin, MatchCaseItem, prefs.searchCase );
-			if( EM_Hex == prefs.searchMode )
-				DisableButton( g.searchWin, MatchCaseItem );	// LR 1.65
-			else
-				EnableButton( g.searchWin, MatchCaseItem );	// LR 1.65
+		// Set Radio Buttons
+		SetControl( g.searchWin, HexModeItem, prefs.searchMode == EM_Hex );
+		SetControl( g.searchWin, AsciiModeItem, prefs.searchMode == EM_Ascii );
+		SetControl( g.searchWin, MatchCaseItem, prefs.searchCase );
+		if( EM_Hex == prefs.searchMode )
+			DisableButton( g.searchWin, MatchCaseItem );	// LR 1.65
+		else
+			EnableButton( g.searchWin, MatchCaseItem );	// LR 1.65
 
-			// NS: added disabling of buttons if no text is entered
+		// NS: added disabling of buttons if no text is entered
 // LR: not needed			GetText( g.searchWin, SearchTextItem, g.searchText );
-			SelectDialogItemText( g.searchWin, SearchTextItem, 0, 32767 );	// LR: make immediately editable
-			g.searchDisabled = false;
-			SetSearchButtons();
-		}
+		SelectDialogItemText( g.searchWin, SearchTextItem, 0, 32767 );	// LR: make immediately editable
+		g.searchDisabled = false;
+		SetSearchButtons();
 	}
-#if TARGET_API_MAC_CARBON
+
 	SelectWindow( GetDialogWindow( g.searchWin ) );
 	ShowWindow( GetDialogWindow( g.searchWin ) );
-#else
-	SelectWindow( g.searchWin );
-	ShowWindow( g.searchWin );
-#endif
 }
 
 /*** PERFORM TEXT SEARCH ***/
@@ -215,27 +209,19 @@ OSStatus OpenGotoAddress( void )
 		return paramErr;
 
 	if( !g.gotoWin )
-	{
 		g.gotoWin = GetNewDialog( dlgGoto, NULL, kFirstWindowOfClass );
-		if( !g.gotoWin ) return paramErr;
-	// 	GetDialogItem( g.gotoWin, GUserItem, &t, &h, &r );
-	// 	SetDialogItem( g.gotoWin, GUserItem, t, (Handle) GotoUserItem, &r );
+	if( !g.gotoWin )
+		return paramErr;
 
-		SetText( g.gotoWin, GAddrItem, g.gotoText );
-		// Set Radio Buttons
-		SetControl( g.gotoWin, GHexItem, prefs.gotoMode == EM_Hex );
-		SetControl( g.gotoWin, GDecimalItem, prefs.gotoMode == EM_Decimal );
-		SelectDialogItemText( g.gotoWin, GAddrItem, 0, 32767 );
-	}
-#if TARGET_API_MAC_CARBON
-	else SelectWindow( GetDialogWindow( g.gotoWin ) );
+	SetText( g.gotoWin, GAddrItem, g.gotoText );
+	// Set Radio Buttons
+	SetControl( g.gotoWin, GHexItem, prefs.gotoMode == EM_Hex );
+	SetControl( g.gotoWin, GDecimalItem, prefs.gotoMode == EM_Decimal );
+	SelectDialogItemText( g.gotoWin, GAddrItem, 0, 32767 );
 
+	SelectWindow( GetDialogWindow( g.gotoWin ) );
 	ShowWindow( GetDialogWindow( g.gotoWin ) );
-#else
-	else SelectWindow( g.gotoWin );
 
-		ShowWindow( g.gotoWin );
-#endif
 	return noErr;
 }
 
