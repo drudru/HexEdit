@@ -34,6 +34,7 @@
 #include "Menus.h"
 #include "EditWindow.h"
 #include "EditRoutines.h"
+#include "EditScrollbar.h"
 #include "HexCompare.h"
 #include "HexSearch.h"
 #include "AboutBox.h"
@@ -612,8 +613,8 @@ openfind:
 				}
 				break;
 
-			case SM_Replace:	//LR 190 -- add replace & find next
-				if( dWin  )
+			case SM_Replace:	//LR 190 -- add replace & find next (must have a window with selection to start!)
+				if( dWin  && dWin->startSel != dWin->endSel )
 				{
 					EditChunk	**replaceChunk;
 
