@@ -23,7 +23,7 @@
  */
 
 
-#if TARGET_API_MAC_CARBON
+#if TARGET_API_MAC_CARBON && __MWERKS__
 	#include <PMApplication.h>
 #endif
 
@@ -40,10 +40,12 @@
 		#undef PROFILE
 	#endif
 	
-	//#include <Carbon/Carbon.h>
+	#ifndef __MWERKS__
+		#include <Carbon/Carbon.h>
+	#endif
 #endif
 
-#ifndef __MC68K__
+#if !defined(__MC68K__) && defined(__MWERKS__)
 	#include <InternetConfig.h>
 #endif
 
