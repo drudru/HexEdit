@@ -13,7 +13,7 @@
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
  * Portions created by Lane Roathe are
- * Copyright (C) Copyright © 1996-2000.
+ * Copyright (C) Copyright © 1996-2001.
  * All Rights Reserved.
  * 
  * Contributor(s):
@@ -31,7 +31,8 @@
 #define	kPrefsFileNameIndex	FN_PrefsFile
 
 // LR: preferences structure
-#define PREFS_VERSION 0x0204
+#define PREFS_V204		0x0204
+#define PREFS_VERSION	0x0205
 
 typedef struct
 {
@@ -41,19 +42,25 @@ typedef struct
 	short	searchMode,
 			searchForward,	// false = backward
 			searchCase,		// true = match case
-			searchSize,
-			searchType;
+			searchSize,		// byte, short or long
+			searchType;		// hex or ASCII
 
-	short	asciiMode;
+	short	asciiMode;		// show high bit ascii chars (or substitute '.')?
 	short	gotoMode;		// hex or dec
-	short	decimalAddr;
-	short	overwrite;
+	short	decimalAddr;	// display numbers in windows as decimal or hex?
+	short	overwrite;		// insert or overwrite editing?
 	short	backupFlag;		// from original (moved in 1.5)
 	short	vertBars;		// use David Emme's vertical bars
 
-	short	useColor;
+	short	useColor;		// true if we are using color windows
 
-	short	version;
+	short	version;		// version # of prefs record
+
+	// %% NOTE: below version so that older versions do not require prefs to be inited!
+	//			If a prefs update requires older prefs inited, move below above version!
+
+	short	constrainSize;	// resizing allows partial lines?
+
 }	prefs_t, *prefsPtr;
 
 extern prefs_t prefs;

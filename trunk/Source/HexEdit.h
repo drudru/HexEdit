@@ -136,35 +136,46 @@ typedef struct
 extern globals g;
 
 // make some things a bit easier to read
+
 #define kAppCreator		FOUR_CHAR_CODE('hDmp')
 #define kDefaultFileType FOUR_CHAR_CODE('TEXT')
-#define SBarSize		16
-#define	GrowIconSize	14
-#define	MainWIND		128
-#define MaxFileRAM		32000L
-#define SlushRAM		1000L
-#define AllocIncr		64L
-#define HeaderHeight	20
-#define FooterHeight	20
-#define TopMargin		3
-#define BotMargin		0
-#define AddrPos			10	// LR: 12
-#define HexStart		9
-#define AsciiStart		59
-#define AsciiSpacing	6
-#define LineHeight		11
-#define DescendHeight	3
-#define CharWidth		6
-#define HexWidth		(CharWidth*3)
-#define LineNbr(a)		((a) >> 4)
-#define ColNbr(a)		((a) & 0x0F)
-#define CharPos(a)		(((a) << 2) + ((a) << 1))	// Multiply by 6
-#define HexPos(a)		(((a) << 4) + ((a) << 1))	// Multiply by 18
 
-#define MenuBaseID		128
+#define kMaxFileRAM		32000L
+#define kSlushRAM		1000L
+#define kAllocIncrement	64L
 
-#define MaxWindowWidth	484	// Must be multiple of 2
-#define MaxWindowHeight	512	// Note - these are NOT reversed!
+#define kSBarSize		16
+#define	kGrowIconSize	14
+
+#define kBytesPerLine	16
+
+#define kHeaderHeight	16
+#define kFooterHeight	16
+//LR: 1.7 #define TopMargin		3
+//LR: 1.7 #define BotMargin		0
+//LR: 1.7 #define AsciiSpacing	6
+//LR: 1.7 #define DescendHeight	0
+
+#define kStringHexPos	11
+#define kStringTextPos	(kStringHexPos+(kBytesPerLine*3)+1)
+#define kBodyStrLen		(kStringTextPos+kBytesPerLine-kStringHexPos)	// LR: 1.7 was 75 - (kStringHexPos -  2) in EditWindow.c
+
+#define kLineHeight		11
+#define kCharWidth		6
+#define kHexWidth		(kCharWidth*3)
+
+#define kBodyDrawPos	0	// LR: 12 - let's not have any undrawn areas, to avoid erasing!
+#define kDataDrawPos	(kBodyDrawPos + ((kStringHexPos - 1) * kCharWidth))
+#define kTextDrawPos	(kBodyDrawPos + ((kStringTextPos -  1) * kCharWidth))
+
+#define LINENUM(a)		((a) >> 4)
+#define COLUMN(a)		((a) & 0x0F)
+#define CHARPOS(a)		(((a) << 2) + ((a) << 1))	// Multiply by 6
+#define HEXPOS(a)		(((a) << 4) + ((a) << 1))	// Multiply by 18
+
+#define kHexWindowWidth	(((kStringHexPos + kBodyStrLen) * kCharWidth) + kSBarSize)	//LR 1.7 - renamed to show windows are not sizable horizontally! Must be multiple of 2
+
+//LR 1.7 #define MaxWindowHeight	512	// Note - these are NOT reversed!
 
 // LR: #define PrefResType	'prf1'
 // LR: #define PrefResID	128
@@ -207,28 +218,8 @@ enum CompPref { CP_Done=1,CP_Cancel,CP_Bytes,CP_Words,CP_Longs,CP_Different,CP_M
 #define CM_StartingResourceID 128
 
 // window ID
-#define HexEditWindowID		1000
+#define	kMainWIND		128
 
-// Menu Resource IDs
-enum	{kAppleMenu = 128, kFileMenu, kEditMenu, kFindMenu, kOptionsMenu, kColorMenu, kWindowMenu};
-
-// Menu Item Numbers
-enum	{AM_About=1};
-
-enum	{FM_New=1,FM_Open,FM_Close,FM_Sep1,
-		 FM_OtherFork,FM_CompareFiles,FM_Sep2,	
-		 FM_Save, FM_SaveAs, FM_Revert,FM_Sep3,
-		 FM_PageSetup, FM_Print,FM_Sep4,
-		 FM_Quit};
-
-enum 	{EM_Undo = 1, EM_Sep1, EM_Cut, EM_Copy,
-		 EM_Paste, EM_Clear, EM_Sep2, EM_SelectAll};
-		 
-enum	{SM_Find = 1, SM_FindForward, SM_FindBackward, SM_Sep1, SM_GotoAddress};
-
-enum	{OM_HiAscii = 1, OM_DecimalAddr, OM_VertBars, OM_Overwrite, OM_Sep1, OM_Backups,
-			OM_ComparePref};
-
-enum	{CM_UseColor = 1, CM_Sep1, CM_FirstColor};
+#define kHexEditWindowTag		1000
 
 #endif
