@@ -1397,7 +1397,7 @@ void UpdateOnscreen( WindowRef theWin )
 		CopyBits( ( BitMap * ) &( dWin->offscreen )->portPixMap, &theWin->portBits, &r1, &r2, srcCopy, 0L );
 	#endif
 
-		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage << 4) ) 
+		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) ) 
 			InvertSelection( dWin );
 
 		UnlockPixels( thePixMap );
@@ -1426,10 +1426,10 @@ void MyIdle( WindowRef theWin, EventRecord *er )
 			w.v < kHeaderHeight + ( dWin->linesPerPage*kLineHeight ) )
 		{
 				if( w.h >= kDataDrawPos &&
-					w.h < kDataDrawPos + ( kHexWidth<<4 ) ) 
+					w.h < kDataDrawPos + ( kHexWidth * kBytesPerLine ) ) 
 					MySetCursor( C_IBeam );
 				else if( w.h >= kTextDrawPos &&
-						 w.h < kTextDrawPos + ( kCharWidth<<4 ) )
+						 w.h < kTextDrawPos + ( kCharWidth * kBytesPerLine ) )
 					MySetCursor( C_IBeam );
 				else
 					MySetCursor( C_Arrow );
@@ -1465,21 +1465,21 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 		return;
 	// Else handle editing chore
 	CursorOff( theWin );
-	if( w.v >= kHeaderHeight && w.v < kHeaderHeight+( dWin->linesPerPage*kLineHeight ) )
+	if( w.v >= kHeaderHeight && w.v < kHeaderHeight+( dWin->linesPerPage * kLineHeight ) )
 	{
 		do
 		{
 			AutoScroll( dWin, w );
 
-			if( w.h >= kDataDrawPos && w.h < kDataDrawPos + ( kHexWidth<<4 ) )
+			if( w.h >= kDataDrawPos && w.h < kDataDrawPos + (kHexWidth * (kBytesPerLine + 1)) )
 			{
 
-				pos = (((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine) + (w.h - kDataDrawPos) / kHexWidth;
+				pos = (((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine) + (w.h - kDataDrawPos + (kHexWidth / 2)) / kHexWidth;
 				dWin->editMode = EM_Hex;
 			}
-			else if( w.h >= kTextDrawPos && w.h < kTextDrawPos + ( kCharWidth<<4 ) )
+			else if( w.h >= kTextDrawPos && w.h < kTextDrawPos + (kCharWidth * (kBytesPerLine + 1)) )
 			{
-				pos = (((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine) + (w.h -  kTextDrawPos) / kCharWidth;
+				pos = (((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine) + (w.h -  kTextDrawPos + (kCharWidth / 2)) / kCharWidth;
 				dWin->editMode = EM_Ascii;
 			}
 			else
@@ -1488,18 +1488,18 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 			pos += dWin->editOffset;
 			if( pos < dWin->editOffset )
 				pos = dWin->editOffset;
-			if( pos > dWin->editOffset + ( dWin->linesPerPage << 4 ) )
-				pos = dWin->editOffset + ( dWin->linesPerPage << 4 );
+			if( pos > dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) )
+				pos = dWin->editOffset + (dWin->linesPerPage * kBytesPerLine);
 			if( pos > dWin->fileSize )
 				pos = dWin->fileSize;
 			if( anchorPos == -1 )
 			{
 				if( er->modifiers & shiftKey )
-					anchorPos = ( pos < dWin->startSel )? dWin->endSel : dWin->startSel;
+					anchorPos = ( pos < dWin->startSel ) ? dWin->endSel : dWin->startSel;
 				else anchorPos = pos;
 			}
-			sPos = pos < anchorPos? pos : anchorPos;
-			ePos = pos > anchorPos? pos : anchorPos;
+			sPos = pos < anchorPos ? pos : anchorPos;
+			ePos = pos > anchorPos ? pos : anchorPos;
 			if( ePos > dWin->fileSize )
 				ePos = dWin->fileSize;
 
@@ -1509,9 +1509,9 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 				dWin->endSel = ePos;
 				UpdateOnscreen( theWin );
 			}
-
 	GetMouseLabel:
 			GetMouse( &w );
+
 		} while ( WaitMouseUp() );
 	}
 }
@@ -1539,10 +1539,8 @@ void InvertSelection( EditWindowPtr	dWin )
 	if( start < 0 )
 		start = 0;
 	end = ( dWin->endSel-1 ) - dWin->editOffset;
-	if( end > ( dWin->linesPerPage<<4 )-1 )
-		end = ( dWin->linesPerPage<<4 )-1;
-	
-	PenMode( patXor );
+	if( end > ( dWin->linesPerPage * kBytesPerLine )-1 )
+		end = ( dWin->linesPerPage * kBytesPerLine )-1;
 	
 	startX = COLUMN( start );
 	endX = COLUMN( end );
@@ -1551,11 +1549,11 @@ void InvertSelection( EditWindowPtr	dWin )
 	{
 		if( LINENUM( start ) < LINENUM( end ) )
 		{
-			// Invert Hex
-			r.top = kHeaderHeight+LINENUM( start ) *kLineHeight;
+			// Outline Hex
+			r.top = kHeaderHeight + LINENUM( start ) * kLineHeight;
 			r.bottom = r.top+kLineHeight;
-			r.left = kDataDrawPos + HEXPOS( startX ) - 2;
-			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 2;
+			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
 
 			MoveTo( kDataDrawPos - 3, r.bottom );
 
@@ -1587,8 +1585,8 @@ void InvertSelection( EditWindowPtr	dWin )
 
 			if( LINENUM( start ) < LINENUM( end ) - 1 )
 			{
-				r.top = kHeaderHeight+LINENUM( start ) *kLineHeight+kLineHeight;
-				r.bottom = kHeaderHeight+LINENUM( end ) *kLineHeight;
+				r.top = kHeaderHeight + LINENUM( start ) * kLineHeight + kLineHeight;
+				r.bottom = kHeaderHeight + LINENUM( end ) * kLineHeight;
 				r.left = kDataDrawPos - 3;
 				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
 				MoveTo( r.left, r.top );
@@ -1603,7 +1601,7 @@ void InvertSelection( EditWindowPtr	dWin )
 				MoveTo( r.right, r.top );
 				LineTo( r.right, r.bottom );
 			}
-			r.top = kHeaderHeight  +LINENUM( end ) * kLineHeight;
+			r.top = kHeaderHeight + LINENUM( end ) * kLineHeight;
 			r.bottom = r.top + kLineHeight;
 			r.left = kDataDrawPos - 3;
 			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
@@ -1633,10 +1631,10 @@ void InvertSelection( EditWindowPtr	dWin )
 		}
 		else
 		{
-			r.top = kHeaderHeight+LINENUM( start ) *kLineHeight;
+			r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
 			r.bottom = r.top+kLineHeight;
-			r.left = kDataDrawPos + +HEXPOS( startX )-3;
-			r.right = kDataDrawPos + HEXPOS( endX )+kHexWidth-3;
+			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom );
 			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
@@ -1678,16 +1676,13 @@ void InvertSelection( EditWindowPtr	dWin )
 	
 				// Invert Hex
 				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
-				r.bottom = r.top+kLineHeight;
+				r.bottom = r.top + kLineHeight;
 				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
 				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-	
-	HiliteColor( &invertColor );
 				InvertRect( &r );
-	
-	
+
 				// Outline Box around Ascii
-				r.left = kTextDrawPos + CHARPOS( startX )-1;
+				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
 				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
 				
 				MoveTo( kTextDrawPos, r.bottom );
@@ -1740,7 +1735,7 @@ void InvertSelection( EditWindowPtr	dWin )
 			{
 				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
 				r.bottom = r.top+kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX )-3;
+				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
 				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 
 				InvertRect( &r );
@@ -1763,18 +1758,15 @@ void InvertSelection( EditWindowPtr	dWin )
 				}
 			}
 		}
-		else
+		else	// Ascii Mode!!
 		{
-			// Ascii Mode!!
-			// 
 			if( LINENUM( start ) < LINENUM( end ) )
 			{
-	
-				// Invert Hex
-				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
-				r.bottom = r.top+kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX )-3;
-				r.right = kDataDrawPos + HEXPOS( kBytesPerLine )-3;
+				// Outline Hex
+				r.top = kHeaderHeight + LINENUM( start ) * kLineHeight;
+				r.bottom = r.top + kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
 	
 				MoveTo( kDataDrawPos - 3, r.bottom );
 				LineTo( r.left, r.bottom );
@@ -1787,28 +1779,27 @@ void InvertSelection( EditWindowPtr	dWin )
 					MoveTo( r.right, r.top );
 				LineTo( r.right, r.bottom );
 	
-				// Outline Box around Ascii
-				r.left = kTextDrawPos + CHARPOS( startX )-1;
-				r.right = kTextDrawPos + CHARPOS( kBytesPerLine )-1;
-				
+				// Invert Ascii
+				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
+				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
 				InvertRect( &r );
 	
 				if( LINENUM( start ) < LINENUM( end )-1 )
 				{
-					r.top = kHeaderHeight+LINENUM( start ) * kLineHeight + kLineHeight;
-					r.bottom = kHeaderHeight+LINENUM( end ) * kLineHeight;
+					r.top = kHeaderHeight + LINENUM( start ) * kLineHeight + kLineHeight;
+					r.bottom = kHeaderHeight + LINENUM( end ) * kLineHeight;
 					r.left = kDataDrawPos - 3;
-					r.right = kDataDrawPos + HEXPOS( kBytesPerLine )-3;
+					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
 					MoveTo( r.left, r.top );
 					LineTo( r.left, r.bottom );
 					MoveTo( r.right, r.top );
 					LineTo( r.right, r.bottom );
 	
 					r.left = kTextDrawPos - 1;
-					r.right = kTextDrawPos + CHARPOS( kBytesPerLine )-1;
+					r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
 					InvertRect( &r );
 				}
-				r.top = kHeaderHeight+LINENUM( end ) * kLineHeight;
+				r.top = kHeaderHeight + LINENUM( end ) * kLineHeight;
 				r.bottom = r.top+kLineHeight;
 				r.left = kDataDrawPos - 3;
 				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
@@ -1831,7 +1822,7 @@ void InvertSelection( EditWindowPtr	dWin )
 			{
 				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
 				r.bottom = r.top+kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX )-3;
+				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
 				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
@@ -1847,13 +1838,12 @@ void InvertSelection( EditWindowPtr	dWin )
 					LineTo( r.left, r.top );
 				}
 	
-				r.left = kTextDrawPos + CHARPOS( startX )-1;
-				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
+				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;
 				InvertRect( &r );
 			}
 		}
 	}
-	PenMode( patCopy );
 }
 
 /*** PRINT WINDOW ***/
@@ -2214,7 +2204,7 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 				{
 					--dWin->startSel;
 					DeleteSelection( dWin );
-					hexVal = hexVal | ( dWin->lastNybble << 4 );
+					hexVal = hexVal | ( dWin->lastNybble * kBytesPerLine );
 					InsertCharacter( dWin, hexVal );
 					dWin->loByteFlag = false;
 				}
@@ -2252,7 +2242,7 @@ void CursorOn( WindowRef theWin )
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	long			start;
 
-	if( !g.cursorFlag && dWin->startSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + ( dWin->linesPerPage << 4 ) ) 
+	if( !g.cursorFlag && dWin->startSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + ( dWin->linesPerPage * kBytesPerLine ) ) 
 	{
 		g.cursorFlag = true;
 		SetPortWindowPort( theWin );
