@@ -178,8 +178,10 @@ enum ErrorIDs		{ errMemory = 1, errSeek, errRead, errSetFPos, errWrite, errPaste
 					};
 
 enum ChunkTypes		{ CT_Original, CT_Work, CT_Unwritten };
-enum ForkType 		{ FT_Data, FT_Resource };
-enum ForkModes		{ FM_Data, FM_Rsrc, FM_Smart };
+enum ForkType 		{ FT_Data = 1, FT_Resource };
+enum ForkModes		{ FM_Data = 1, FM_Rsrc, FM_Smart };
+enum Headers		{ HD_Decimal = FT_Resource + 1, HD_Hex, HD_Footer };
+enum Filenames		{ FN_PrefsFolder = 1, FN_PrefsFile, FN_Untitled, FN_DATA, FN_RSRC };
 enum AsciiModes		{ AM_Lo, AM_Hi };
 enum EditMode 		{ EM_Hex, EM_Decimal, EM_Ascii };
 enum EditOperation	{ EO_Undo = 1, EO_Redo, EO_Typing, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete };

@@ -329,7 +329,8 @@ void NewEditWindow( void )
 		ErrorAlert( ES_Caution, errFindFolder, error );
 		return;
 	}
-	BlockMove( "\pUntitledw", workSpec.name, 10 );
+	GetIndString( workSpec.name, strFiles, FN_Untitled );
+//LR: 1.66	BlockMove( "\pUntitledw", workSpec.name, 10 );
 	EnsureNameIsUnique( &workSpec );
 	HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
 	if( error != noErr )
@@ -352,7 +353,7 @@ void NewEditWindow( void )
 	dWin->creator = kAppCreator;
 	dWin->creationDate = 0L;
 
-	SetupNewEditWindow( dWin, "\pUntitled" );	// LR: 1.5 -make mashortenence easier!
+	SetupNewEditWindow( dWin, workSpec.name );	//LR 1.66 "\pUntitled" );	// LR: 1.5 -make mashortenence easier!
 
 	dWin->firstChunk = NewChunk( 0L, 0L, 0L, CT_Unwritten );
 	dWin->curChunk = dWin->firstChunk;
@@ -483,6 +484,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	Point				where={-1, -1};
 	HParamBlockRec		pb;
 	FSSpec				workSpec;
+	Str31				tempStr;
 // LR: 1.5 	Rect		r, offRect;
 	
 	// Get the Template & Create the Window, it is set up in the resource fork
@@ -522,7 +524,8 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 		if( error == fnfErr )
 		{
 			if( !showerr ) return error;
-			ParamText( fsSpec->name, "\pDATA", NULL, NULL );
+			GetIndString( tempStr, strFiles, FN_DATA );
+			ParamText( fsSpec->name, tempStr, NULL, NULL );
 			if( CautionAlert( alertNoFork, NULL ) != 2 )
 				return error;
 
@@ -555,7 +558,8 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 			if( !showerr )
 				return error;
 
-			ParamText( fsSpec->name, "\pRSRC", NULL, NULL );
+			GetIndString( tempStr, strFiles, FN_RSRC );
+			ParamText( fsSpec->name, tempStr, NULL, NULL );
 			if( CautionAlert( alertNoFork, NULL ) != 2 )
 				return error;
 
@@ -812,7 +816,7 @@ OSStatus GetColorInfo( EditWindowPtr dWin )
 /*** DRAW HEADER ***/
 void DrawHeader( EditWindowPtr dWin, Rect *r )
 {
-	char str[256];
+	char str[256], str2[31];
 
 	GetColorInfo( dWin );	// LR: v1.6.5 ensure that updates are valid!
 
@@ -854,9 +858,11 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 						%d	identifies as a number (decimal)
 						%X	identifies as a number (hexadecimal)		*/
 	
-	GetIndString( (StringPtr) str, strHeader, prefs.decimalAddr? 1:2 );
+	GetIndString( (StringPtr) str, strHeader, prefs.decimalAddr? HD_Decimal : HD_Hex );
 	CopyPascalStringToC( (StringPtr) str, str );
-	sprintf( (char *) g.buffer, str, dWin->fileSize, &dWin->fileType, &dWin->creator, (dWin->fork == FT_Data? "data" : "rsrc"), dWin->startSel, dWin->endSel );
+	GetIndString( (StringPtr) str2, strHeader, dWin->fork );
+	CopyPascalStringToC( (StringPtr) str2, str2 );
+	sprintf( (char *) g.buffer, str, dWin->fileSize, &dWin->fileType, &dWin->creator, str2, dWin->startSel, dWin->endSel );
 	MoveTo( 5, r->top + HeaderHeight - DescendHeight - 5 );
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 	
@@ -873,7 +879,7 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 //	only used when printing
 	unsigned long	tim;
 	DateTimeRec		dat;
-	Str31			fileName;
+	Str31			fileName, fmtStr;
 
 	TextFont( fontID );
 	TextSize( 9 );
@@ -892,7 +898,9 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 
 	GetWTitle( dWin->oWin.theWin, fileName );
-	sprintf( (char *) g.buffer, "File: %.*s", fileName[0], &fileName[1] );
+	GetIndString( fmtStr, strHeader, HD_Footer );
+	CopyPascalStringToC( fmtStr, (char *)fmtStr );
+	sprintf( (char *) g.buffer, "%s: %.*s", (char *)fmtStr, (int)fileName[0], (char *)&fileName[1] );
 	MoveTo( ( r->left+r->right )/2 - TextWidth( g.buffer, 0, strlen( (char *) g.buffer ) )/2, r->top+FooterHeight-DescendHeight-2 );
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 	
@@ -2016,11 +2024,12 @@ ErrorExit:
 
 /*** ENSURE NAME IS UNIQUE ***/	
 // LR: complete re-write as this function used to create bogus names and overwrite memory
+// LR: 1.66 -- another rewrite, to create more "readable" names
 void EnsureNameIsUnique( FSSpec *tSpec )
 {
 	OSStatus err;
 	FInfo fInfo;
-	short i = tSpec->name[0];
+	int i = tSpec->name[0], num = 1;
 
 	// Weird compiler bug, having the OS call in the while loop can caues it to fail w/o error
 	do
@@ -2028,11 +2037,17 @@ void EnsureNameIsUnique( FSSpec *tSpec )
 		err = HGetFInfo( tSpec->vRefNum, tSpec->parID, tSpec->name, &fInfo );
 		if( err != fnfErr )
 		{
-			if( tSpec->name[0] > 31 )
-				tSpec->name[0] = 31;
+			Str31 numstr;
 
-			tSpec->name[i] = MyRandom( 'z' - 'A' ) + 'A';
-			i--;
+			NumToString( num++, numstr );	// get string equiv
+
+			if( i > 30 - numstr[0] )
+				i = 30 - numstr[0];		// don't make too long of a name
+
+			tSpec->name[i + 1] = ' ';
+			BlockMoveData( numstr + 1, &tSpec->name[i + 2], numstr[0] );
+
+			tSpec->name[0] = i + 1 + numstr[0];
 		}
 	}while( err != fnfErr && i );
 }
