@@ -31,25 +31,35 @@
 #include "AboutBox.h"
 #include "Utility.h"
 
-static TEHandle	hTE;
-static short endText;
-static long long prevTime;
+#if !TARGET_CPU_PPC
+	static TEHandle	hTE;
+	static short endText;
+	static long long prevTime;
 
-//LR 1.76 -- rewrite entire text scroll routine to do speed based on pixels per second!
-#define SCROLLPIXELSPERSECOND 10.0	// NOTE: good to keep in even ticks for update cleanness
+	//LR 1.76 -- rewrite entire text scroll routine to do speed based on pixels per second!
+	#define SCROLLPIXELSPERSECOND 10.0	// NOTE: good to keep in even ticks for update cleanness
+#endif
+
+#define itemFirstURL 6	// all the rest must follow WITHOUT BREAKS!
 
 //LR 1.73 -- make code more readable
 #ifdef __MC68K__
 	#define PLATFORM_STRING "\p68K"
 #elif TARGET_API_MAC_CARBON
 	#define PLATFORM_STRING	"\pCarbon"
-#else
+#elif TARGET_CPU_PPC
 	#define PLATFORM_STRING	"\pPPC"
+#else
+	#define PLATFORM_STRING "\pUKNOWN!"
 #endif
+
+/* --- new dialog method in carbon makes scrolling much better, esp. in X! */
+
+#if !TARGET_CPU_PPC
 
 /*** DRAW TE TEXT ***/
 //	draw the TE text in our user item
-pascal void DrawTEText( DialogPtr whichDialog, short itemNr )
+static pascal void DrawTEText( DialogPtr whichDialog, short itemNr )
 {
 	#pragma unused( whichDialog, itemNr )
 	TEUpdate( &(*hTE)->viewRect, hTE );
@@ -57,7 +67,7 @@ pascal void DrawTEText( DialogPtr whichDialog, short itemNr )
 
 /*** DIALOG FILTER ***/
 //	dialog filter for about box (used to scroll TE contents)
-pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
+static pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
 {
 	long long curTime;
 	double elapsed;
@@ -92,6 +102,9 @@ pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *i
 	return StdFilterProc( whichDialog, event, itemHit );
 }
 
+#endif //!TARGET_CPU_PPC
+
+
 /*** HEX EDIT ABOUT BOX ***/
 //	code stolen from Lane's ResCon sources
 void HexEditAboutBox( void )
@@ -101,17 +114,20 @@ void HexEditAboutBox( void )
 	DialogPtr	theDialog;
 	Boolean		done;
 	short		item;
-	Handle		text;
-	StScrpHandle style;
 	GrafPtr		savePort;
 	StringPtr	verStr;
-	Rect		bounds;
 	VersRecHndl	vr;
+
+#if !TARGET_CPU_PPC
+	Handle		text;
+	StScrpHandle style;
+	Rect		bounds;
+
 	ModalFilterUPP dlgFilterUPP = NewModalFilterUPP( DialogFilter );
 	UserItemUPP userItemUPP = NewUserItemUPP( DrawTEText );
+#endif
 
-	GetPort( &savePort );
-
+	/* First, get our version information to display in dialog */
 	if( ( vr = (VersRecHndl)GetResource( 'vers', 1 )) != NULL )
 	{
 		HLock( (Handle)vr );
@@ -125,9 +141,14 @@ void HexEditAboutBox( void )
 	if( vr )
 		ReleaseResource( (Handle)vr );	//LR 1.73 -- just to be safe
 
+	/* Create the dialog */
+	GetPort( &savePort );
+
 	theDialog = GetNewDialog( dlgAbout, NULL, kFirstWindowOfClass );
 	SetPortDialogPort( theDialog );
 
+#if !TARGET_CPU_PPC
+	/* Get the text to display */
 	GetRect( theDialog, TEITEM, &bounds );
 	hTE = TEStyleNew( &bounds, &bounds );
 	TEScroll( 0, (*hTE)->viewRect.bottom - (*hTE)->viewRect.top, hTE );
@@ -147,6 +168,8 @@ void HexEditAboutBox( void )
 	SetDraw( theDialog, TEITEM, (Handle) userItemUPP );
 
 	Microseconds( (UnsignedWide *)&prevTime );
+#endif //!TARGET_CPU_PPC
+
 	done = false;
 
 	SetDialogDefaultItem( theDialog, ok );
@@ -154,7 +177,11 @@ void HexEditAboutBox( void )
 
 	InitCursor();
 
+#if TARGET_CPU_PPC
+	ModalDialog( NULL, &item );
+#else
 	ModalDialog( dlgFilterUPP, &item );
+#endif
 
 	// LR: 1.66 check for a URL item and launch if so
 #ifndef __MC68K__
@@ -166,10 +193,13 @@ void HexEditAboutBox( void )
 	}
 #endif
 
+#if !TARGET_CPU_PPC
 	TEDispose( hTE );
-	DisposeDialog( theDialog );
 	DisposeModalFilterUPP( dlgFilterUPP );
 	DisposeUserItemUPP( userItemUPP );
+#endif //!TARGET_CPU_PPC
+
+	DisposeDialog( theDialog );
 
 	SetPort( savePort );
 }

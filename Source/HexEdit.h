@@ -137,8 +137,8 @@
 
 // LR: 1.6.5 -- better ID defs, and include all references
 typedef enum { alertSave = 10000, alertError, alertNoFork, alertRevert  }AlertIDs;
-typedef enum { dlgSearch = 128, dlgGoto, dlgAbout, dlgCompare, dlgComparePref, dlgGetFile = 1401 } DialogIDs;
-typedef enum { strUndo = 128, strPrint, strHeader, strError, strColor, strPrompt, strFiles, strURLs, strFont } StringIDs;
+typedef enum { dlgSearch = 128, dlgGoto, dlgCompare, dlgComparePref, dlgAbout = 200, dlgGetFile = 1401 } DialogIDs;
+typedef enum { strUndo = 128, strPrint, strHeader, strError, strColor, strPrompt, strFiles, strFont, strURLs = 200 } StringIDs;
 
 typedef enum { errMemory = 1, errSeek, errRead, errSetFPos, errWrite, errPaste, errFindFolder,
 						errCreate, errOpen, errFileInfo, errPrintRange, errSetFileInfo, errBackup,
