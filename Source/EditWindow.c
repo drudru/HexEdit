@@ -2217,8 +2217,6 @@ doend:
 
 		case kClearCharCode:		//LR 180 -- clearing an area is now a seperate command
 			{
-				long start;
-
 				if( dWin->endSel == dWin->startSel )	//LR 190 -- if no selection, clear char in front of cursor
 				{
 					if( dWin->endSel < dWin->fileSize )
@@ -2228,28 +2226,9 @@ doend:
 					}
 				}
 doclear:
-				if( dWin->endSel > dWin->startSel )	// can only clear something if it's selected
-				{
-					// Create a new chunk which will be all zero by default
-					EditChunk **tc = NewChunk( dWin->endSel - dWin->startSel, 0, 0, CT_Unwritten );
-					if( !tc )
-						ErrorAlert( ES_Caution, errMemory );
-					else
-					{
-						(*tc)->lastCtr = 1;	// external chunk
-
-						start = dWin->startSel;
-
-						// now, remember for undo and past this chunk over existing space, then free the memory used
-						RememberOperation( dWin, EO_Paste, &gUndo );
-						PasteOperation( dWin, tc );
-						DisposeChunk( dWin, tc );
-						dWin->startSel = dWin->endSel;
-						ScrollToSelection( dWin, dWin->startSel, false );
-					}
-				}
-				else
-					SysBeep(0);		// nothing to clear, signal it!
+				ClearSelection( dWin );
+				dWin->startSel = dWin->endSel;
+				ScrollToSelection( dWin, dWin->startSel, false );
 			}
 			break;
 
@@ -2288,29 +2267,29 @@ doclear:
 			}
 			else if( dWin->endSel > dWin->startSel )
 			{
-				ClearSelection( dWin );
+				DeleteSelection( dWin );
 			}
 			else if( dWin->startSel > 0L )
 			{
 				ObscureCursor();
 				--dWin->startSel;
-				ClearSelection( dWin );
+				DeleteSelection( dWin );
 			}
 			else
 				SysBeep(0);
 			break;
 
 		case kDeleteCharCode:	// forward delete
-			if( gPrefs.overwrite && gPrefs.nonDestructive )	//LR 1.90 -- bad form to use goto, but ...
+			if( gPrefs.overwrite && gPrefs.nonDestructive )	//LR 190 -- bad form to use goto, but ...
 				goto ndbad;
 
 			if( !dWin->endSel > dWin->startSel )
-				ClearSelection( dWin );
+				DeleteSelection( dWin );
 			else if( dWin->startSel > 0L )
 			{
 				ObscureCursor();
 				++dWin->endSel;
-				ClearSelection( dWin );
+				DeleteSelection( dWin );
 			}
 			else
 ndbad:
@@ -2329,11 +2308,11 @@ ndbad:
 					dWin->startSel != dWin->lastTypePos) )
 					RememberOperation( dWin, EO_Typing, &gUndo );
 				if( dWin->endSel > dWin->startSel )
-					DeleteSelection( dWin );
+					RemoveSelection( dWin );
 				if( gPrefs.overwrite && dWin->startSel < dWin->fileSize )
 				{
 					++dWin->endSel;
-					DeleteSelection( dWin );
+					RemoveSelection( dWin );
 				}
 				InsertCharacter( dWin, charCode );
 				dWin->lastTypePos = dWin->startSel;
@@ -2361,19 +2340,19 @@ ndbad:
 					RememberOperation( dWin, EO_Typing, &gUndo );
 				}
 				if( dWin->endSel > dWin->startSel )
-					DeleteSelection( dWin );
+					RemoveSelection( dWin );
 
 				if( dWin->loByteFlag )
 				{
 					--dWin->startSel;
-					DeleteSelection( dWin );
+					RemoveSelection( dWin );
 					hexVal = hexVal | ( dWin->lastNybble * kBytesPerLine );
 					InsertCharacter( dWin, hexVal );
 					dWin->loByteFlag = false;
 				}
 				else
 				{
-					//LR 1.90 -- fix overwrite stopping 1 char short and inserting chars past eof
+					//LR 190 -- fix overwrite stopping 1 char short and inserting chars past eof
 					if( gPrefs.overwrite && dWin->startSel >= dWin->fileSize )
 					{
 						SysBeep( 1 );		// overwrite can't insert chars!
@@ -2384,7 +2363,7 @@ ndbad:
 						if( gPrefs.overwrite )	// we know it's before eof due to previous check
 						{
 							++dWin->endSel;
-							DeleteSelection( dWin );	// for overwrite, we delete current char and then insert new one ;)
+							RemoveSelection( dWin );	// for overwrite, we delete current char and then insert new one ;)
 						}
 						InsertCharacter( dWin, hexVal );
 						dWin->lastNybble = hexVal;

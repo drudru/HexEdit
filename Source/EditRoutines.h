@@ -60,6 +60,7 @@ void LoadChunk( EditWindowPtr dWin, EditChunk **cc );
 void UnloadLeastUsedChunk( EditWindowPtr dWin );
 void UnloadChunk( EditWindowPtr dWin, EditChunk	**cc, Boolean writeFlag );
 void RewriteAddressChain( EditChunk **fc );
+void RemoveSelection( EditWindowPtr dWin );
 void DeleteSelection( EditWindowPtr dWin );
 void InsertCharacter( EditWindowPtr dWin, short charCode );
 void ReleaseEditScrap( EditWindowPtr dWin, EditChunk ***scrap );
