@@ -205,8 +205,8 @@ typedef struct
 	Boolean		navAvailable;
 	Boolean		appearanceAvailable;
 	
-	// debugging prefs
-	Boolean		useAppleEvents;
+	// environment prefs
+//LR 1.72 unused	Boolean		useAppleEvents;
 	Boolean		useAppearance;
 	Boolean		useNavServices;
 	
