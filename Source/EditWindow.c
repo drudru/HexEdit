@@ -34,6 +34,7 @@
 #include "EditRoutines.h"
 #include "EditScrollbar.h"
 #include "HexSearch.h"
+#include "HexCompare.h"
 #include "Menus.h"
 #include "Prefs.h"
 #include "Utility.h"
@@ -41,8 +42,6 @@
 // Create a new main theWin using a 'WIND' template from the resource fork
 
 SInt16			CompareFlag = 0;
-WindowRef		CompWind1, 
-				CompWind2;
 
 HEColorTableHandle ctHdl = NULL;	// LR: global to file, for speed
 
@@ -564,11 +563,7 @@ void InitializeEditor( void )
 	WindowRef	newWin;
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
 	PScrapStuff			ScrapInfo;
-#endif
 
-#if !TARGET_API_MAC_CARBON	// LR: v1.6.5
-//	OSStatus anErr = ClearCurrentScrap();
-//#else
 	ScrapInfo = InfoScrap();
 	if( ScrapInfo->scrapState < 0 )
 		ZeroScrap();
@@ -595,7 +590,8 @@ void InitializeEditor( void )
 
 	//LR 1.72 -- more flexability in font usage, get from string and find width/height from actual data
 
-	newWin = GetNewCWindow( kSystem7Window, NULL, kLastWindowOfClass );					//LR 1.72 don't change system font!
+	newWin = GetNewCWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, NULL, kLastWindowOfClass );	//LR 1.72 don't change system font!
+	SelectWindow( newWin );
 	SetPortWindowPort( newWin );
 
 	GetIndString( str, strFont, 1 );
@@ -611,9 +607,7 @@ void InitializeEditor( void )
 
 	DisposeWindow( newWin );	// done w/temp window, get rid of it
 
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-// bug: carbon printing not written
-#else
+#if !TARGET_API_MAC_CARBON	// LR: v1.6
 	PrOpen();
 	g.HPrint = (THPrint) NewHandle( sizeof(TPrint) );
 	if( !g.HPrint )
@@ -622,7 +616,6 @@ void InitializeEditor( void )
 	PrintDefault( g.HPrint );
 	PrClose();
 #endif
-// LR:	LoadPreferences();
 }
 
 /*** CLEANUP EDITOR ***/
@@ -1095,7 +1088,13 @@ Boolean	CloseEditWindow( WindowRef theWin )
 			n = i+1;
 		}
 	}
-	
+
+	// 1.73 LR :if a compare window, clear ptr so compare routine can exit!
+	if( theWin == CompWind1 )
+		CompWind1 = NULL;
+	if( theWin == CompWind2 )
+		CompWind2 = NULL;
+
 	((ObjectWindowPtr)dWin)->Dispose( theWin );
 
 	// LR: v1.7 -- if no edit window available, close find windows
@@ -2581,7 +2580,7 @@ void SaveContents( WindowRef theWin )
 			}
 			else	tSpec.name[31] ^= 0x10;
 		}
-		_ensureNameIsUnique( &tSpec );
+//1.73 -- delete temp files!		_ensureNameIsUnique( &tSpec );
 
 		HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
 		error = HCreate( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->creator, dWin->fileType );
@@ -2614,9 +2613,9 @@ void SaveContents( WindowRef theWin )
 				return;
 			}
 		}
-		// Preserve other fork if it exists
+		// Preserve other fork if it exists (1.73 can't do !fork because fork #s are now 1 & 2!)
 		if( dWin->refNum )
-			if( CopyFork( &dWin->fsSpec, &tSpec, !dWin->fork ) != noErr )
+			if( CopyFork( &dWin->fsSpec, &tSpec, (dWin->fork == FT_Data) ? FT_Resource : FT_Data ) != noErr )
 				return;
 
 		// Open the temp file
@@ -2651,8 +2650,13 @@ void SaveContents( WindowRef theWin )
 				// !! Error Message - write error
 				FSClose( tRefNum );
 				if( error == dskFulErr )
-					goto DiskFull;
-				ErrorAlert( ES_Caution, errWrite, error );
+				{
+					ErrorAlert( ES_Stop, errDiskFull );
+					HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
+				}
+				else
+					ErrorAlert( ES_Caution, errWrite, error );
+
 				return;
 			}
 			cc = ( *cc ) ->next;
@@ -2745,9 +2749,6 @@ void SaveContents( WindowRef theWin )
 		dWin->dirtyFlag = false;
 	}
 	return;
-DiskFull:
-	ErrorAlert( ES_Caution, errDiskFull );
-	HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
 }
 
 /*** SAVE AS CONTENTS ***/
