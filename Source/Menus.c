@@ -223,13 +223,8 @@ OSStatus AdjustMenus( void )
 	theWin = FrontWindow();
 	if( theWin )
 	{
-	#if TARGET_API_MAC_CARBON
 		isGotoWin = (g.gotoWin && theWin == GetDialogWindow( g.gotoWin ));		//LR: 1.7 - don't get window info on NULL!
 		isFindWin = (g.searchWin && theWin == GetDialogWindow( g.searchWin ));
-	#else
-		isGotoWin = (theWin == g.gotoWin);		//LR: 1.7 - no need here, because theWin != NULL && no function call!
-		isFindWin = (theWin == g.searchWin);
-	#endif
 
 		windowKind = GetWindowKind( theWin );
 		isDA = ( windowKind < 0 );
@@ -461,11 +456,7 @@ OSStatus HandleMenu( long mSelect )
 				CloseEditWindow( frontWindow );
 			else if( dlgRef )
 			{
-#if TARGET_API_MAC_CARBON
 				HideWindow( GetDialogWindow( dlgRef ) );
-#else
-				HideWindow( dlgRef );
-#endif
 			}
 			break;
 
@@ -494,8 +485,8 @@ OSStatus HandleMenu( long mSelect )
 	case kEditMenu:
 #if !TARGET_API_MAC_CARBON
 		if( !SystemEdit( menuItem -1 ) )
-		{
 #endif
+		{
 			if( dWin ) switch( menuItem ) 
 			{
 				case EM_Undo:
@@ -544,10 +535,7 @@ OSStatus HandleMenu( long mSelect )
 				case EM_SelectAll:
 					break;
 			}
-
-#if !TARGET_API_MAC_CARBON
 		}
-#endif
 		break;
 
 	case kFindMenu:
