@@ -39,6 +39,8 @@
 #include "AboutBox.h"
 #include "Utility.h"
 
+static _cmCheckedItem = 0;
+
 // Menu Handles
 static MenuRef appleMenu, fileMenu, editMenu, findMenu, optionsMenu, colorMenu, windowMenu;
 
@@ -342,8 +344,11 @@ OSStatus AdjustMenus( void )
 	GetIndString( menuStr, strColor, (gPrefs.useColor) ? 2 : 1 );
 	SetMenuItemText( colorMenu, CM_UseColor, menuStr );
 
-	//LR 181 -- set menu item checkmark
-	CheckMenuItem( colorMenu, isObjectWin ? dWin->csMenuID : gPrefs.csMenuID, true );
+	//LR 181 -- show the current window color (or default if no windows)
+	if( _cmCheckedItem )
+		CheckMenuItem( colorMenu, _cmCheckedItem, false );
+	_cmCheckedItem = isObjectWin ? dWin->csMenuID : gPrefs.csMenuID;
+	CheckMenuItem( colorMenu, _cmCheckedItem, true );
 
 	selection = gPrefs.useColor && isObjectWin && dWin->csResID > 0;
 	i = CountMenuItems( colorMenu );
@@ -660,30 +665,34 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 		{
 			short colorResID = GetColorMenuResID( menuItem );
 
-			CheckMenuItem( colorMenu, gPrefs.csMenuID, false );
+			if( _cmCheckedItem )
+				CheckMenuItem( colorMenu, _cmCheckedItem, false );
 
 			if( (modifiers & optionKey) )	// option down == do only front window!
 			{
 				if( GetWindowKind( dWin->oWin.theWin ) == kHexEditWindowTag )
+				{
 					dWin->csResID = colorResID;
+					dWin->csMenuID = menuItem;	//LR 181 -- for menu tagging
+				}
 			}
 			else	//LR 180 -- default is to change color of ALL windows!
 			{
 				EditWindowPtr eWin = FindFirstEditWindow();
 
-				gPrefs.csResID = colorResID;	//LR 180 -- save prefs when changing all
-				gPrefs.csMenuID = menuItem;
-
 				while( eWin )
 				{
 					if( GetWindowKind( eWin->oWin.theWin ) == kHexEditWindowTag )
 					{
-						eWin->csResID = gPrefs.csResID;
-						eWin->csMenuID = gPrefs.csMenuID;	//Lr 181 -- for menu tagging
+						eWin->csResID = colorResID;
+						eWin->csMenuID = menuItem;	//LR 181 -- for menu tagging
 					}
 
 					eWin = FindNextEditWindow( eWin );
 				}
+
+				gPrefs.csResID = colorResID;	//LR 180 -- save prefs when changing all
+				gPrefs.csMenuID = menuItem;
 			}
 		}
 		UpdateEditWindows();
