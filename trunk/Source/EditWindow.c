@@ -1196,15 +1196,15 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 
 	addr = sAddr - (sAddr % kBytesPerLine);
 
-	g.buffer[0] = g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kStringHexPos + kBodyStrLen] = ' ';
+	g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kStringHexPos + kBodyStrLen] = ' ';
 
 	// draw each line of data
 	for( y = r->top + (kLineHeight - 2), j = 0; y < r->bottom && addr < eAddr; y += kLineHeight, j++ )
 	{
 		if( prefs.decimalAddr )
-			sprintf( (char *)&g.buffer[1], "%7ld:", addr );
+			sprintf( (char *)&g.buffer[0], "%8ld:", addr );
 		else
-			sprintf( (char *)&g.buffer[1], " %06lX:", addr );
+			sprintf( (char *)&g.buffer[0], " %07lX:", addr );
 
 		// draw the address (not one big string due to different coloring!)
 		if( ctHdl )
@@ -1237,7 +1237,7 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 				g.buffer[hexPos++] = ch1 + (( ch1 < 10 )? '0' : ( 'A'-10 ));
 				g.buffer[hexPos++] = ch2 + (( ch2 < 10 )? '0' : ( 'A'-10 ));
 				g.buffer[hexPos++] = ' ';
-				g.buffer[asciiPos++] = ((ch >= 0x20 && ch <= g.highChar)? ch:'.');
+				g.buffer[asciiPos++] = (ch >= 0x20 && ch <= g.highChar && 0x7F != ch) ? ch : '.';	// LR: 1.7 - 0x7F doesn't draw ANYTHING! Ouch!
 			}
 			else
 			{
@@ -1251,7 +1251,7 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		// %% NOTE: Carsten says to move this into for loop (ie, draw each byte's data) to
 		//			prevent font smoothing from messing up the spacing
 		MoveTo( kDataDrawPos - kCharWidth, y );
-		DrawText( g.buffer, kStringHexPos - 1, kBodyStrLen + 2 );
+		DrawText( g.buffer, kStringHexPos - 1, kBodyStrLen + 3 );
 	}
 
 	// Draw left edging?
