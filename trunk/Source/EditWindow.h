@@ -79,7 +79,6 @@ GWorldPtr NewCOffScreen( short width, short height );
 void NewEditWindow( void );
 pascal short SourceDLOGHook( short item, DialogPtr theDialog );
 pascal Boolean SourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item );
-short AskEditWindow( void );
 OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr );
 void DisposeEditWindow( WindowRef theWin );
 Boolean	CloseEditWindow( WindowRef theWin );
@@ -108,5 +107,19 @@ void SaveAsContents( WindowRef theWin );
 void RevertContents( WindowRef theWin );
 void MyActivate( WindowRef theWin, Boolean active );
 void UpdateEditWindows( void );
+
+//short AskEditWindow( void ); BB: split into two functions and made into an inline
+short AskEditWindowNav( void );
+short AskEditWindowSF( void );
+
+// BB: now a wrapper for Nav or SF based functions
+#if !__POWERPC__		//LR 1.73 -- not available for 68K (won't even link!)
+inline short AskEditWindow( void ) {return AskEditWindowSF();}
+#elif !TARGET_API_MAC_CARBON
+inline short AskEditWindow( void )
+{if (g.useNavServices) {return AskEditWindowNav();} else {return AskEditWindowSF();}}
+#else
+inline short AskEditWindow( void ) {return AskEditWindowNav();}
+#endif
 
 #endif

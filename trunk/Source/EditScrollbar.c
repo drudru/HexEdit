@@ -161,10 +161,12 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 	if( limit > 0 )
 	{
 		SetControlMaximum( dWin->vScrollBar, h );
+
+#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
 		// BB: Set up proportional scroll bar if we can
         if (SetControlViewSize != (void*)kUnresolvedCFragSymbolAddress)
             SetControlViewSize( dWin->vScrollBar, h );
-
+#endif
 		SetControlValue( dWin->vScrollBar,
 						(short)(dWin->editOffset < 64000L ? ((dWin->editOffset * h) / limit) : (dWin->editOffset / (limit / h))) );
 	}

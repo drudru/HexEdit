@@ -19,6 +19,7 @@
  * Contributor(s):
  *		Nick Shanks (NS)
  *		Scott E. Lasley (SEL) 
+ *		Brian Bergstrand (BB) 
  */
 
 // 05/10/01 - GAB: MPW environment support
@@ -99,6 +100,12 @@ void main( void )	// LR: fix warnings
 
 	CleanupEditor();
 
+#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
+	// BB: Unload NavServices
+	if( g.useNavServices )
+		NavUnload();
+#endif
+
 // 05/10/01 - GAB: MPW environment support
 #if !defined(__MC68K__) && !defined(__SC__)
 	if( ICStop )
@@ -161,9 +168,14 @@ OSStatus InitGlobals( void )
 // 05/10/01 - GAB: MPW environment support
 #if !defined(__MC68K__) && !defined(__SC__)
 	g.navAvailable = (Boolean) NavServicesAvailable();
-	if( g.navAvailable )		g.useNavServices = true;
-	else						g.useNavServices = false;
-	if( g.useNavServices )		NavLoad();
+	// BB: check for Navlib version, older versions were very buggy 
+	g.useNavServices = ((g.navAvailable) && (NavLibraryVersion() >= 0x0110));
+
+	if( g.useNavServices )
+	{
+	  if ( NavLoad() != noErr ) // BB: make sure NavLoad returns noErr
+	    g.useNavServices = false;
+	}    
 
 	// Startup InternetConfig (should only be done once!)
 	if( ICStart )

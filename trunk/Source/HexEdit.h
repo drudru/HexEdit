@@ -19,6 +19,7 @@
  * Contributor(s):
  *		Nick Shanks (NS)
  *		Scott E. Lasley (SEL) 
+ *		Brian Bergstrand (BB)
  */
 
 
@@ -54,6 +55,9 @@
 #if !TARGET_API_MAC_CARBON
 	#if !defined(SetPortDialogPort)
 		#define SetPortDialogPort SetPort
+	#endif
+	#if !defined(GetDialogPort)
+		#define GetDialogPort( d ) d // BB: added (LR -- may already be defined, check!)
 	#endif
 	#define GetPortBounds( p, rp ) *rp = (p)->portRect
 	#define GetWindowPortBounds( w, rp ) *rp = (w)->portRect
