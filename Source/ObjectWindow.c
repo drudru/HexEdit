@@ -36,7 +36,7 @@ WindowRef InitObjectWindow( short resID, ObjectWindowPtr objectWindow, Boolean i
 
 	objectWindow->floating = false;
 	objectWindow->theWin = GetNewCWindow( resID, NULL, (WindowRef) -1 );
-	SetWindowKind( objectWindow->theWin, HexEditWindowID );			// new storage location (not in RefCon)
+	SetWindowKind( objectWindow->theWin, kHexEditWindowTag );			// new storage location (not in RefCon)
 	SetWRefCon( objectWindow->theWin, (long)objectWindow );	// new storage to stop "(ObjectWindowPtr) theWindowPtr"
 
 	objectWindow->Update = DefaultUpdate;

@@ -32,10 +32,10 @@ void SetupScrollBars( EditWindowPtr dWin )
 
 	GetWindowPortBounds( dWin->oWin.theWin, &r );
 
-	sRect.left = r.right - ( SBarSize - 1 );
-	sRect.top = r.top + HeaderHeight;	// NS: move to below header
+	sRect.left = r.right - ( kSBarSize - 1 );
+	sRect.top = r.top + kHeaderHeight;	// NS: move to below header
 	sRect.right = r.right + 1;
-	sRect.bottom = r.bottom	- GrowIconSize;
+	sRect.bottom = r.bottom	- kGrowIconSize;
  	dWin->vScrollBar = NewControl( dWin->oWin.theWin, &sRect, "\p", true, 0, 0, sRect.bottom - sRect.top, scrollBarProc, 1L );
 	AdjustScrollBars( dWin->oWin.theWin, 1 );
 }
@@ -46,37 +46,33 @@ void SetupScrollBars( EditWindowPtr dWin )
 /*** ADJUST SCROLL BARS ***/
 void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 {
-	short			w, h;
+	short			h;
 	GrafPtr			savePort;
 	long			limit;
-	Rect			winRect;
+	Rect			r;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 
-	GetWindowPortBounds( theWin, &winRect );
+	GetWindowPortBounds( theWin, &r );
 
 	GetPort( &savePort );
 	
+	h = (r.bottom - r.top) - (kGrowIconSize - 1) - (kHeaderHeight - 1);
+
 	if( resizeFlag )
 	{
 		// Adjust Lines Per Page
-		// LR: allow one more line ( clipped at bottom of theWin instead of always a full line in theWin )
-		dWin->linesPerPage = ( ( ( winRect.bottom - SBarSize ) - ( HeaderHeight + 1 ) - TopMargin - BotMargin ) / LineHeight );
+//LR: 1.7 -fix lpp calculation!		dWin->linesPerPage = ( ( ( r.bottom - kSBarSize ) - ( kHeaderHeight + 1 ) - TopMargin - BotMargin ) / kLineHeight );
+		dWin->linesPerPage = (((r.bottom - r.top) + (kLineHeight / 2) - (kHeaderHeight)) / kLineHeight);
 
 		// Move sliders to new position
 		// LR: per Shanks, control below theWin's header
-		MoveControl( dWin->vScrollBar, winRect.right - ( SBarSize - 1 ), winRect.top + ( HeaderHeight - 1 ) );	
+		MoveControl( dWin->vScrollBar, r.right - (kSBarSize - 1), r.top + ( kHeaderHeight - 1 ) );	
 
 		// Change their sizes to fit new theWin dimensions
-		w = SBarSize;
-		h = winRect.bottom - winRect.top - ( GrowIconSize - 1 ) - ( HeaderHeight - 1 );
-
-		SizeControl( dWin->vScrollBar, w, h );
-
-		// Reset their maximum values
-		SetControlMaximum( dWin->vScrollBar, h );
+		SizeControl( dWin->vScrollBar, kSBarSize, h );
 	}
 
-	// Reposition pashorting if you have resized or scrolled past the legal
+	// Reposition painting if you have resized or scrolled past the legal
 	// bounds	Note: this call will usually be followed by an update
 	limit = ( ( dWin->fileSize+15 ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
 	if( dWin->editOffset > limit )
@@ -85,17 +81,14 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 		dWin->editOffset = 0;
 
 	// Set the value of the sliders accordingly
-	// 
-// LR: why?	h = theWin->portRect.bottom - theWin->portRect.top - ( GrowIconSize - 1 ) - ( HeaderHeight - 1 );
 	if( limit > 0 )
 	{
-		h = winRect.bottom - winRect.top - ( GrowIconSize - 1 ) - ( HeaderHeight -1 );
-
 		SetControlMaximum( dWin->vScrollBar, h );
+
 		if( dWin->editOffset < 64000L )
-			SetControlValue( dWin->vScrollBar, (short) ( ( dWin->editOffset*h )/limit ) );
+			SetControlValue( dWin->vScrollBar, (short)((dWin->editOffset * h) / limit) );
 		else
-			SetControlValue( dWin->vScrollBar, (short) ( dWin->editOffset / ( limit/h ) ) );
+			SetControlValue( dWin->vScrollBar, (short)(dWin->editOffset / (limit / h)) );
 	}
 	else
 	{
@@ -125,15 +118,15 @@ pascal void MyScrollAction( ControlHandle theControl, short thePart )
 
 	GetWindowPortBounds( gp, &myRect );
 
-	myRect.right -= SBarSize-1;
-	myRect.bottom -= SBarSize-1;
+	myRect.right -= kSBarSize-1;
+	myRect.bottom -= kSBarSize-1;
 
-	pageWidth = ( gDWin->linesPerPage-1 ) * SBarSize;
+	pageWidth = (gDWin->linesPerPage - 1) * kBytesPerLine;
 
 	switch( thePart )
 	{
-		case kControlUpButtonPart:		newPos = curPos - SBarSize;		break;	// LR: -- UH compliant
-		case kControlDownButtonPart:	newPos = curPos + SBarSize;		break;
+		case kControlUpButtonPart:		newPos = curPos - kBytesPerLine;		break;	// LR: -- UH compliant
+		case kControlDownButtonPart:	newPos = curPos + kBytesPerLine;		break;
 		case kControlPageUpPart:		newPos = curPos - pageWidth;	break;
 		case kControlPageDownPart:		newPos = curPos + pageWidth;	break;
 	}
@@ -177,7 +170,7 @@ Boolean MyHandleControlClick( WindowRef window, Point mouseLoc )
 */
 
 	// Use default behavior for thumb, program will crash if you don't!!
-	if( controlPart == kControlIndicatorPart && !g.useAppearance )	scrollAction = 0L;
+	if( kControlIndicatorPart == controlPart && !g.useAppearance )	scrollAction = 0L;
 	else															scrollAction = trackActionUPP;	// LR: Universal Headers requirement fix
 
 	// Perform scrollbar tracking
@@ -189,11 +182,11 @@ Boolean MyHandleControlClick( WindowRef window, Point mouseLoc )
 		vPos = GetControlValue( dWin->vScrollBar );
 
 		GetWindowPortBounds( window, &winRect );
-		h = winRect.bottom - winRect.top - ( GrowIconSize - 1 ) - ( HeaderHeight - 1 );
+		h = winRect.bottom - winRect.top - ( kGrowIconSize - 1 ) - ( kHeaderHeight - 1 );
 
-		limit = ( ( dWin->fileSize+( SBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
+		limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage << 4);
 		if( vPos == h )
-			newPos = limit;	// LR: v1.6.5 LR already computed! ( ( dWin->fileSize+( SBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
+			newPos = limit;	// LR: v1.6.5 LR already computed! ( ( dWin->fileSize+( kSBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
 		else if( limit < 64000L )		// JAB 12/10 Prevent Overflow in Calcuation
 			newPos = ( vPos*limit )/h;
 		else
@@ -224,8 +217,8 @@ void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boole
 	}
 	if( centerFlag )
 	{
-		curAddr = pos - ( pos % 16 );
-		curAddr -= 16 * ( dWin->linesPerPage /2 - 1 );
+		curAddr = pos - ( pos % kBytesPerLine );
+		curAddr -= kBytesPerLine * ((dWin->linesPerPage / 2) - 1);
 		// No need to adjust for limits, will be done by scroll routine
 	}
 	else
@@ -235,13 +228,13 @@ void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boole
 		{
 			// Scroll Up
 			curAddr = pos;
-			curAddr -= ( curAddr % 16 );
+			curAddr -= ( curAddr % kBytesPerLine );
 		}
 		else
 		{
 			// Scroll Down
-			curAddr = pos - ( dWin->linesPerPage -1 ) * 16;
-			curAddr -= ( curAddr % 16 );
+			curAddr = pos - ( dWin->linesPerPage -1 ) * kBytesPerLine;
+			curAddr -= ( curAddr % kBytesPerLine );
 		}
 	}
 	HEditScrollToPosition( dWin, curAddr );
@@ -255,7 +248,7 @@ void HEditScrollToPosition( EditWindowPtr dWin, long newPos )
 	SetPortWindowPort( dWin->oWin.theWin );
 
 	// Constrain scrolling position to legal limits
-	limit = ( ( dWin->fileSize+( SBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
+	limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage << 4);
 	if( newPos > limit )
 		newPos = limit;
 	if( newPos < 0 )
@@ -281,10 +274,10 @@ void HEditScrollToPosition( EditWindowPtr dWin, long newPos )
 void AutoScroll( EditWindowPtr dWin, Point pos )
 {
 	short offset;
-	if( pos.v < ( HeaderHeight + 1 ) + TopMargin )
-		offset = -16;
-	else if( pos.v >= ( HeaderHeight + 1 ) + TopMargin + dWin->linesPerPage * LineHeight )
-		offset = 16;
+	if( pos.v < ( kHeaderHeight + 1 ) )
+		offset = -kBytesPerLine;
+	else if( pos.v >= ( kHeaderHeight + 1 ) + dWin->linesPerPage * kLineHeight )
+		offset = kBytesPerLine;
 	else
 		return;
 

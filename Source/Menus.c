@@ -123,14 +123,7 @@ static void _doPageSetupDialog(PMPageFormat* pageFormat)
 ------------------------------------------------------------------------------*/
 void PostPrintingErrors( OSStatus status )
 {
-	switch ( status )
-	{
-		case kPMNoDefaultPrinter:
-			ErrorAlert(ES_Caution, errDefaultPrinter);
-			break;
-		default:
-			ErrorAlert(ES_Caution, errGenericPrinting);
-	}
+	ErrorAlert(ES_Caution, status == kPMNoDefaultPrinter ? errDefaultPrinter : errGenericPrinting, "Error = %d", status );
 }
 
 #endif
@@ -169,7 +162,7 @@ OSStatus InitMenubar( void )
 	// set menu bar
 	Handle	menuBar;
 
-	menuBar = GetNewMBar( MenuBaseID );
+	menuBar = GetNewMBar( kMenuBaseID );
 	SetMenuBar( menuBar );
 
 	// get menu references
@@ -216,7 +209,7 @@ OSStatus AdjustMenus( void )
 
 		windowKind = GetWindowKind( theWin );
 		isDA = ( windowKind < 0 );
-		isObjectWin = GetWindowKind( theWin ) == HexEditWindowID;
+		isObjectWin = GetWindowKind( theWin ) == kHexEditWindowTag;
 		if( isObjectWin )
 		{
 			dWin = (EditWindowPtr)GetWRefCon( theWin );	//LR: 1.66 - don't set unless an edit window!
@@ -242,9 +235,9 @@ OSStatus AdjustMenus( void )
 
 		anErr = GetCurrentScrap( &scrapRef );
 		if( !anErr )
-			anErr = GetScrapFlavorFlags( scrapRef, kScrapFlavorTypeText, &flavorFlags );		// non-blocking check for scrap data
+			anErr = GetScrapFlavorFlags( scrapRef, kScrapFlavorTypeText, &flavorFlags );	// non-blocking check for scrap data
 		if( !anErr )
-			anErr = GetScrapFlavorSize( scrapRef, kScrapFlavorTypeText, &scrapSize );	// blocking call to get size
+			anErr = GetScrapFlavorSize( scrapRef, kScrapFlavorTypeText, &scrapSize );		// blocking call to get size
 #else
 		long offset;
 
@@ -294,6 +287,7 @@ OSStatus AdjustMenus( void )
 	CheckMenuItem( optionsMenu, OM_HiAscii, prefs.asciiMode );
 	CheckMenuItem( optionsMenu, OM_DecimalAddr, prefs.decimalAddr );
 	CheckMenuItem( optionsMenu, OM_Backups, prefs.backupFlag );
+	CheckMenuItem( optionsMenu, OM_WinSize, prefs.constrainSize );
 	CheckMenuItem( optionsMenu, OM_Overwrite, prefs.overwrite );
 	CheckMenuItem( optionsMenu, OM_VertBars, prefs.vertBars );
 
@@ -357,7 +351,7 @@ OSStatus HandleMenu( long mSelect )
 	frontWindow = FrontWindow();
 	if( frontWindow )
 	{
-		if( HexEditWindowID == GetWindowKind( frontWindow ) )
+		if( kHexEditWindowTag == GetWindowKind( frontWindow ) )
 			dWin = (EditWindowPtr) GetWRefCon( frontWindow );
 		else if( g.gotoWin == (DialogPtr)frontWindow || g.searchWin == (DialogPtr)frontWindow )
 			dlgRef = (DialogPtr)frontWindow;
@@ -579,6 +573,10 @@ OSStatus HandleMenu( long mSelect )
 				prefs.backupFlag = !prefs.backupFlag;
 				break;
 
+			case OM_WinSize:
+				prefs.constrainSize = !prefs.constrainSize;
+				break;
+
 			case OM_Overwrite:
 				prefs.overwrite = !prefs.overwrite;
 				break;
@@ -605,7 +603,7 @@ OSStatus HandleMenu( long mSelect )
 			prefs.csResID = GetColorMenuResID( menuItem );
 			prefs.csMenuID = menuItem;
 			
-			if( GetWindowKind( dWin->oWin.theWin ) == HexEditWindowID )
+			if( GetWindowKind( dWin->oWin.theWin ) == kHexEditWindowTag )
 				dWin->csResID = prefs.csResID;
 		}
 		UpdateEditWindows();
