@@ -111,6 +111,9 @@ Unformatted Copies - when checked copies of Hex data are made without any format
 
 Make Backups - If checked, when saving a file ("filename"), rename the original file to "filename~" before saving the new data using the original filename. If not checked, the original file is overwritten and can not be restored.
 
+
+Open File Dialog at launch - if checked HexEdit will present the Open File dialog when launched, unless a file is ready to be opened (ie, via dragging a file onto the HexEdit icon, etc.) or a compare files apple event caused HexEdit to launch. If unchecked the Open File dialog will not be presented (ie, will open with no window).
+
 Compare Options - Brings up a dialog that lets you choose how file compares are performed. You can choose the data size as well as if you want to display where files are similiar or where they differ.
 
 
