@@ -20,7 +20,7 @@ HexEdit can edit very large files (they don't need to fit into memory).  At it's
 
 Note that when HexEdit saves a file, it will (temporarily or permanetaly, depending on the "Create Backup" setting) need twice the disc space of the original file, plus a little extra for storing the changes you have made.
 
-Memory usage and Color Schemes: when using color schemes (Use Color is checked, and windows are in color) memory usage is MUCH higher! For instance, on a 1600x1280 screen at 16bit color depth you can only have 4 HexEdit windows open in the prefered 5MB partition! On the same system, you can have over 40 black and white windows open!
+Memory usage and Color Schemes: Before v1.8 color windows used lots of RAM. This is no longer true, so color is now the default, and in fact all windows are color now so you can switch back and forth between B&W and color w/o having to re-open windows.
 
 
 Opening and Saving Files
@@ -111,7 +111,7 @@ Compare Options - Brings up a dialog that lets you choose how file compares are 
 
 The Color Schemes Menu
 
-Use Color Schemes - If selected, then all of the schemes below this item will be selectable as well. In that case, windows will be created in color and you can change the color scheme used to draw windows. All windows are effected by a scheme change. Note: if a window is created with color, it takes 8-32 times as much memory! So, on a large screen this can be Megabytes! Therefore, if a window is created with color schemes off it is created in black and white mode, and can not be turned into color! You will need to close the window and re-open it to change a black and white window to color.
+Use Color Schemes - If selected, then all of the schemes below this item will be selectable as well. In that case, windows will be created in color and you can change the color scheme used to draw windows. All windows are effected by a scheme change. Note: You can now press Option while selecting a color to change just a single window's color. The default color HexEdit uses is only changed when you change the color of all windows (the default) as changing one window's color is considered a 'temp' selection.
 
 
 Program Notes
