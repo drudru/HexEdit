@@ -459,24 +459,18 @@ static void _setWindowTitle( EditWindowPtr dWin )
 	MacAppendMenu( GetMenuHandle(kWindowMenu), wintitle );
 }
 
-/*** SETUP NEW EDIT WINDOW ***/
-// LR: 1.7 - static, and remove title (always fsSpec->name)
+/*** SIZE A WINDOW APPR. TO SITUATION ***/
+//LR 175 -- seperated to allow calling from OpenWindow to handle compare requests on open windows
 
-static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
+static void _sizeWindow( WindowRef theWin )
 {
-	WindowRef theWin;
-	ObjectWindowPtr objectWindow;
-	short maxheight = g.maxHeight / 2 - 32;	//LR .72 -- simplify height settings
-	Rect r;
-
-	// NS 1.7.1; check for appearance and create appropriate window
-	theWin = InitObjectWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, (ObjectWindowPtr) dWin, false );
-	if( !theWin )
-		ErrorAlert( ES_Stop, errMemory );
+	EditWindowPtr dWin = (EditWindowPtr)GetWRefCon( theWin );
+	short maxheight = g.maxHeight / 2 - 96;
 
 	// LR:	Hack for comparing two files
 	if( CompareFlag == 1 )
 	{
+		MoveWindow( theWin, 14, 48, true );
 		CompWind1 = theWin;
 	}
 	else if( CompareFlag == 2 )
@@ -489,8 +483,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 
 	// Check for best window size
 	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
-		maxheight = (((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) * kLineHeight);	//LR 1.72 + kHeaderHeight;
-//LR 1.7		r.bottom = (kLineHeight * (((dWin->linesPerPage - 1) * kBytesPerLine) - dWin->fileSize)) / kLineHeight;
+		maxheight = (((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) * kLineHeight);
 
 	if( maxheight < (kLineHeight * 5) )
 		maxheight = (kLineHeight * 5);
@@ -499,6 +492,27 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	maxheight = ((maxheight / kLineHeight) * kLineHeight) + kHeaderHeight;
 
 	SizeWindow( theWin, kHexWindowWidth - 1, maxheight, true );
+
+	// Show the theWin
+	SelectWindow( theWin );
+	ShowWindow( theWin );
+
+	SetupScrollBars( dWin );
+}
+
+/*** SETUP NEW EDIT WINDOW ***/
+// LR: 1.7 - static, and remove title (always fsSpec->name)
+
+static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
+{
+	WindowRef theWin;
+	ObjectWindowPtr objectWindow;
+	Rect r;
+
+	// NS 1.7.1; check for appearance and create appropriate window
+	theWin = InitObjectWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, (ObjectWindowPtr) dWin, false );
+	if( !theWin )
+		ErrorAlert( ES_Stop, errMemory );
 
 	// LR: 1.7 set window title & get text for window menu
 	_setWindowTitle( dWin );
@@ -527,19 +541,18 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	if( !dWin->offscreen )
 			ErrorAlert( ES_Stop, errMemory );
 
-	// Show the theWin
-	ShowWindow( theWin );
-
-	SetupScrollBars( dWin );
+	_sizeWindow( theWin );
 
 	GetWindowPortBounds( theWin, &r );
 
 //LR: 1.7 -fix lpp calculation!	dWin->linesPerPage = ( r.bottom - TopMargin - BotMargin - ( kHeaderHeight-1 ) ) / kLineHeight + 1;
-	dWin->linesPerPage = (/*(r.bottom - r.top) + 3)*/maxheight - kHeaderHeight) / kLineHeight;
+
+/*LR 175 -- done in SetupScrollBars (this was causing bogus scrollbar values!)
+	dWin->linesPerPage = (maxheight - kHeaderHeight) / kLineHeight;
 	dWin->startSel = dWin->endSel = 0L;
 	dWin->editMode = EM_Hex;
 	dWin->lastTypePos = -1;	//LR 1.72 -- allow insertion before first char to get into undo buffer
-
+*/
 	//LR: 1.7 - what was this??? ((WStateData *) *((WindowPeek)theWin)->dataHandle)->stdState.left + kHexWindowWidth;
 
 	LocalToGlobal( (Point *)&r.top );
@@ -844,7 +857,14 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	Str31				tempStr;
 	long				fileEOF;	//LR 175
 // LR: 1.5 	Rect		r, offRect;
-	
+
+	//LR 175 -- try to find the file in an open window first, and use it if found
+	if( NULL != (dWin = LocateEditWindow( fsSpec, g.forkMode == FM_Smart ? -1 : g.forkMode )) )
+	{
+		_sizeWindow( dWin->oWin.theWin );
+		return( noErr );
+	}
+
 	// Get the Template & Create the Window, it is set up in the resource fork
 	// to not be initially visible 
 
@@ -1004,7 +1024,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 
 	dWin->fileType = pb.fileParam.ioFlFndrInfo.fdType;
 	dWin->creator = pb.fileParam.ioFlFndrInfo.fdCreator;
-	dWin->creationDate =	pb.fileParam.ioFlCrDat;
+	dWin->creationDate = pb.fileParam.ioFlCrDat;
 
 	dWin->fsSpec =
 	dWin->destSpec = *fsSpec;
@@ -1492,14 +1512,14 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		if( ctHdl )
 			RGBForeColor( &( *ctHdl )->headerLine );	// LR: v1.6.5 LR - was barText
 
-		MoveTo( CHARPOS(22) - (kCharWidth / 2), addrRect.top );
-		LineTo( CHARPOS(22) - (kCharWidth / 2), addrRect.bottom );
+		MoveTo( CHARPOS(22) - (kCharWidth / 2) - 1, addrRect.top );
+		LineTo( CHARPOS(22) - (kCharWidth / 2) - 1, addrRect.bottom );
 
 		MoveTo( CHARPOS(34) - (kCharWidth / 2) - 1, addrRect.top );
 		LineTo( CHARPOS(34) - (kCharWidth / 2) - 1, addrRect.bottom );
 
-		MoveTo( CHARPOS(46) - (kCharWidth / 2) - 2, addrRect.top );
-		LineTo( CHARPOS(46) - (kCharWidth / 2) - 2, addrRect.bottom );
+		MoveTo( CHARPOS(46) - (kCharWidth / 2) - 1, addrRect.top );
+		LineTo( CHARPOS(46) - (kCharWidth / 2) - 1, addrRect.bottom );
 	}
 
 	// LR: restore color
