@@ -1089,7 +1089,7 @@ Boolean	CloseEditWindow( WindowRef theWin )
 		}
 	}
 
-	// 1.73 LR :if a compare window, clear ptr so compare routine can exit!
+	//LR 1.73 :if a compare window, clear ptr so compare routine can exit!
 	if( theWin == CompWind1 )
 		CompWind1 = NULL;
 	if( theWin == CompWind2 )
@@ -2580,7 +2580,7 @@ void SaveContents( WindowRef theWin )
 			}
 			else	tSpec.name[31] ^= 0x10;
 		}
-//1.73 -- delete temp files!		_ensureNameIsUnique( &tSpec );
+//LR 1.73 -- delete temp files!		_ensureNameIsUnique( &tSpec );
 
 		HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
 		error = HCreate( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->creator, dWin->fileType );
@@ -2613,7 +2613,7 @@ void SaveContents( WindowRef theWin )
 				return;
 			}
 		}
-		// Preserve other fork if it exists (1.73 can't do !fork because fork #s are now 1 & 2!)
+		// Preserve other fork if it exists (LR 1.73 can't do !fork because fork #s are now 1 & 2!)
 		if( dWin->refNum )
 			if( CopyFork( &dWin->fsSpec, &tSpec, (dWin->fork == FT_Data) ? FT_Resource : FT_Data ) != noErr )
 				return;

@@ -229,7 +229,7 @@ void LoadChunk( EditWindowPtr dWin, EditChunk **cc )
 		if( ( error = SetFPos( refNum, fsFromStart, ( *cc )->filePos ) ) != noErr )
 			ErrorAlert( ES_Caution, errSeek, error );
 		count = ( *cc )->size;
-		if( count )	//1.73 LR :empty file is OK, don't bring up an error by trying to read nothing!
+		if( count )	//LR 1.73 :empty file is OK, don't bring up an error by trying to read nothing!
 		{
 			dWin->totLoaded += count;
 			if( ( error = FSRead( refNum, &count, *( *cc )->data ) ) != noErr )

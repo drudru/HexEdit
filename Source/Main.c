@@ -445,7 +445,11 @@ OSStatus DoEvent( EventRecord *theEvent )
 			if( active && g.searchDlg )	//LR 1.72 -- if activating, get text from search dialog
 			{
 				GetText( g.searchDlg, SearchTextItem, g.searchText );
-				StringToSearchBuffer( prefs.searchCase );
+				if( !StringToSearchBuffer( prefs.searchCase ) )
+				{
+					g.searchText[0] = g.searchBuffer[0] = 0;	//LR 1.73 -- on error, keep from repeating!
+					SetText( g.searchDlg, SearchTextItem, g.searchText );
+				}
 			}
 		}
 		break;

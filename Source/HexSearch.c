@@ -376,6 +376,13 @@ Boolean StringToSearchBuffer( Boolean matchCase )
 	short	val;
 	Boolean	loFlag;
 
+	//LR 1.73 :empty buffer is OK, just set dest and exit!
+	if( !g.searchText[0] )
+	{
+		g.searchBuffer[0] = 0;
+		return( true );
+	}
+
 	// Convert String to g.searchBuffer
 	if( prefs.searchMode == EM_Hex )
 	{
