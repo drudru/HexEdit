@@ -118,52 +118,35 @@ static void _ensureNameIsUnique( FSSpec *tSpec )
 /*** Set the window title (making sure it's good ***/	
 static void _setWindowTitle( EditWindowPtr dWin )
 {
-	Str255 wintitle;		// NOTE: static so we can pass back pointer (ie, it's not on stack!)
-
-	int i,j,l;
-
-	// LR: 1.66 make sure the name is good (for instance "icon/r" is bad!)
+	MenuRef			windowMenu;
+	Str255 wintitle;
+	
+	// ABR: 1.9.1 use unmodified filename for window title
+	int l;
+	
 	l = (int)dWin->fsSpec.name[0];
-
-	//LR 181 -- change first char if bad for menus
-	if( '(' == dWin->fsSpec.name[0] )
-		dWin->fsSpec.name[0] = '{';		// don't disable item
-
-	if( '<' == dWin->fsSpec.name[0] )
-		dWin->fsSpec.name[0] = '²';		// don't disable menu
-
-	if( '/' == dWin->fsSpec.name[0] )
-		dWin->fsSpec.name[0] = '|';		// don't create shortcut
-
-	if( '-' == dWin->fsSpec.name[0] )
-		dWin->fsSpec.name[0] = 'Ñ';		// don't create seperator line
-
-	if( ';' == dWin->fsSpec.name[0] )
-		dWin->fsSpec.name[0] = ':';		// not sure what it does, but ; is bad!
-
-	//LR 1.72 -- don't copy bad chars (can cause menu to mess up!)
-	for( i = 1, j= 1; i <= l; i++ )
-	{
-		if( dWin->fsSpec.name[i] >= ' ' && '!' != dWin->fsSpec.name[i] && '^' != dWin->fsSpec.name[i] )
-			wintitle[j++] = dWin->fsSpec.name[i];
-	}
-
+	BlockMoveData(dWin->fsSpec.name, wintitle, l+1);
+	
 	// LR: 1.7 Append fork in use to title
-	if( j < 255 - 8 )
+	if( l < 255 - 9 )
 	{
 		Str31 str2;
-
+		
 		GetIndString( (StringPtr) str2, strHeader, dWin->fork );
-
-		BlockMoveData( &str2[1], &wintitle[j], str2[0] );
-
-		wintitle[0] = j + str2[0] - 1;
+		
+		BlockMoveData( &str2[1], &wintitle[l+1], str2[0] );
+		
+		wintitle[0] = l + str2[0];
 	}
-
+	
 	SetWTitle( dWin->oWin.theWin, wintitle );
-
+	
 	// NS: 1.6.6 add window to window menu
-	MacAppendMenu( GetMenuHandle(kWindowMenu), wintitle );
+	// ABR: 1.9.1 use SetMenuItemText instead of MacAppendMenu to avoid parsing of meta-characters
+	windowMenu = GetMenuHandle( kWindowMenu );
+	
+	MacAppendMenu( windowMenu, "\px" );
+	SetMenuItemText( windowMenu, CountMenuItems(windowMenu), wintitle );
 }
 
 /*** SETUP NEW EDIT WINDOW ***/
