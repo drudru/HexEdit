@@ -581,17 +581,22 @@ static pascal OSErr _compareEventHandler( const AppleEvent *theEvent, AppleEvent
 		error = OpenEditWindow( &oldSpec, kWindowCompareBtm, false );
 		if( !error )
 		{
-			result = PerformTextCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 /* 185			if( gPrefs.searchType == CM_Match )
 				result = PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 			else
 				result = PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 */
 			//LR 187 -- always return success status if( result )
+			//LR 187 -- Check to make sure user didn't try to open the same file twice
+			if( CompWind1 && CompWind2 )
 			{
+				result = PerformTextCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
+
 				error = AEPutParamPtr( reply, keyDirectObject, typeBoolean, &result, sizeof( result ) );
 				return error;
 			}
+			else
+				error = dupFNErr;
 		}
 	}
 

@@ -5,6 +5,7 @@ Fixed icon for main app (can't include during build, must copy/paste...no idea w
 Give time for compare events to arrive before showing open file dialog
 New test file in documentation folder shows how to have HexEdit compare files via AppleScript
 Added compare options to specify fork in AppleScript (with option "rsrc"/"data")
+Fixed crash if an AppleScript tried to compare a file to itself, now returns duplicate file error
 
 12/05/02 1.86 (no public release)
 Enhanced selection hilight code to work more like finder & w/all colors
