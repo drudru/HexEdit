@@ -175,14 +175,12 @@ Failure:
 Success:
 	SelectWindow( dWin1->oWin.theWin );
 	dWin1->startSel = matchAddr1;
-	dWin1->endSel = dWin1->startSel + gPrefs.searchSize + 1;
-	if( gPrefs.searchSize==CM_Long ) dWin1->endSel += 1;
+	dWin1->endSel = dWin1->startSel + gPrefs.searchSize;
 	ScrollToSelection( dWin1, dWin1->startSel, true );
 
 	SelectWindow( dWin2->oWin.theWin );
 	dWin2->startSel = matchAddr2;
-	dWin2->endSel = dWin2->startSel + gPrefs.searchSize + 1;
-	if( gPrefs.searchSize==CM_Long ) dWin2->endSel += 1;
+	dWin2->endSel = dWin2->startSel + gPrefs.searchSize;
 	ScrollToSelection( dWin2, dWin2->startSel, true );
 
 	MySetCursor( C_Arrow );
@@ -321,15 +319,15 @@ void DoComparison( void )
 	InsetRect( &iRect, -4, -4 );
 	FrameRoundRect( &iRect, 16, 16 );
 */
-	// show the contents of the windows
-	ShowWindow( GetDialogWindow( pDlg ) );
-	DrawDialog( pDlg );
-
 //LR 180	DrawPage( (EditWindowPtr) GetWRefCon( CompWind1 ) );
 	UpdateOnscreen( CompWind1 );
 //LR 180	DrawPage( (EditWindowPtr) GetWRefCon( CompWind2 ) );
 	UpdateOnscreen( CompWind2 );
 			
+	// show the contents of the windows
+	ShowWindow( GetDialogWindow( pDlg ) );
+	DrawDialog( pDlg );
+
 	// handle event processing
 	do
 	{
