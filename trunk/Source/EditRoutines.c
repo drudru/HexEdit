@@ -511,7 +511,8 @@ void CopySelection( EditWindowPtr dWin )
 	CopyOperation( dWin, &gScrapChunk );
 	if( gScrapChunk )
 	{
-// LR: v1.6.5		KeyMap keys;
+		KeyMap keys;	//LR 1.72 - shift to copy hex w/o formatting.
+		Boolean shift;
 		OSErr anErr;
 
 #if TARGET_API_MAC_CARBON
@@ -526,16 +527,15 @@ void CopySelection( EditWindowPtr dWin )
 
 		// LR: -- sure wish I remembered who sent me this code!!!
 		// LR: v1.6.5 Now a menu selection, with ASCII the default :)
-// LR: v1.6.5		GetKeys( keys );
-// LR: v1.6.5		if( !keys[1] & 0x00000001L )
+		GetKeys( keys );
+		shift =  keys[1] & (1<<0);
+
 		if( EM_Hex == dWin->editMode )
 		{
-			// If shift key is NOT down, copy to system scrap as converted text
-
 			Handle tmp;
 			const char *src;
 			char *dest, bit;
-			long i, len = ( *gScrapChunk )->size * 3;
+			long i, len = ( *gScrapChunk )->size * (shift ? 2 : 3);	//LR 1.72 -- size depends on how copied
 
 			tmp = NewHandle( len );
 			if( tmp )
@@ -547,13 +547,14 @@ void CopySelection( EditWindowPtr dWin )
 				dest = *tmp;
 
 				len = ( *gScrapChunk )->size;
-				for( i=0;i<len;++i, ++src )
+				for( i=0; i<len; ++i, ++src )
 				{
 					 bit = ( src[0] & 0xF0 ) >> 4;
 					 *dest++ = bit > 9 ? ( bit-10+'A' ) : ( bit+'0' );
 					 bit = ( src[0] & 0x0F );
 					 *dest++ = bit > 9 ? ( bit-10+'A' ) : ( bit+'0' );
-					 *dest++ = (i + 1) % kBytesPerLine == 0 ? '\r' : ' ';
+					 if( !shift )
+						 *dest++ = (i + 1) % kBytesPerLine == 0 ? '\r' : ' ';
 				}
 
 				HUnlock( ( *gScrapChunk )->data );
