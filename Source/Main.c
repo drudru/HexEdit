@@ -60,7 +60,6 @@ AEEventHandlerUPP AEHandlerUPP, AECompareHandlerUPP;
 	extern DlgHookUPP myGetFileUPP;
 #endif
 
-//LR 177 extern SInt16		CompareFlag;
 extern WindowRef	CompWind1, CompWind2;
 static SInt32		caretTime;
 static Boolean		skipOpen = false;
@@ -543,9 +542,11 @@ static pascal OSErr _compareEventHandler( const AppleEvent *theEvent, AppleEvent
 
 	DescType	actualType;
 	Size		actualSize;
-	OSErr		error;
 	FSSpec	oldSpec, newSpec;
+	OSType	options;	// options are a text field, we get only the first 4 chars to make compares easy!
 	Boolean result;
+	OSErr		error;
+	
 
 	skipOpen = true;
 
@@ -561,11 +562,21 @@ static pascal OSErr _compareEventHandler( const AppleEvent *theEvent, AppleEvent
 	error = AEGetParamPtr( theEvent, kAEOldFileParam, typeFSS, &actualType, &oldSpec, sizeof( oldSpec ), &actualSize );
 	if( error ) return error;
 
-//LR 177	CompareFlag = 1;
+	//LR - 187: Options param is optional, and thus no error do we care about
+	error = AEGetParamPtr( theEvent, kAECompOptParam, typeChar, &actualType, &options, sizeof( options ), &actualSize );
+	if( !error )
+	{
+		if( 'rsrc' == options || 'RSRC' == options )
+			g.forkMode = FM_Rsrc;
+		else if( 'data' == options || 'DATA' == options )
+			g.forkMode = FM_Data;
+		else
+			g.forkMode = FM_Smart;		// default is "smart"
+	}
+
 	error = OpenEditWindow( &newSpec, kWindowCompareTop, false );
 	if( !error )
 	{
-//LR 177		CompareFlag = 2;
 		error = OpenEditWindow( &oldSpec, kWindowCompareBtm, false );
 		if( !error )
 		{
