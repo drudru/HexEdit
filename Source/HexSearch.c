@@ -112,13 +112,13 @@ void PerformTextSearch( EditWindowPtr dWin )
 	// for text g.searchBuffer
 
 	if( prefs.searchForward )
-		addr = dWin->endSel;
+		addr = dWin->startSel;
 	else
-	{
-		addr = dWin->startSel - 1;
-		if( addr < 0 )
-			return;
-	}
+		addr = dWin->endSel - 1;
+
+	// LR: 1.7 -- make sure we are searching in OK memory (ie, empty window bug fix)
+	if( addr < 0 || !dWin->fileSize)
+		goto Failure;
 
 	MySetCursor( C_Watch );
 
@@ -154,7 +154,7 @@ void PerformTextSearch( EditWindowPtr dWin )
 		if( prefs.searchForward )
 		{
 			++addr;
-			if( addr == dWin->fileSize )
+			if( addr >= dWin->fileSize )
 				goto Failure;
 		}
 		else
