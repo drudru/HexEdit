@@ -935,7 +935,7 @@ Boolean	CloseEditWindow( WindowRef theWin )
 				break;
 		}
 	}
-	
+
 	// NS: v1.6.6, remove window from menu on closing
 	GetWTitle( theWin, windowName );
 	windowMenu = GetMenuHandle( kWindowMenu );
@@ -951,6 +951,15 @@ Boolean	CloseEditWindow( WindowRef theWin )
 	}
 	
 	((ObjectWindowPtr)dWin)->Dispose( theWin );
+
+	// LR: v1.7 -- if no edit window available, close find windows
+	if( !FindFirstEditWindow() )
+	{
+		if( g.gotoWin )
+			HideWindow( GetDialogWindow( g.gotoWin ) );
+		if( g.searchWin )
+			HideWindow( GetDialogWindow( g.searchWin ) );
+	}
 
 	return true;
 }
