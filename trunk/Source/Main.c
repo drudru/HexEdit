@@ -413,6 +413,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 			objectWindow->Activate( theWin, (theEvent->modifiers & activeFlag) > 0 );
 
 		break;
+
 	case osEvt:
 		// Force it to be redrawn
 		switch ( theEvent->message >> 24 )
@@ -431,6 +432,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 				break;
 		}
 		break;		
+
 	case kHighLevelEvent:
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
 		if( g.sys7Flag )
@@ -462,7 +464,7 @@ OSStatus IdleObjects( EventRecord *er )
 }
 
 /*** GOT REQUIRED PARAMS ***/
-Boolean GotRequiredParams( const AppleEvent *theEvent )
+static Boolean GotRequiredParams( const AppleEvent *theEvent )
 {
 	DescType returnedType;
 	Size 	actualSize;
@@ -471,7 +473,7 @@ Boolean GotRequiredParams( const AppleEvent *theEvent )
 }
 
 /*** DO OPEN EVENT ***/
-OSStatus DoOpenAppleEvent( const AppleEvent *theEvent )
+static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 {
 	OSStatus	error;
 	Handle		docList = NULL;
@@ -510,7 +512,16 @@ OSStatus DoOpenAppleEvent( const AppleEvent *theEvent )
 	{
 		error = AEGetNthPtr( &theList, i, typeFSS, &aeKeyword, &actualType, (Ptr) &myFSS, sizeof( FSSpec ), &actualSize );
 		if( error == noErr )
-			OpenEditWindow( &myFSS, false );
+		{
+			if( noErr == OpenEditWindow( &myFSS, false ) )
+			{
+				if( print && kHexEditWindowTag == GetWindowKind( FrontWindow() ) )	// LR: 1.7 -- allow printing documents
+				{
+					PrintWindow( (EditWindowPtr)GetWRefCon( FrontWindow() ) );
+					CloseEditWindow( FrontWindow() );
+				}
+			}
+		}
 	}
 
 	// event was handled successfully
@@ -519,7 +530,6 @@ OSStatus DoOpenAppleEvent( const AppleEvent *theEvent )
 }
 
 /*** CORE EVENT HANDLER ***/
-// Requires Carbon SDK 1.2 or later!
 static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *reply, long refCon )
 {
 	#pragma unused( reply, refCon )	// LR
@@ -528,8 +538,8 @@ static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *re
 	DescType	eventID;
 	OSErr		error;
 
-	if( ( error = AEGetAttributePtr( 	( AppleEvent* ) theEvent, keyEventIDAttr, typeType, &actualType, (Ptr) &eventID, 
-				sizeof( eventID ), &actualSize ) ) != noErr )
+	error = AEGetAttributePtr( 	( AppleEvent* ) theEvent, keyEventIDAttr, typeType, &actualType, (Ptr) &eventID, sizeof( eventID ), &actualSize );
+	if( error )
 		return error;
 								
 	switch( eventID )
@@ -543,10 +553,11 @@ static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *re
 			break;
 				
 		case kAEOpenDocuments:
-			DoOpenAppleEvent( theEvent );
+			DoOpenAppleEvent( theEvent, false );
 			break;
 				
 		case kAEPrintDocuments:
+			DoOpenAppleEvent( theEvent, true );
 			break;
 			
 		case kAEQuitApplication:
