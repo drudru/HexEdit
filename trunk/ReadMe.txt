@@ -22,6 +22,7 @@ Too many to list! (Really!) Please see the History.txt file in the Documentation
 * Compiling the Code *
 The latest code and HexEdit development community can be found on <http://hexedit.sourceforget.net>. The latest version of CodeWarrior is the "Official" development environment, including the set of Apple's Universal Headers and so forth that shipped with the latest version and all of it's updates.
 
+
 Other development environments may be supported, just not "officially" :)
 
 * File Mappings *
@@ -33,12 +34,18 @@ In Internet Explorer, you can set these by going to "Preferences" and the "File 
 
 Anyway, no one is more annoyed with this entire problem than me (Lane), because I get the blame and yet I have no control over the situation!
 
+
 * Translations *
 
-Japanese translation provided by:  Hardboiled_egg <boiled@geocities.co.jp>
-French translation provided by:  Jean-Jacques Cortes <jjcortes@wanadoo.fr>
-German translation provided by:  Bruce Gehre <bruce@gehre.org>
-				 <http://gehre.org/hexedit/>
+Japanese translation by:	Hardboiled_egg <boiled@geocities.co.jp>
+				<http://www.geocities.co.jp/SiliconValley/5025/>
+
+French translation by:		Jean-Jacques Cortes <jjcortes@wanadoo.fr>
+				<http://perso.wanadoo.fr/jjcortes/>
+
+German translation by:		Bruce Gehre <bruce@gehre.org>
+				<http://gehre.org/hexedit/>
+
 
 * From Jim's original Docs *
 HexEdit is a hexdump viewer and editor that works similarly to the hex editor provided with Apple's ResEdit.  It allows you to edit either the data fork or the resource fork of a file.
