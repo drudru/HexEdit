@@ -40,7 +40,7 @@
 #include "AboutBox.h"
 #include "Utility.h"
 
-static _cmCheckedItem = 0;
+static short _cmCheckedItem = 0;
 
 // Menu Handles
 static MenuRef appleMenu, fileMenu, editMenu, findMenu, optionsMenu, colorMenu, windowMenu;

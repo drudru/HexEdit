@@ -207,6 +207,7 @@ short ErrorAlert( short severity, short strid, ... )
 
 		case ES_Stop:
 		case ES_Fatal:
+		default:
 			inAlertType  = kAlertStopAlert;
 			break;
 		}
