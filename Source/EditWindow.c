@@ -2032,7 +2032,7 @@ void UpdateOnscreen( WindowRef theWin )
 /*** MY DRAW ***/
 void MyDraw( WindowRef theWin )
 {
-	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+//LR 190 --	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	DrawControls( theWin );
 
 	if( !g.useAppearance )	//LR 1.72 -- must call when not using Appearance
@@ -2515,14 +2515,14 @@ static OSStatus _doPrintDialog( PMPrintSession printSession, PMPageFormat pageFo
 ------------------------------------------------------------------------------*/
 static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings printSettings, EditWindowPtr dWin )
 {
-	OSStatus  	status,
-	          printError;
-	PMRect		pageRect;
-	SInt32		startAddr, endAddr, linesPerPage, addr;
-	UInt32			realNumberOfPagesinDoc,
-	          pageNumber,
-	          firstPage,
-	          lastPage;
+	OSStatus status,
+	         printError;
+	PMRect	pageRect;
+	SInt32	startAddr, endAddr, linesPerPage, addr;
+	UInt32	realNumberOfPagesinDoc,
+	         pageNumber,
+	         firstPage,
+	         lastPage;
 
 	//  PMGetAdjustedPaperRect returns the paper size taking into account rotation,
 	//  resolution, and scaling settings.  Note this is the paper size selected

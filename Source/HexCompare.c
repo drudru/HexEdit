@@ -53,7 +53,7 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 //	returns differences in data of two edit windows
 	Byte		ch1, ch2;
 	short		matchIdx, matchCnt;
-	long		addr1, addr2, matchAddr1, matchAddr2, adjust;
+	long		addr1, addr2, matchAddr1 = 0, matchAddr2 = 0, adjust;
 	register 	EditChunk **c1, **c2;
 
 	MySetCursor( C_Watch );

@@ -118,7 +118,7 @@ void OpenSearchDialog( void )
 Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag )	//LR 175 -- now return if search succeeds (for replace)
 {
 	short		ch, matchIdx;
-	long		addr, matchAddr, adjust;
+	long		addr, matchAddr = 0, adjust;
 	register 	EditChunk **cc;
 	long 		wrapped =false;
 
