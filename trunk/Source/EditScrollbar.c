@@ -18,6 +18,7 @@
  * 
  * Contributor(s):
  *		Nick Shanks
+ *      Brian Bergstrand
  */
 
 // 05/10/01 - GAB: MPW environment support
@@ -27,15 +28,79 @@
 
 #include "EditScrollbar.h"
 #include "EditRoutines.h"
+#include "HexEdit.h" //BB: bring in globals g;
 
-ControlActionUPP trackActionUPP;		// LR: init'd in Main!
+static ControlActionUPP _trackActionUPP = NULL;		//LR 1.73 -- properly local, must be NULL ast startup!
 
 #define LIMIT_CALC ((((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) - dWin->linesPerPage) * kBytesPerLine)
+
+/*** Calc Scroll Position ***/
+//LR 1.73 -- simplify some code
+static long _calcScrollPosition( EditWindowPtr dWin )
+{
+	long	newPos, h, limit;
+	Rect	winRect;
+	short	vPos = GetControlValue( dWin->vScrollBar );
+
+	GetWindowPortBounds( dWin->oWin.theWin, &winRect );
+	h = winRect.bottom - winRect.top - (kGrowIconSize - 1) - (kHeaderHeight - 1);
+
+	limit = LIMIT_CALC;
+//LR 1.72		limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
+	if( vPos >= h )
+		newPos = limit;	// LR: v1.6.5 LR already computed! ( ( dWin->fileSize+( kSBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
+	else if( limit < 64000L )		// JAB 12/10 Prevent Overflow in Calcuation
+		newPos = (vPos * limit) / h;
+	else
+		newPos = vPos * (limit / h);
+
+	newPos -= newPos % kBytesPerLine;
+
+	return( newPos );
+}
+
+
+/*** MY SCROLL ACTION ***/
+static pascal void _scrollAction( ControlHandle theControl, short thePart )
+{
+	long			curPos, newPos;
+	short			pageWidth;
+	EditWindowPtr	dWin;		//LR 1.73 -- need window info for live scrolling
+//1.72	Rect		myRect;
+
+	dWin = (EditWindowPtr)GetControlReference( theControl );	//LR 1.73 -- get owning window
+
+	curPos = dWin->editOffset;
+	newPos = curPos;
+
+/*LR 1.72 -- not used!
+	GetWindowPortBounds( dWin->oWin.theWin, &myRect );
+
+	myRect.right -= kSBarSize-1;
+	myRect.bottom -= kSBarSize-1;
+*/
+	pageWidth = (dWin->linesPerPage - 1) * kBytesPerLine;
+
+	switch( thePart )
+	{
+		case kControlUpButtonPart:		newPos = curPos - kBytesPerLine;		break;	// LR: -- UH compliant
+		case kControlDownButtonPart:	newPos = curPos + kBytesPerLine;		break;
+		case kControlPageUpPart:		newPos = curPos - pageWidth;	break;
+		case kControlPageDownPart:		newPos = curPos + pageWidth;	break;
+		case kControlIndicatorPart:		newPos = _calcScrollPosition( dWin );	break;	//LR 1.73 -- live scrolling
+	}
+
+	ScrollToPosition( dWin, newPos );
+}
 
 /*** SETUP SCROLL BARS ***/
 void SetupScrollBars( EditWindowPtr dWin )
 {
 	Rect	sRect, r;
+
+	//LR 1.73 -- setup track action proc if not already done
+	if( !_trackActionUPP )
+		_trackActionUPP = NewControlActionUPP( _scrollAction );
 
 	GetWindowPortBounds( dWin->oWin.theWin, &r );
 
@@ -43,8 +108,12 @@ void SetupScrollBars( EditWindowPtr dWin )
 	sRect.top = r.top + kHeaderHeight;	// NS: move to below header
 	sRect.right = r.right + 1;
 	sRect.bottom = r.bottom	- kGrowIconSize;
- 	dWin->vScrollBar = NewControl( dWin->oWin.theWin, &sRect, "\p", true, 0, 0, sRect.bottom - sRect.top, scrollBarProc, 1L );
+	// BB: detect Appearance manager, and create a live scroll bar if we do
+    dWin->vScrollBar = NewControl( dWin->oWin.theWin, &sRect, "\p", true, 0, 0, sRect.bottom - sRect.top, g.useAppearance ? kControlScrollBarLiveProc : scrollBarProc, 1L );
 	AdjustScrollBars( dWin->oWin.theWin, 1 );
+
+	//LR 1.73 -- save window for callback procedure
+	SetControlReference( dWin->vScrollBar, (SInt32)dWin );
 }
 
 // Adjust scroll bars when they need to be redrawn for some reason.
@@ -92,11 +161,12 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 	if( limit > 0 )
 	{
 		SetControlMaximum( dWin->vScrollBar, h );
+		// BB: Set up proportional scroll bar if we can
+        if (SetControlViewSize != (void*)kUnresolvedCFragSymbolAddress)
+            SetControlViewSize( dWin->vScrollBar, h );
 
-		if( dWin->editOffset < 64000L )
-			SetControlValue( dWin->vScrollBar, (short)((dWin->editOffset * h) / limit) );
-		else
-			SetControlValue( dWin->vScrollBar, (short)(dWin->editOffset / (limit / h)) );
+		SetControlValue( dWin->vScrollBar,
+						(short)(dWin->editOffset < 64000L ? ((dWin->editOffset * h) / limit) : (dWin->editOffset / (limit / h))) );
 	}
 	else
 	{
@@ -107,43 +177,6 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 	SetPort( savePort );
 }
 
-// Callback routine to handle arrows and page up, page down
-EditWindowPtr	gDWin;
-
-/*** MY SCROLL ACTION ***/
-pascal void MyScrollAction( ControlHandle theControl, short thePart )
-{
-	#pragma unused( theControl )	// LR
-
-	long		curPos, newPos;
-	short		pageWidth;
-//1.72	Rect		myRect;
-
-	WindowRef	gp = gDWin->oWin.theWin;
-
-	curPos = gDWin->editOffset;
-	newPos = curPos;
-
-/*LR 1.72 -- not used!
-	GetWindowPortBounds( gp, &myRect );
-
-	myRect.right -= kSBarSize-1;
-	myRect.bottom -= kSBarSize-1;
-*/
-	pageWidth = (gDWin->linesPerPage - 1) * kBytesPerLine;
-
-	switch( thePart )
-	{
-		case kControlUpButtonPart:		newPos = curPos - kBytesPerLine;		break;	// LR: -- UH compliant
-		case kControlDownButtonPart:	newPos = curPos + kBytesPerLine;		break;
-		case kControlPageUpPart:		newPos = curPos - pageWidth;	break;
-		case kControlPageDownPart:		newPos = curPos + pageWidth;	break;
-	}
-
-	if( newPos != curPos )
-		HEditScrollToPosition( gDWin, newPos );
-}
-
 // Intercept Handler for scroll bars
 // Returns true if user clicked on scroll bar
 
@@ -152,18 +185,12 @@ Boolean MyHandleControlClick( WindowRef window, Point mouseLoc )
 {
 	short 			controlPart;
 	ControlRef		control;
-	short			vPos;
-	Rect			winRect;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( window );
-	ControlActionUPP scrollAction;
 
 	// NS: v1.6.6, new scrolling code to enable live scrolling on post-Appearance systems
 	controlPart = FindControl( mouseLoc, window, &control );
 	if( control == nil ) return false;
 	
-	// Identify theWin for callback procedure
-	gDWin = dWin;
-
 	// scroll the window	-- use old bits for now
 /*	if( controlPart == kControlIndicatorPart && !g.useAppearance )	// in thumb (129)
 	{
@@ -179,33 +206,26 @@ Boolean MyHandleControlClick( WindowRef window, Point mouseLoc )
 */
 
 	// Use default behavior for thumb, program will crash if you don't!!
-	if( kControlIndicatorPart == controlPart && !g.useAppearance )	scrollAction = 0L;
-	else															scrollAction = trackActionUPP;	// LR: Universal Headers requirement fix
-
-	// Perform scrollbar tracking
-	controlPart = TrackControl( control, mouseLoc, scrollAction );
-	if( !controlPart ) return false;
-	else if( controlPart == kControlIndicatorPart )
+	if( kControlIndicatorPart == controlPart && !g.useAppearance )
 	{
-		long	newPos, h, limit;
-		vPos = GetControlValue( dWin->vScrollBar );
+	    // BB: Perform scrollbar tracking
+	    controlPart = TrackControl( control, mouseLoc, 0L );
+		if( !controlPart )
+			return false;
 
-		GetWindowPortBounds( window, &winRect );
-		h = winRect.bottom - winRect.top - (kGrowIconSize - 1) - (kHeaderHeight - 1);
-
-		limit = LIMIT_CALC;
-//LR 1.72		limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
-		if( vPos == h )
-			newPos = limit;	// LR: v1.6.5 LR already computed! ( ( dWin->fileSize+( kSBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
-		else if( limit < 64000L )		// JAB 12/10 Prevent Overflow in Calcuation
-			newPos = (vPos * limit) / h;
-		else
-			newPos = vPos * (limit / h);
-
-		newPos -= newPos & 0x0F;
-
-		HEditScrollToPosition( dWin, newPos );
+		if( controlPart == kControlIndicatorPart )
+		{
+			ScrollToPosition( dWin, _calcScrollPosition( dWin ) );
+		}
 	}
+	else
+	{
+	    // Perform scrollbar tracking
+	    controlPart = TrackControl( control, mouseLoc, _trackActionUPP );
+	    if( !controlPart )
+	    	return false;
+	    // BB: all scrolling handled by _scrollAction()
+	}						
 
 	return true;
 }
@@ -215,6 +235,7 @@ void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boole
 {
 	long	curAddr;
 	curAddr = dWin->editOffset;
+
 	if( pos >= curAddr && pos < curAddr + (dWin->linesPerPage * kBytesPerLine) )
 	{
 		if( forceUpdate )
@@ -225,6 +246,7 @@ void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boole
 		AdjustScrollBars( dWin->oWin.theWin, false );
 		return;
 	}
+
 	if( centerFlag )
 	{
 		curAddr = pos - ( pos % kBytesPerLine );
@@ -233,7 +255,6 @@ void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boole
 	}
 	else
 	{
-
 		if( pos < curAddr )
 		{
 			// Scroll Up
@@ -247,11 +268,11 @@ void ScrollToSelection( EditWindowPtr dWin, long pos, Boolean forceUpdate, Boole
 			curAddr -= (curAddr % kBytesPerLine);
 		}
 	}
-	HEditScrollToPosition( dWin, curAddr );
+	ScrollToPosition( dWin, curAddr );
 }
 
-/*** HEDIT SCROLL TO POSITION ***/
-void HEditScrollToPosition( EditWindowPtr dWin, long newPos )
+/*** SCROLL TO POSITION ***/
+void ScrollToPosition( EditWindowPtr dWin, long newPos )
 {
 	long	limit;
 
@@ -292,5 +313,5 @@ void AutoScroll( EditWindowPtr dWin, Point pos )
 	else
 		return;
 
-	HEditScrollToPosition( dWin, dWin->editOffset+offset );
+	ScrollToPosition( dWin, dWin->editOffset+offset );
 }
