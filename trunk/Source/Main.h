@@ -35,7 +35,5 @@ OSStatus CheckEnvironment( void );
 OSStatus HandleEvent( void );
 OSStatus DoEvent( EventRecord *theEvent );
 OSStatus IdleObjects( EventRecord *er );
-Boolean GotRequiredParams( const AppleEvent *theEvent );
-OSStatus DoOpenAppleEvent( const AppleEvent *theEvent );
 
 #endif
