@@ -36,7 +36,7 @@ static short endText;
 static long long prevTime;
 
 //LR 1.76 -- rewrite entire text scroll routine to do speed based on pixels per second!
-#define SCROLLPIXELSPERSECOND 5.0
+#define SCROLLPIXELSPERSECOND 10.0	// NOTE: good to keep in even ticks for update cleanness
 
 //LR 1.73 -- make code more readable
 #ifdef __MC68K__
