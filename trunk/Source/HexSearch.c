@@ -402,11 +402,22 @@ ButtonHit:
 							{
 								long ss = dWin->startSel;	//LR 188 -- hilight what was replaced!
 
-								RememberOperation( dWin, EO_Paste, &gUndo );
-								PasteOperation( dWin, replaceChunk );
-
-								dWin->startSel = ss;
-								dWin->endSel = ss + (*replaceChunk)->size;
+								//LR 190 -- only replace if a selection is there (ie, a previous find)
+								if( dWin->startSel != dWin->endSel )
+								{
+									RememberOperation( dWin, EO_Paste, &gUndo );
+									PasteOperation( dWin, replaceChunk );
+								}
+								//LR 190 -- Option key on Replace is "replace and find next"
+								if( theEvent->modifiers & optionKey )
+								{
+									PerformTextSearch( dWin, kSearchUpdateUI );
+								}
+								else	// otherwise it's just normal replace
+								{
+									dWin->startSel = ss;
+									dWin->endSel = ss + (*replaceChunk)->size;
+								}
 							}
 							else while( PerformTextSearch( dWin, kSearchSkipUI ) )
 							{
