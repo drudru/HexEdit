@@ -19,6 +19,7 @@
  * Contributor(s):
  *		Nick Shanks (NS)
  *		Scott E. Lasley (SEL) 
+ *		Brian Bergstrand (BB) 
  */
 
 // 05/10/01 - GAB: MPW environment support
@@ -27,6 +28,7 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h> // BB: bring in abs()
 
 #include "EditWindow.h"
 #include "EditRoutines.h"
@@ -256,28 +258,96 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 
 // NS: v1.6.6, event filters for navigation services
 
+#endif	//TARGET_API_MAC_CARBON  -- BB: moved _navEventFilter from Carbon only
+
+// BB: selector to determine Nav dialog type
+#define kNavOpenDialogType ((NavCallBackUserData)-1L)
+enum
+{
+	kNavDITLID = 15000,
+	kNavDITLHeight = 40,//18,
+	kNavDITLWidth = 350,//234
+	kDataForkRadioID = 2,
+	kRsrcForkRadioID = 3,
+	kAutoForkRadioID = 4,
+	kNavDITLNumControls = 4//3 radio buttons + radio group control
+};
+
+#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
 /*** NAV SERVICES EVENT FILTER ***/
 static pascal void _navEventFilter( NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, NavCallBackUserData callBackUD )
 {
-	#pragma unused( callBackSelector, callBackParms, callBackUD )
-/*
-//	WindowRef theWindow = (WindowRef) callBackParms->eventData.event->message;
-//	WindowRef theWindow = (WindowRef) callBackParms->eventData.eventDataParms.event->message;
-	switch( callBackSelector )
+	static Handle navDITL = NULL; // BB: custom control DITL
+	
+	// BB: setup and handle custom NavGet controls - Fixes bug #229519
+	if( callBackUD == kNavOpenDialogType )
 	{
-		case kNavCBEvent:
-//			switch( callBackParms->eventData.event->what )
-			switch( callBackParms->eventData.eventDataParms.event->what )
-			{
-				case updateEvt:
-//					RgnHandle updateRgn;
-//					GetWindowRegion( theWindow, kWindowUpdateRgn, updateRgn );
-//					updateWindow( theWindow, updateRgn );
-//					break;
-			}
-			break;
+		//short theItem;
+		short itemCount;
+		ControlRef theControl;
+		DialogPtr theDialog;
+		switch( callBackSelector )
+		{
+			case kNavCBCustomize://Negotiate the custom area size
+			 	if( callBackParms->customRect.bottom == 0 )
+			 	{
+					callBackParms->customRect.bottom = callBackParms->customRect.top+kNavDITLHeight;
+					callBackParms->customRect.right = callBackParms->customRect.left+kNavDITLWidth;
+				}
+				break;
+			
+			case kNavCBStart:
+				navDITL = GetResource( 'DITL', kNavDITLID );	//LR 1.73 -- no need to keep loaded, resource manager does that for us!
+				if( navDITL != NULL )
+				{
+					theDialog = GetDialogFromWindow( callBackParms->window );
+					itemCount = CountDITL( theDialog );
+					if( NavCustomControl( callBackParms->context, kNavCtlAddControlList, navDITL ) == noErr)
+					{
+						//since Nav Services won't work w/o the AppearanceMgr, we go ahead and use Appearance calls w/o checking
+						short i = itemCount+kDataForkRadioID;
+						//init the controls
+						for( ; i <= (itemCount+kRsrcForkRadioID); ++i )
+						{
+							GetDialogItemAsControl( theDialog, i, &theControl );
+							if( theControl != NULL )
+								SetControlValue( theControl, 0 );
+						}
+						GetDialogItemAsControl( theDialog, itemCount+kAutoForkRadioID, &theControl );
+						if( theControl != NULL )
+							SetControlValue( theControl, 1 );
+					}
+				}	
+				break;
+			
+			case kNavCBTerminate:
+				if( navDITL != NULL )
+				{
+					short i;
+					theDialog = GetDialogFromWindow( callBackParms->window );
+					itemCount = CountDITL( theDialog );
+					//set the fork mode based on the selection
+					for( i = itemCount; i >= itemCount - 2; --i )
+					{
+						GetDialogItemAsControl( theDialog, i, &theControl );
+						if( theControl != NULL )
+						{
+							if( GetControlValue( theControl) >= 1 )
+							{
+								g.forkMode = abs( (i - itemCount) ) + 1; //dependant on ForkModes being 1,2,3
+								//the FM_Data and FM_Smart modes will be reversed
+								if( g.forkMode == FM_Smart ) g.forkMode = FM_Data;
+								else if( g.forkMode == FM_Data ) g.forkMode = FM_Smart;
+								break;
+							}
+						}
+					}
+					ReleaseResource( navDITL );
+					navDITL = NULL;
+				}
+				break;
+		}
 	}
-*/
 }
 
 /*** NAV SERVICES PREVIEW FILTER ***/
@@ -297,7 +367,7 @@ static pascal Boolean _navFileFilter( AEDesc* theItem, void* info, void *callBac
 	return true;
 }
 */
-#endif
+#endif	//POWERPC
 
 /* NS: v1.6.6, GWorld creation moved to where it is used */
 
@@ -682,9 +752,11 @@ pascal Boolean SourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item 
 #endif
 
 /*** ASK EDIT WINDOW ***/
-short AskEditWindow( void )
+#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
+//short AskEditWindow( void ) // BB: split into two functions
+short AskEditWindowNav( void )
 {
-#if TARGET_API_MAC_CARBON	// LR: v1.6
+//#if TARGET_API_MAC_CARBON	// LR: v1.6  -- BB no longer used
 	OSStatus error = noErr;
 	NavReplyRecord		reply;
 	NavDialogOptions	dialogOptions;
@@ -694,8 +766,8 @@ short AskEditWindow( void )
 	NavTypeListHandle	openTypeList = NULL;
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
-	dialogOptions.dialogOptionFlags += kNavNoTypePopup;
-	error = NavGetFile( NULL, &reply, &dialogOptions, eventProc, previewProc, filterProc, openTypeList, NULL);
+	dialogOptions.dialogOptionFlags |= kNavNoTypePopup+kNavAllowInvisibleFiles; // BB: allow invisible files - fixes bug #425256
+	error = NavGetFile( NULL, &reply, &dialogOptions, eventProc, previewProc, filterProc, openTypeList, kNavOpenDialogType);
 	if( reply.validRecord || !error )
 	{
 		AEKeyword 	keyword;
@@ -711,7 +783,12 @@ short AskEditWindow( void )
 	DisposeNavEventUPP( eventProc );
 	AdjustMenus();
 	return error == noErr? 0 : -1;
-#else
+}
+#endif	//POWERPC
+
+#if !TARGET_API_MAC_CARBON	// BB:  replaced
+short AskEditWindowSF( void )
+{
 	SFReply		macSFReply;
 	FSSpec		fSpec;
 	long		procID;
@@ -750,8 +827,8 @@ short AskEditWindow( void )
 
 	AdjustMenus();
 	return 0;
-#endif
 }
+#endif
 
 /*** OPEN EDIT WINDOW ***/
 OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
@@ -958,20 +1035,51 @@ Boolean	CloseEditWindow( WindowRef theWin )
 	if( dWin->dirtyFlag )
 	{
 //LR 1.72		GetWTitle( theWin, fileName );
-		ParamText( dWin->fsSpec.name, NULL, NULL, NULL );
-		switch( CautionAlert( alertSave, NULL ) )
+		if( !g.useNavServices ) // BB: use Nav Services ?
 		{
-			case ok:
-				SaveContents( theWin );	
-				break;
-				
-			case cancel:
-				return false;
-				
-			case 3:
-				// Discard
-				break;
+			ParamText( dWin->fsSpec.name, NULL, NULL, NULL );
+			switch( CautionAlert( alertSave, NULL ) )
+			{
+				case ok:
+					SaveContents( theWin );	
+					break;
+					
+				case cancel:
+					return false;
+					
+				case 3:
+					// Discard
+					break;
+			}
 		}
+#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
+		else		// BB: code to support Nav Services
+		{
+			OSStatus error = noErr;
+			NavAskSaveChangesResult		reply;
+			NavDialogOptions	dialogOptions;
+			NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
+
+			NavGetDefaultDialogOptions( &dialogOptions );
+			BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0]+1 );//set the file name string
+			error = NavAskSaveChanges( &dialogOptions, kNavSaveChangesClosingDocument, &reply, eventProc, NULL );
+			if( error != noErr )	return false; //on error, make sure we don't destroy the contents
+			switch( reply )
+			{
+				case kNavAskSaveChangesSave:
+					SaveContents( theWin );
+					break;
+				
+				case kNavAskSaveChangesCancel:
+					return false;
+					
+				case kNavAskSaveChangesDontSave:
+					break;				
+			}
+			
+			DisposeNavEventUPP( eventProc );
+		}
+#endif	//POWERPC
 	}
 
 	// NS: v1.6.6, remove window from menu on closing
@@ -2655,54 +2763,59 @@ void SaveAsContents( WindowRef theWin )
 	if( id )
 		DeleteMenuItem( GetMenuHandle(kWindowMenu), id );
 
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-{
-	OSStatus error = noErr;
-	NavReplyRecord		reply;
-	NavDialogOptions	dialogOptions;
-	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
-
-	NavGetDefaultDialogOptions( &dialogOptions );
-//LR: 1.7 not w/modified window titles!	GetWTitle( theWin, dialogOptions.savedFileName );
-	// 05/10/01 - GAB: copy the ENTIRE name, including the last character (hence, the "+ 1" on the count parameter)
-	BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0] + 1 );
-	error = NavPutFile( NULL, &reply, &dialogOptions, eventProc, kDefaultFileType, kAppCreator, NULL );
-	if( reply.validRecord || !error )
+#if !defined(__MC68K__) && !defined(__SC__)		//LR 1.73 -- not available for 68K (won't even link!)
+	if( g.useNavServices ) // BB: replaced #if TARGET_API_MAC_CARBON	// LR: v1.6
 	{
-		AEKeyword 	keyword;
-		DescType 	descType;
-		FSSpec		savedSpec;	
-		Size 		actualSize;
-		
-		error = AEGetNthPtr( &(reply.selection), 1, typeFSS, &keyword, &descType, &savedSpec, sizeof(FSSpec), &actualSize );
-		if( !error )
+		OSStatus error = noErr;
+		NavReplyRecord		reply;
+		NavDialogOptions	dialogOptions;
+		NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
+
+		NavGetDefaultDialogOptions( &dialogOptions );
+//LR: 1.7 not w/modified window titles!	GetWTitle( theWin, dialogOptions.savedFileName );
+		// 05/10/01 - GAB: copy the ENTIRE name, including the last character (hence, the "+ 1" on the count parameter)
+		BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0] + 1 );
+		error = NavPutFile( NULL, &reply, &dialogOptions, eventProc, kDefaultFileType, kAppCreator, NULL );
+		if( reply.validRecord || !error )
 		{
-			dWin->destSpec = savedSpec;
-			dWin->creationDate = 0;
-			SaveContents( theWin );
-			NavCompleteSave( &reply, kNavTranslateInPlace );
+			AEKeyword 	keyword;
+			DescType 	descType;
+			FSSpec		savedSpec;	
+			Size 		actualSize;
+			
+			error = AEGetNthPtr( &(reply.selection), 1, typeFSS, &keyword, &descType, &savedSpec, sizeof(FSSpec), &actualSize );
+			if( !error )
+			{
+				dWin->destSpec = savedSpec;
+				dWin->creationDate = 0;
+				SaveContents( theWin );
+				NavCompleteSave( &reply, kNavTranslateInPlace );
+			}
+			NavDisposeReply( &reply );
 		}
-		NavDisposeReply( &reply );
+		DisposeNavEventUPP( eventProc );
 	}
-	DisposeNavEventUPP( eventProc );
-}
-#else
-{
-	StandardFileReply	reply;
-	EditWindowPtr		dWin = (EditWindowPtr) GetWRefCon( theWin );
-	Str63				/*fileName,*/ prompt;
+#if !TARGET_API_MAC_CARBON
+	else // BB: only used if not in carbon
+#endif
+#endif	//POWERPC
+#if !TARGET_API_MAC_CARBON
+	{
+		StandardFileReply	reply;
+		EditWindowPtr		dWin = (EditWindowPtr) GetWRefCon( theWin );
+		Str63				/*fileName,*/ prompt;
 
 //LR: 1.7 not w/modified window titles!	GetWTitle( theWin, fileName );
-	GetIndString( prompt, strPrompt, 1 );
-	
-	StandardPutFile( prompt, dWin->fsSpec.name, &reply );
-	if( reply.sfGood )
-	{
-		dWin->destSpec = reply.sfFile;
-		dWin->creationDate = 0;
-		SaveContents( theWin );
+		GetIndString( prompt, strPrompt, 1 );
+		
+		StandardPutFile( prompt, dWin->fsSpec.name, &reply );
+		if( reply.sfGood )
+		{
+			dWin->destSpec = reply.sfFile;
+			dWin->creationDate = 0;
+			SaveContents( theWin );
+		}
 	}
-}
 #endif
 
 	_setWindowTitle( dWin );	// LR: 1.7 - set window title, append window to menu
