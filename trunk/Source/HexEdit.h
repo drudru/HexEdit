@@ -50,8 +50,9 @@
 #define _HexEdit_
 
 // Comatibility macros
+//LR -- 1.72 :no longer requires carbon headers to compile for non-carbon targets
 #if !TARGET_API_MAC_CARBON
-//LR: 1.7 - defined in Carbon.h now! (1.2)	#define SetPortDialogPort SetPort
+	#define SetPortDialogPort SetPort
 	#define GetPortBounds( p, rp ) *rp = (p)->portRect
 	#define GetWindowPortBounds( w, rp ) *rp = (w)->portRect
 	#define GetPortPixMap(p) p->portPixMap
@@ -60,6 +61,7 @@
 	#define DisableMenuItem DisableItem
 	#define FrontNonFloatingWindow FrontWindow
 	#define MenuRef MenuHandle
+	#define GetDialogFromWindow
 #endif
 
 // make some things a bit easier to read

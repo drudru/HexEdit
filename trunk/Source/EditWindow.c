@@ -844,10 +844,11 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 			ErrorAlert( ES_Caution, errFindFolder, error );
 		return error;
 	}
+
 	if( workSpec.name[0] < 31 )
 	{
 		workSpec.name[0]++;
-		workSpec.name[workSpec.name[0]] = '~';
+		workSpec.name[workSpec.name[0]] = '^';	//LR 1.72 -- temp filenames end with ^
 	}
 	else
 		workSpec.name[31] ^= 0x10;
@@ -900,6 +901,11 @@ void DisposeEditWindow( WindowRef theWin )
 		FSClose( dWin->workRefNum );
 		HDelete( dWin->workSpec.vRefNum, dWin->workSpec.parID, dWin->workSpec.name );
 	}
+
+	//LR 1.72 -- release undo if associated with this window
+	if( dWin == gUndo.theWin )
+		ReleaseEditScrap( dWin, &gUndo.undoScrap );
+
 	DisposeGWorld( dWin->offscreen );
 	DefaultDispose( theWin );
 	AdjustMenus();
@@ -1366,7 +1372,9 @@ void DrawPage( EditWindowPtr dWin )
 		{
 			Rect er = r;
 
-			er.top = (dWin->fileSize / kBytesPerLine) + kHeaderHeight;
+			er.top = ((dWin->fileSize / kBytesPerLine) * kLineHeight);	//LR 1.72 -- need line height!
+			if( (dWin->fileSize % kBytesPerLine) )	//LR 1.72 -- if not an empty line, no need to erase current line
+				er.top += kLineHeight;
 			EraseRect( &er );
 		}
 
@@ -1510,9 +1518,10 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 
 	w = where;
 	GlobalToLocal( &w );
-	if( MyHandleControlClick( theWin, w ) )
+	if( MyHandleControlClick( theWin, w ) )	// clicked on a window control (ie scrollbar)?
 		return;
-	// Else handle editing chore
+
+	// No, handle editing chore
 	CursorOff( theWin );
 	if( w.v >= kHeaderHeight && w.v < kHeaderHeight+( dWin->linesPerPage * kLineHeight ) )
 	{
@@ -1520,10 +1529,9 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 		{
 			AutoScroll( dWin, w );
 
-			if( w.h >= kDataDrawPos && w.h < kDataDrawPos + (kHexWidth * (kBytesPerLine + 1)) )
+			if( w.h >= kDataDrawPos && w.h < kTextDrawPos )	//LR 1.72 -- ichy! kDataDrawPos + (kHexWidth * (kBytesPerLine + 1)) )
 			{
-
-				pos = (((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine) + (w.h - kDataDrawPos + (kHexWidth / 2)) / kHexWidth;
+				pos = (((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine) + (w.h - kDataDrawPos + (kHexWidth - (kCharWidth*2))) / kHexWidth;
 				dWin->editMode = EM_Hex;
 			}
 			else if( w.h >= kTextDrawPos && w.h < kTextDrawPos + (kCharWidth * (kBytesPerLine + 1)) )
@@ -2419,7 +2427,7 @@ void SaveContents( WindowRef theWin )
 			if( tSpec.name[0] < 31 )
 			{
 				tSpec.name[0]++;
-				tSpec.name[tSpec.name[0]] = '~';
+				tSpec.name[tSpec.name[0]] = '^';	//LR 1.72 -- temp files end with ^
 			}
 			else	tSpec.name[31] ^= 0x10;
 		}
@@ -2523,7 +2531,7 @@ void SaveContents( WindowRef theWin )
 					if( bSpec.name[0] < 31 )	// LR: 000505 -- don't go beyond 31 chars!
 						bSpec.name[0]++;
 					bSpec.name[bSpec.name[0]] = '~';
-					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
+					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );	// backup files end with ~
 		
 					// Rename original file to backup name
 					error = HRename( dWin->destSpec.vRefNum, dWin->destSpec.parID, dWin->destSpec.name, bSpec.name );
