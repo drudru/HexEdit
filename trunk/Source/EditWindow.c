@@ -362,28 +362,26 @@ static void _setWindowTitle( EditWindowPtr dWin )
 {
 	Str255 wintitle;		// NOTE: static so we can pass back pointer (ie, it's not on stack!)
 
-	int i,l;
+	int i,j,l;
 
 	// LR: 1.66 make sure the name is good (for instance "icon/r" is bad!)
 	l = (int)dWin->fsSpec.name[0];
-	for( i = 1; i <= l; i++ )
+	for( i = 1, j= 1; i <= l; i++ )
 	{
-		if( dWin->fsSpec.name[i] < ' ' )	// truncate name at fist bad char
-			break;
-		else
-			wintitle[i] = dWin->fsSpec.name[i];
+		if( dWin->fsSpec.name[i] >= ' ' && '!' != dWin->fsSpec.name[i] && '^' != dWin->fsSpec.name[i] )	//LR 1.72 -- don't copy bad chars (can cause menu to mess up!)
+			wintitle[j++] = dWin->fsSpec.name[i];
 	}
 
 	// LR: 1.7 Append fork in use to title
-	if( i < 255 - 8 )
+	if( j < 255 - 8 )
 	{
 		Str31 str2;
 
 		GetIndString( (StringPtr) str2, strHeader, dWin->fork );
 
-		BlockMoveData( &str2[1], &wintitle[i], str2[0] );
+		BlockMoveData( &str2[1], &wintitle[j], str2[0] );
 
-		wintitle[0] = i + str2[0] - 1;
+		wintitle[0] = j + str2[0] - 1;
 	}
 
 	SetWTitle( dWin->oWin.theWin, wintitle );
@@ -2135,12 +2133,16 @@ void OffsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFlag )
 				dWin->endSel = dWin->startSel;
 				CursorOff( dWin->oWin.theWin );
 			}
-			ScrollToSelection( dWin, dWin->startSel, fullUpdate, false );
 			if( !shiftFlag )
 				CursorOn( dWin->oWin.theWin );
 		}
 		else
+		{
 			SysBeep( 1 );
+			if( !shiftFlag )
+				dWin->endSel = dWin->startSel;		//LR 1.72 -- deselect anyway
+		}
+		ScrollToSelection( dWin, dWin->startSel, fullUpdate, false );
 	}
 	else
 	{
@@ -2158,12 +2160,16 @@ void OffsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFlag )
 				dWin->startSel = dWin->endSel;
 				CursorOff( dWin->oWin.theWin );
 			}
-			ScrollToSelection( dWin, dWin->endSel, fullUpdate, false );
 			if( !shiftFlag )
 				CursorOn( dWin->oWin.theWin );
 		}
 		else
+		{
 			SysBeep( 1 );
+			if( !shiftFlag )
+				dWin->startSel = dWin->endSel;		//LR 1.72 -- deselect anyway
+		}
+		ScrollToSelection( dWin, dWin->endSel, fullUpdate, false );
 	}
 }
 
