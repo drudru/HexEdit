@@ -26,7 +26,7 @@
 static Str63 prefsFName;
 
 /*** INIT PREFS ***/
-static OSStatus InitPrefs( void )
+static OSStatus _prefsInit( void )
 {
 	// bad version, create default
 	memset( &prefs, 0, sizeof( prefs ) );
@@ -55,7 +55,7 @@ static OSStatus InitPrefs( void )
 }
 
 /*** GET PREFS FILE PATH ***/
-static Boolean GetPrefsFPath( long *prefDirID, short *systemVolRef )
+static Boolean _prefsGetFSPath( long *prefDirID, short *systemVolRef )
 {
 	OSStatus	error;
 	
@@ -68,7 +68,7 @@ static Boolean GetPrefsFPath( long *prefDirID, short *systemVolRef )
 }
 
 /*** WRITE PREFS ***/
-static OSStatus WritePrefs( long *prefDirID, short *systemVolRef )
+static OSStatus _prefsWrite( long *prefDirID, short *systemVolRef )
 {
 	OSStatus		error;
 	short		fileRefNum;
@@ -116,30 +116,8 @@ static OSStatus WritePrefs( long *prefDirID, short *systemVolRef )
 	return error;
 }
 
-/*** SAVE PREFS ***/
-Boolean SavePrefs( void )
-{
-	long		prefDirID;
-	short		systemVolRef;
-
-	if( !GetPrefsFPath( &prefDirID, &systemVolRef ) )
-		return false;
-
-	// LR: v1.6.5 don't save a bad prefs structure!
-	if( PREFS_VERSION != prefs.version )
-		InitPrefs();
-
-// LR: v1.6.5	prefs.csResID = prefs.csMenuID;	// LR: 1.5, yech!
-// LR: v1.6.5	prefs.version = PREFS_VERSION;
-
-	if( noErr != WritePrefs( &prefDirID, &systemVolRef ) )
-		return false;
-
-	return true;
-}
-
 /*** READ PREFS ***/
-static OSStatus ReadPrefs( long *prefDirID, short *systemVolRef )
+static OSStatus _prefsRead( long *prefDirID, short *systemVolRef )
 {
 	OSStatus	error;
 	short		fileRefNum;
@@ -188,9 +166,8 @@ static OSStatus ReadPrefs( long *prefDirID, short *systemVolRef )
 	return error;
 }
 
-
 /*** DELETE PREFS ***/
-static Boolean DeletePrefs( long *dirID, short *volRef )
+static Boolean _prefsDelete( long *dirID, short *volRef )
 {
 	FSSpec		theSpecs;
 	OSStatus	error;
@@ -207,8 +184,32 @@ static Boolean DeletePrefs( long *dirID, short *volRef )
 	return true;
 }
 
+#pragma mark -
+
+/*** SAVE PREFS ***/
+Boolean PrefsSave( void )
+{
+	long		prefDirID;
+	short		systemVolRef;
+
+	if( !_prefsGetFSPath( &prefDirID, &systemVolRef ) )
+		return false;
+
+	// LR: v1.6.5 don't save a bad prefs structure!
+	if( PREFS_VERSION != prefs.version )
+		_prefsInit();
+
+// LR: v1.6.5	prefs.csResID = prefs.csMenuID;	// LR: 1.5, yech!
+// LR: v1.6.5	prefs.version = PREFS_VERSION;
+
+	if( noErr != _prefsWrite( &prefDirID, &systemVolRef ) )
+		return false;
+
+	return true;
+}
+
 /*** LOAD PREFS ***/
-Boolean LoadPrefs( void )
+Boolean PrefsLoad( void )
 {
 	OSStatus	error;
 	long		prefDirID;
@@ -219,13 +220,13 @@ Boolean LoadPrefs( void )
 
 	prefs.version = 0;	// failure flag
 
-	noProblems = GetPrefsFPath( &prefDirID, &systemVolRef );
+	noProblems = _prefsGetFSPath( &prefDirID, &systemVolRef );
 	if( noProblems )
 	{
-		error = ReadPrefs( &prefDirID, &systemVolRef );
+		error = _prefsRead( &prefDirID, &systemVolRef );
 		if( error == eofErr )
 		{
-			noProblems = DeletePrefs( &prefDirID, &systemVolRef );
+			noProblems = _prefsDelete( &prefDirID, &systemVolRef );
 // LR: v1.6.5			return false;
 		}
 	}
@@ -238,7 +239,7 @@ Boolean LoadPrefs( void )
 		if( PREFS_V204 == prefs.version )	// check for modifyable version
 			prefs.constrainSize = false;
 		else
-			InitPrefs();					// !!! start from scratch!
+			_prefsInit();					// !!! start from scratch!
 	}
 
 	// funky...but menus sorted by name mess me up!

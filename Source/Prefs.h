@@ -67,7 +67,7 @@ extern prefs_t prefs;
 
 // --- Prototypes ---
 
-Boolean SavePrefs( void );
-Boolean LoadPrefs( void );
+Boolean PrefsSave( void );
+Boolean PrefsLoad( void );
 
 #endif
