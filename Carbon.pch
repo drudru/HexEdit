@@ -31,4 +31,4 @@
 	#define DEBUG 1
 #endif
 
-#include "MacHeadersCarbon.h"		//LR 1.72 -- include precompiled headers, much faster :)
+#include "CarbonHeaders.c"		//LR 1.76 -- must have "Carbon Support" folder and 1.3 or later
