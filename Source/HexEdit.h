@@ -71,6 +71,7 @@
 	#define GetWindowBounds(w,t,rp) *rp = (*((CWindowPeek)w)->port.portPixMap)->bounds
 	#define GetPortBounds(p,rp) *rp = (p)->portRect
 	#define GetPortPixMap(p) p->portPixMap
+	#define GetPortHiliteColor(p,c) *(c) = (*((GVarHandle)p->grafVars))->rgbHiliteColor	//LR 185
 	#define InvalWindowRect(w,r) InvalRect(r)
 	#define EnableMenuItem EnableItem
 	#define DisableMenuItem DisableItem
