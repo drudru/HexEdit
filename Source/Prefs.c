@@ -49,6 +49,7 @@ static OSStatus _prefsInit( void )
 	gPrefs.asciiMode = false;
 	gPrefs.decimalAddr = EM_Hex;
 	gPrefs.overwrite = false;
+	gPrefs.nonDestructive = true;
 	gPrefs.backupFlag = true;
 	gPrefs.vertBars = true;
 

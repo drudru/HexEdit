@@ -5,31 +5,3 @@ This is to track changes made to files checked in. This is NOT the history file!
 This file will be culled to update the version history file for official releases. (ie, for each official release this file is emptied!)
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
-Fix opening of one-fork files with drag and drop (drags are now always opened in smart fork mode)
-Fix Overwrite mode stopping overwrites before last byte of file
-Fix Overwrite mode adding bytes to file (no bytes to overwrite past eof!)
-Changed menu option "non-destructive delete" to "destructive delete" (correct name)
-Checked all icon resource files in in mergable resource fork format (MacCVSClient)
-Checked all resources in in mergable resource fork format (MacCVSClient)
-	(this fixes correct problem with checkouts from CVS having no resource data!)
-Added the pre-built 68K application to CVS (so no need to rebuild ... can't w/CW7 or later)
-Updated webpage links in application
-Removed all old Projector checkout resources from any files where they still existed
-Updated documentation to reflect these changes
-Added documentation on keyboard usage to docs file
-Clear key now clears byte to right if no selection is made
-Clear (key and menu item) now moves cursor to next insertion point after clear
-Updated handling of Backspace, clear, and edit "clear" menu to be more consistent
-	(clear always zeros for instance, and BS/Del are non-destructive when appropriate)
-Updated the Source Forge website with new links, images, corrections, etc.
-Fix find dialog's replace code (was working, but code was wrong)
-Add ability for finding to wrap in file
-Added "replace and find next" search feature
-	(replaces current text with replace text, searches for next matching find string)
-Replacement text is no longer converted to upper case if "ignore case" is checked
-	(option should have only effected the find string!)
-If nothing to find, all find/replace menu options open the find dialog for you
-Pressing "option" w/replace click in find dialog is replace/find next.
-Find dialog's Replace only happens if there is a selection! (replace all happens always)
-Added keyboard modifiers for various program items (menus/editing/dialogs) to documentaiton
-Zoom state is now smaller for large files (big window) and larger for small files (small window)
