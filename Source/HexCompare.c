@@ -46,81 +46,125 @@ WindowRef		CompWind1 = NULL,
 Boolean			WeFoundWind1 = false,
 				WeFoundWind2 = false;
 
-/*** PERFORM TEXT DIFFERENCE COMPARE ***/
-Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
+/*** PERFORM TEXT COMPARE ***/
+//LR 181 -- this one routine now performs EITHER match or diff comparisons...and WAY faster :)
+Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 {
 //	returns differences in data of two edit windows
-	Byte		ch, ch2;
+	Byte		ch1, ch2;
 	short		matchIdx, matchCnt;
-	long		addr, addr2, matchAddr;
+	long		addr1, addr2, matchAddr1, matchAddr2, adjust;
+	register 	EditChunk **c1, **c2;
 
 	MySetCursor( C_Watch );
 
 	// Search in Direction gPrefs.searchForward for text gSearchBuffer
 
+	addr1 = dWin1->startSel;
+	addr2 = dWin2->startSel;
+
 	if( gPrefs.searchForward )
-	{
-		addr = dWin->endSel;
-		addr2 = dWin2->endSel;
-	}
+		adjust = 1;
 	else
-	{
-		addr = dWin->startSel - 1;
-		addr2 = dWin2->startSel - 1;
-		if( addr < 0 )	return false;
-		if( addr2 < 0 )	return false;
-	}
+		adjust = -1;
 	
 	// 1 = byte, 2 = words, 4 = longs, ect...
-	matchCnt = gPrefs.searchSize+1;
-	if( gPrefs.searchSize == CM_Long ) matchCnt += 1;
+	matchCnt = gPrefs.searchSize;
 
+	//LR 181 -- we handle the chucks ourself to speed up searching!
+	//			get the chunk for the current address & load it.
+
+	c1 = GetChunkByAddr( dWin1, addr1 );
+	c2 = GetChunkByAddr( dWin2, addr2 );
+	if( !c1 || !c2 )
+		goto Failure;	// should never happen, but...
+
+	LoadChunk( dWin1, c1 );
+	LoadChunk( dWin2, c2 );
 
 	matchIdx = 0;
-	while ( !CheckForAbort() )		// LR: 1.7 -- allow aborting compares!
+	addr1 += adjust;
+	addr2 += adjust;
+
+	//LR 181 -- re-write of compare loop; it was pathetically slow, etc.
+	while( addr1 >= 0 && addr1 < dWin1->fileSize && addr2 >= 0 && addr2 < dWin2->fileSize )
 	{
-		ch = GetByte( dWin, addr );
-		ch2 = GetByte( dWin2, addr2 );
-		if( ch != ch2 ) {				// change this if you want compare for similarities
-			if( matchIdx == 0 ) matchAddr = addr;
+		if( !(addr1 % 4096) )		//LR 1.72 -- don't slow our searches down unnecessarily!
+		{
+			if( CheckForAbort() )	//LR: 1.66 - allow user to abort the search
+				break;
+		}
+
+//181		ch1 = GetByte( dWin1, addr1 );
+//181		ch2 = GetByte( dWin2, addr2 );
+		ch1 = (Byte) (*(*c1)->data)[addr1 - (*c1)->addr];
+		ch2 = (Byte) (*(*c2)->data)[addr2 - (*c2)->addr];
+		if( (gPrefs.searchType == CM_Different && ch1 != ch2) || (gPrefs.searchType == CM_Match && ch1 == ch2) )
+		{
+			if( matchIdx == 0 )
+			{
+				matchAddr1 = addr1;
+				matchAddr2 = addr2;
+			}
 			++matchIdx;
+
 			if( matchIdx >= matchCnt )
 				goto Success;
-			++addr;
+
+			++addr1;
 			++addr2;
-			if( addr == dWin->fileSize )
+			if( addr1 == dWin1->fileSize )
 			{
 				matchIdx = 0;
-				addr = matchAddr;
+				addr1 = matchAddr1;
+				addr2 = matchAddr2;
 			}
 			else
 				continue;
 		}
-		else
+		else if( matchIdx )	// if we were in a match, back it out!
 		{
-			if( matchIdx )
-			{
-				matchIdx = 0;
-				addr = matchAddr;
-			}
+			matchIdx = 0;
+			addr1 = matchAddr1;
+			addr2 = matchAddr2;
 		}
-		if( gPrefs.searchForward )
+		addr1 += adjust;
+		addr2 += adjust;
+
+		//LR 181 -- OK, here we must handle moving to a new chunk if outside current one
+		if( addr1 < (*c1)->addr )
 		{
-			++addr;
-			++addr2;
-			if( addr2 == dWin2->fileSize )
-				goto Failure;
-			if( addr == dWin->fileSize )
-				goto Failure;
+			UnloadChunk( dWin1, c1, true );
+			c1 = (*c1)->prev;
+			goto nc1;
 		}
-		else
+		else if( addr1 >= (*c1)->addr + (*c1)->size )
 		{
-			--addr;
-			--addr2;
-			if( addr < 0 )
+			UnloadChunk( dWin1, c1, true );
+			c1 = (*c1)->next;
+nc1:
+			if( !c1 )
 				goto Failure;
-			if( addr2 < 0 )
+
+			LoadChunk( dWin1, c1 );	// no check, most likely not loaded, and checked in routine anyway
+		}
+
+		//LR 181 -- OK, here we must handle moving to a new chunk if outside current one
+		if( addr2 < (*c2)->addr )
+		{
+			UnloadChunk( dWin2, c2, true );
+			c2 = (*c2)->prev;
+			goto nc2;
+		}
+		else if( addr2 >= (*c2)->addr + (*c2)->size )
+		{
+			UnloadChunk( dWin2, c2, true );
+			c2 = (*c2)->next;
+nc2:
+			if( !c2 )
 				goto Failure;
+
+			LoadChunk( dWin2, c2 );	// no check, most likely not loaded, and checked in routine anyway
 		}
 	}
 
@@ -130,14 +174,14 @@ Failure:
 	return false;
 
 Success:
-	SelectWindow( dWin->oWin.theWin );
-	dWin->startSel = matchAddr;
-	dWin->endSel = dWin->startSel + gPrefs.searchSize + 1;
-	if( gPrefs.searchSize==CM_Long ) dWin->endSel += 1;
-	ScrollToSelection( dWin, dWin->startSel, true );
+	SelectWindow( dWin1->oWin.theWin );
+	dWin1->startSel = matchAddr1;
+	dWin1->endSel = dWin1->startSel + gPrefs.searchSize + 1;
+	if( gPrefs.searchSize==CM_Long ) dWin1->endSel += 1;
+	ScrollToSelection( dWin1, dWin1->startSel, true );
 
 	SelectWindow( dWin2->oWin.theWin );
-	dWin2->startSel = matchAddr;
+	dWin2->startSel = matchAddr2;
 	dWin2->endSel = dWin2->startSel + gPrefs.searchSize + 1;
 	if( gPrefs.searchSize==CM_Long ) dWin2->endSel += 1;
 	ScrollToSelection( dWin2, dWin2->startSel, true );
@@ -147,6 +191,7 @@ Success:
 }
 
 /*** PERFORM TEXT MATCH COMPARE ***/
+/*181
 Boolean PerformTextMatchCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
 {
 //	returns matches in data of two edit windows
@@ -245,6 +290,7 @@ Success:
 	MySetCursor( C_Arrow );
 	return true;
 }
+*/
 
 /*** DO COMPARISON ***/
 void DoComparison( void )
@@ -311,22 +357,25 @@ void DoComparison( void )
 			if( iType==1 )			// handle find forward here
 			{
 				gPrefs.searchForward = true;
-				if( gPrefs.searchType == CM_Match )
+				PerformTextCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
+
+/*181				if( gPrefs.searchType == CM_Match )
 					PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 				else
 					PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
-
+*/
 				SelectWindow( (WindowRef)pDlg );
 			}
 			if( iType==3 )			// handle find backward here
 			{
 				gPrefs.searchForward = false;
+				PerformTextCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 
-				if( gPrefs.searchType == CM_Match )
+/*181				if( gPrefs.searchType == CM_Match )
 					PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 				else
 					PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
-
+*/
 				SelectWindow( (WindowRef)pDlg );
 			}
 		}

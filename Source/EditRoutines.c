@@ -47,9 +47,9 @@ static EditChunk	**_scrapChunk;
 
 
 /*** LOAD FILE ***/
+// Assumes theWin has just been opened, file is open, fileSize field is correct
 void LoadFile( EditWindowPtr dWin )
 {
-// Assumes theWin has just been opened, file is open, fileSize field is correct
 	EditChunk	**nc;
 	long		count, chunkSize, pos;
 	Boolean		once = true;
@@ -169,17 +169,24 @@ void SetCurrentChunk( EditWindowPtr dWin, long addr )
 EditChunk** GetChunkByAddr( EditWindowPtr dWin, long addr )
 {
 	register EditChunk **cc;
+
+	// Does current chunk contain address?
 	if( dWin->curChunk && addr >= ( *dWin->curChunk )->addr )
 		cc = dWin->curChunk;
 	else	// Otherwise, start from beginning of chain
 		cc = dWin->firstChunk;
+
+	// Search chunck list for chunck with our address
 	while( cc )
 	{
-		if( addr < ( *cc )->addr+( *cc )->size )	break;
+		if( addr < ( *cc )->addr+( *cc )->size )
+			break;
 		else
 		{
-			if( ( *cc )->next )	cc = ( *cc )->next;
-			else return cc;
+			if( ( *cc )->next )
+				cc = ( *cc )->next;
+			else
+				return cc;
 		}
 	}
 	return cc;
@@ -210,12 +217,15 @@ void LoadChunk( EditWindowPtr dWin, EditChunk **cc )
 	long	count;
 	OSErr	error;
 	short	refNum;
+
 	if( ( *cc )->loaded )
 		return;
+
 	// Check if we can fit within MaxFileRam, if not, deallocate old chunks
 	// until we're ok
 	while( dWin->totLoaded+( *cc )->size > kMaxFileRAM )
 		UnloadLeastUsedChunk( dWin );
+
 	( *cc )->data = NewHandleClear( ( *cc )->size );
 	if( !( *cc )->data )
 	{
