@@ -318,6 +318,7 @@ OSStatus AdjustMenus( void )
 		frontWindowName[0] = 0;
 
 	i = CountMenuItems( windowMenu );
+	_enableMenuItem(windowMenu, 0, i != 0);	// dim out Window menu if no windows up.
 	while( i )
 	{
 		GetMenuItemText( windowMenu, i, menuItemTitle );		// if you open more than one file with the same name (or edit the other fork)É
