@@ -347,16 +347,16 @@ void AutoScroll( EditWindowPtr dWin, Point pos )
 {
 	short offset;
 
-	if( pos.v < (kHeaderHeight + 1) )
+	if( pos.v < (kHeaderHeight + 1) )	// off top?
 	{
-		offset = kBytesPerLine * (((pos.v - (kHeaderHeight + 1)) / 2) + 1);
+		offset = kBytesPerLine * (((pos.v - (kHeaderHeight + 3)) / 2) + 1);		// an extra 2 to avoid scrolling down!
 	}
-	else if( pos.v >= (kHeaderHeight + 1) + dWin->linesPerPage * kLineHeight )
+	else if( pos.v >= (kHeaderHeight + 1) + dWin->linesPerPage * kLineHeight )	// of bottom?
 	{
 		offset = kBytesPerLine * (((pos.v - ((kHeaderHeight + 1) + dWin->linesPerPage * kLineHeight)) / 2) + 1);
 	}
 	else
-		return;	// wasn't off top or bottom.
+		return;	// was not off top or bottom.
 
 	ScrollToPosition( dWin, dWin->editOffset+offset );
 }
