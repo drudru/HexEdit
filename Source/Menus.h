@@ -25,6 +25,32 @@
 #ifndef _HexEdit_Menus_
 #define _HexEdit_Menus_
 
+// Menu Resource IDs
+#define kMenuBaseID		128
+
+enum	{kAppleMenu = kMenuBaseID, kFileMenu, kEditMenu, kFindMenu, kOptionsMenu, kColorMenu, kWindowMenu};
+
+// Menu Item Numbers
+enum	{AM_About=1};
+
+enum	{FM_New=1,FM_Open,FM_Close,FM_Sep1,
+		 FM_OtherFork,FM_CompareFiles,FM_Sep2,	
+		 FM_Save, FM_SaveAs, FM_Revert,FM_Sep3,
+		 FM_PageSetup, FM_Print,FM_Sep4,
+		 FM_Quit};
+
+enum 	{EM_Undo = 1, EM_Sep1, EM_Cut, EM_Copy,
+		 EM_Paste, EM_Clear, EM_Sep2, EM_SelectAll};
+		 
+enum	{SM_Find = 1, SM_FindForward, SM_FindBackward, SM_Sep1, SM_GotoAddress};
+
+enum	{OM_HiAscii = 1, OM_DecimalAddr, OM_VertBars, OM_WinSize, OM_Overwrite, OM_Sep1, OM_Backups,
+			OM_ComparePref};
+
+enum	{CM_UseColor = 1, CM_Sep1, CM_FirstColor};
+
+// *** Prototypes
+
 OSStatus InitMenubar( void );
 OSStatus SmartEnableMenuItem( MenuRef menu, short item, short ok );
 OSStatus AdjustMenus( void );
