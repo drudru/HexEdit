@@ -174,7 +174,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 		addr += adjust;
 	}
 
-Failure:
+//LR 175 Failure:
 	SysBeep( 1 );
 	MySetCursor( C_Arrow );
 	return( false );

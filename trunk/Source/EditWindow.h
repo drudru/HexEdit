@@ -110,16 +110,20 @@ void UpdateEditWindows( void );
 
 //short AskEditWindow( void ); BB: split into two functions and made into an inline
 short AskEditWindowNav( void );
+#if !TARGET_API_MAC_CARBON
 short AskEditWindowSF( void );
+#endif
 
 // BB: now a wrapper for Nav or SF based functions
-#if !__POWERPC__		//LR 1.73 -- not available for 68K (won't even link!)
-inline short AskEditWindow( void ) {return AskEditWindowSF();}
+#if __MWERKS__ && !__POWERPC__		//LR 1.73 -- not available for 68K (won't even link!)
+//    inline short AskEditWindow( void ) {return AskEditWindowSF();}
+	#define AskEditWindow AskEditWindowSF
 #elif !TARGET_API_MAC_CARBON
 inline short AskEditWindow( void )
 {if (g.useNavServices) {return AskEditWindowNav();} else {return AskEditWindowSF();}}
 #else
-inline short AskEditWindow( void ) {return AskEditWindowNav();}
+//    inline short AskEditWindow( void ) {return AskEditWindowNav();}
+    #define AskEditWindow AskEditWindowNav
 #endif
 
 #endif

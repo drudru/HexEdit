@@ -23,6 +23,8 @@
 #ifndef _HexEdit_Preferences_
 #define _HexEdit_Preferences_
 
+#include "HexEdit.h"
+
 #define	kPrefCreatorType	FOUR_CHAR_CODE('hDmp')
 #define	kPrefFileType		FOUR_CHAR_CODE('BINA')
 

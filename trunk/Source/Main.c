@@ -27,7 +27,12 @@
 #include "MPWIncludes.h"
 #endif
 
-#include <debugging.h>
+#ifdef __MWERKS__
+    #include <debugging.h>
+#else
+    //#include <FlatCarbon/Debugging.h>
+    //#include <CoreServices/CoreServices.h>
+#endif
 
 #include "Main.h"
 #include "Menus.h"
@@ -61,8 +66,9 @@ QDGlobals	qd;
 #endif
 
 /*** MAIN ***/
-void main( void )	// LR: fix warnings
+int main(int argc, char *argv[])	//LR 175
 {
+#pragma unused(argc,argv)
 	// Standard Mac Initialization
 	InitToolbox();
 
@@ -113,6 +119,7 @@ void main( void )	// LR: fix warnings
 		ICStop( g.icRef );	// shutdown IC
 	}
 #endif
+	return( 0 );
 }
 
 /*** INIT TOOLBOX ***/
@@ -514,7 +521,7 @@ static Boolean GotRequiredParams( const AppleEvent *theEvent )
 static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 {
 	OSStatus	error;
-	Handle		docList = NULL;
+//LR 175	Handle		docList = NULL;
 	FSSpec		myFSS;
 	AEDescList	theList;
 	AEKeyword	aeKeyword = keyDirectObject;
