@@ -252,7 +252,7 @@ OSStatus AdjustMenus( void )
 		}
 		else
 		{
-			selection = false;
+			selection = (isGotoWin || isFindWin);
 		}
 	}
 	else	// LR: v1.6.5 if no window is visible, then nothing is true!
@@ -310,7 +310,7 @@ OSStatus AdjustMenus( void )
 	_enableMenuItem( editMenu, EM_Paste, isDA || scrapExists );
 	_enableMenuItem( editMenu, EM_Clear, isDA || selection );
 
-	_enableMenuItem( editMenu, EM_SelectAll, isDA || isObjectWin );
+	_enableMenuItem( editMenu, EM_SelectAll, isDA || isObjectWin || isFindWin || isGotoWin );
 
 	_enableMenuItem( findMenu, 0, isObjectWin || isFindWin || isGotoWin );
 /* 1.65
@@ -557,17 +557,21 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 			{
 				case EM_Cut:
 					DialogCut( dlgRef );
+					TEToScrap();
 					break;
 
 				case EM_Copy:
 					DialogCopy( dlgRef );
+					TEToScrap();
 					break;
 
 				case EM_Paste:
+					TEFromScrap();
 					DialogPaste( dlgRef );
 					break;
 
 				case EM_Clear:
+					DialogDelete( dlgRef );
 					break;
 
 				case EM_SelectAll:
