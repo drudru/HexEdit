@@ -309,11 +309,14 @@ OSStatus AdjustMenus( void )
 	_enableMenuItem( findMenu, SM_FindForward, isObjectWin && dWin->fileSize && g.searchBuffer[0] );	//LR 1.72 -- only enable w/something to search :)
 	_enableMenuItem( findMenu, SM_FindBackward, isObjectWin && dWin->fileSize && g.searchBuffer[0] );
 
+	_enableMenuItem( optionsMenu, OM_NonDestructive, gPrefs.overwrite );	//LR 1.74 -- only available in overwrite mode
+
 	CheckMenuItem( optionsMenu, OM_HiAscii, gPrefs.asciiMode );
 	CheckMenuItem( optionsMenu, OM_DecimalAddr, gPrefs.decimalAddr );
 	CheckMenuItem( optionsMenu, OM_Backups, gPrefs.backupFlag );
 	CheckMenuItem( optionsMenu, OM_WinSize, gPrefs.constrainSize );
 	CheckMenuItem( optionsMenu, OM_Overwrite, gPrefs.overwrite );
+	CheckMenuItem( optionsMenu, OM_NonDestructive, gPrefs.nonDestructive );	//LR 1.74 -- optional non-destructive deletes
 	CheckMenuItem( optionsMenu, OM_Unformatted, !gPrefs.formatCopies );
 	CheckMenuItem( optionsMenu, OM_VertBars, gPrefs.vertBars );
 
@@ -609,6 +612,10 @@ OSStatus HandleMenu( long mSelect )
 
 			case OM_Overwrite:
 				gPrefs.overwrite = !gPrefs.overwrite;
+				break;
+
+			case OM_NonDestructive:
+				gPrefs.nonDestructive = !gPrefs.nonDestructive;
 				break;
 
 			case OM_Unformatted:

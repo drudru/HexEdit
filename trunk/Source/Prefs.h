@@ -31,7 +31,7 @@
 #define	kPrefsFileNameIndex	FN_PrefsFile
 
 // LR: preferences structure
-#define PREFS_VERSION	0x0206
+#define PREFS_VERSION	0x0207
 
 typedef struct
 {
@@ -51,14 +51,24 @@ typedef struct
 	short	backupFlag;		// from original (moved in 1.5)
 	short	vertBars;		// use David Emme's vertical bars
 	short	constrainSize;	// resizing allows partial lines?
+	short	formatCopies;	// format copies (spaces, tabs - false == raw data)
+	short	nonDestructive;	// in overwrite mode, Detete is non-destructive (## -> 00)
 
 	short	useColor;		// true if we are using color windows
 
-	short	version;		// version # of prefs record
+	// spare prefs entries so version file can be updated
+	// w/o reseting prefs a few times :)
+	// NOTE: these default to FALSE if the ever become used!
+	short	spare1;
+	short	spare2;
+	short	spare3;
+	short	spare4;
+
+	short	version;		// version # of gPrefs record
 
 }	prefs_t, *prefsPtr;
 
-extern prefs_t prefs;
+extern prefs_t gPrefs;
 
 // --- Prototypes ---
 
