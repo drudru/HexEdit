@@ -567,8 +567,9 @@ void SizeEditWindow( WindowRef theWin, tWindowType type )
 	}
 	else if( kWindowCompareBtm == type )
 	{
-		MoveWindow( theWin, 14, g.maxHeight / 2, true );
+		MoveWindow( theWin, 14, maxheight + 48, true );
 		CompWind2 = theWin;
+		maxheight += (maxheight + 48);		//LR 180 -- required to keep window of correct height
 	}
 	else	// kWindowNormal
 	{
@@ -859,7 +860,7 @@ contData:
 			{
 				GetIndString( tempStr, strFiles, FN_RSRC );
 				ParamText( fsSpec->name, tempStr, NULL, NULL );
-				if( StopAlert( alertNoFork, NULL ) != 2 )
+				if( StopAlert( alertNoFork, NULL ) == 2 )
 					goto contRsrc;
 			}
 
