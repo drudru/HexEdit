@@ -326,7 +326,8 @@ OSStatus AdjustMenus( void )
 	CheckMenuItem( optionsMenu, OM_Backups, gPrefs.backupFlag );
 	CheckMenuItem( optionsMenu, OM_WinSize, gPrefs.constrainSize );
 	CheckMenuItem( optionsMenu, OM_Overwrite, gPrefs.overwrite );
-	CheckMenuItem( optionsMenu, OM_NonDestructive, gPrefs.nonDestructive );	//LR 1.74 -- optional non-destructive deletes
+	CheckMenuItem( optionsMenu, OM_NonDestructive, gPrefs.nonDestructive );	//LR 174 -- optional non-destructive deletes
+	CheckMenuItem( optionsMenu, OM_MoveOnlyPaging, gPrefs.moveOnlyPaging );	//LR 180 -- optional move only paging
 	CheckMenuItem( optionsMenu, OM_Unformatted, !gPrefs.formatCopies );
 	CheckMenuItem( optionsMenu, OM_VertBars, gPrefs.vertBars );
 
@@ -627,6 +628,10 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 
 			case OM_NonDestructive:
 				gPrefs.nonDestructive = !gPrefs.nonDestructive;
+				break;
+
+			case OM_MoveOnlyPaging:
+				gPrefs.moveOnlyPaging = !gPrefs.moveOnlyPaging;
 				break;
 
 			case OM_Unformatted:

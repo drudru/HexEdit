@@ -1291,7 +1291,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
 			{
 				LineTo( r.right, r.bottom );
 			}
@@ -1304,7 +1304,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom-1 );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
 			{
 				LineTo( r.right, r.bottom-1 );
 			}
@@ -1321,7 +1321,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
 			{
 				LineTo( r.right, r.bottom );
 			}
@@ -1338,7 +1338,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom-1 );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
 			{
 				LineTo( r.right, r.bottom-1 );
 			}
@@ -1405,7 +1405,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom-1 );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+				if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
 				{
 					LineTo( r.right, r.bottom-1 );
 				}
@@ -1428,7 +1428,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 	
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom-1 );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+				if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
 				{
 					LineTo( r.right, r.bottom-1 );
 				}
@@ -1488,7 +1488,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+				if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
 				{
 					LineTo( r.right, r.bottom );
 				}
@@ -1509,7 +1509,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+				if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
 				{
 					LineTo( r.right, r.bottom );
 				}
@@ -2116,23 +2116,37 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 			_offsetSelection( dWin, 1, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kUpArrowCharCode:
+			if( er->modifiers & optionKey )		//LR 180 -- option up == home
+				goto dohome;
+
 			_offsetSelection( dWin, -kBytesPerLine, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kDownArrowCharCode:
+			if( er->modifiers & optionKey )		//LR 180 -- option down == end
+				goto doend;
+
 			_offsetSelection( dWin, kBytesPerLine, (er->modifiers & shiftKey) > 0 );
 			break;
 		
 		// scroll document
 		case kPageUpCharCode:
-			_offsetSelection( dWin, -kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
+			if( gPrefs.moveOnlyPaging )			//LR 180 -- option to only move display, not selection point
+				ScrollToPosition( dWin, dWin->editOffset - (kBytesPerLine * (dWin->linesPerPage - 1)) );
+			else
+				_offsetSelection( dWin, -kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
 			break;
 		case kPageDownCharCode:
-			_offsetSelection( dWin, kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
+			if( gPrefs.moveOnlyPaging )			//LR 180 -- option to only move display, not selection point
+				ScrollToPosition( dWin, dWin->editOffset + (kBytesPerLine * (dWin->linesPerPage - 1)) );
+			else
+				_offsetSelection( dWin, kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
 			break;
 		case kHomeCharCode:
+dohome:
 			_offsetSelection( dWin, 0xFEED, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kEndCharCode:
+doend:
 			_offsetSelection( dWin, 0xBED, (er->modifiers & shiftKey) > 0 );
 			break;
 
