@@ -1,11 +1,16 @@
 HexEdit Revision History
 
-12/5/02 1.86
+01/14/03 1.87
+Fixed icon for main app (can't include during build, must copy/paste...no idea why)
+Give time for compare events to arrive before showing open file dialog
+New test file in documentation folder shows how to have HexEdit compare files via AppleScript
+Added compare options to specify fork in AppleScript (with option "rsrc"/"data")
+
+12/05/02 1.86 (no public release)
 Enhanced selection hilight code to work more like finder & w/all colors
 Cut/Copy/Paste/Clear menu items are now availabe in dialogs (ie, Find)
 Cut/Copy/Paste keys work again in dialogs under Mac OS X
 Fixed ability to cancel search/compare ops (broke by speed increase!)
-
 
 10/31/02 1.85
 re-wrote the search routine to get a 100x speedup! (650MB search in 1.25 minues vs 120+)
