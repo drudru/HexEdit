@@ -1,5 +1,33 @@
 HexEdit Revision History
 
+10/31/02 1.85
+re-wrote the search routine to get a 100x speedup! (650MB search in 1.25 minues vs 120+)
+	(now manages chunks directly, and chunks are now 128K instead of 30K each)
+re-wrote file comparison routines in same manner as new search code
+only a single file comparison routine (instead of one for match and one for diff)
+Outlines are in grey instead of black, which works better for any color scheme
+re-wrote the selection hiliting code to come out closer to selection hilite in textedit
+    Due to multiple color lines we can't use "hilite" mode for "InvertRect"
+    so I used a strange pen mode, the hilite color and got pretty close. Doesn't work
+    for all color schemes, just like text edit's hilighting. Still, pretty close & looks better!
+Files used to be limited to one chunk in memory at a time (although the system seemed designed for
+    more than that). Now there can be multiple chunks, and each file is limited to a total RAM limit
+    for loaded chunks (1MB on carbon, 128K on other systems). This should speed up some editing.
+
+08/18/02 1.81 (cvs only, no official release)
+Added a new entry (Divider Lines) to the color schemes (per Uli, plus Sage and Aqua schemes)
+Moved Color Schemes and templates to seperate file
+Moved About box and related resources to seperate file
+About box now uses "auto scroll" control, fixes OS X stagger, left basic code in for 68K build.
+  (Uses either appearance or normal about resources, depending on runtime.)
+Fixed bad use of special menu chars in window/menu strings
+Show errors opening files w/drag & drop open (but not print)
+Used FSGetCatalogInfo to preserve unix permissions (and who knows what else :)
+Only use AppearanceManager 1.1 (from Mac OS 8.5 on) which have functionality we need
+Color menu checkmark now shows color of current window (instead of global setting)
+  (also fixes bug of double-selecting a color turning checkmark off)
+No more "default" color, that's now Ocean and "Aqua" is now the default (much nicer scheme!)
+
 04/29/02 1.80
 Removed per-window offscreen drawing surface
 	(a single color capable offscreen is now used for all windows)
