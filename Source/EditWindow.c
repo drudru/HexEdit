@@ -112,7 +112,7 @@ static OSStatus _doPrintDialog( PMPrintSession printSession, PMPageFormat pageFo
 
     Description:
         Assumes the caller provides validated PageFormat and PrintSettings objects.
-        Calculates a valid page range and prints each page by calling DrawPage.
+        Calculates a valid page range and prints each page by calling DrawDump.
 
 ------------------------------------------------------------------------------*/
 static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings printSettings, EditWindowPtr dWin )
@@ -423,8 +423,8 @@ OSStatus SetupNewEditWindow( EditWindowPtr dWin, StringPtr title )
 		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight - 64 );
 
 	// Check for best window size
-	if( ((dWin->linesPerPage - 1) * kLineHeight) > dWin->fileSize )
-		r.bottom = (dWin->fileSize / kBytesPerLine) * kLineHeight;
+	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
+		r.bottom = (((dWin->fileSize / kBytesPerLine) + 1) * kLineHeight) + kHeaderHeight;
 //LR 1.7		r.bottom = (kLineHeight * (((dWin->linesPerPage - 1) * kBytesPerLine) - dWin->fileSize)) / kLineHeight;
 
 	if( r.bottom < (kHeaderHeight + (kLineHeight * 5)) )
@@ -1107,9 +1107,13 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 }
 
 /*** DRAW DUMP ***/
+// Draws the actual hex/decimal and ASCII panes in the window
+
+// NOTE: the kStringTextPos stuff is a bit weird, but it's because I want to draw the leading space in the body
+//			color instead of the address color (and because we don't print the extra spaces every time).
+
 OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 {
-//	draws the actual hex/decimal and ASCII panes in the window
 	short	i, j, y;
 	short	hexPos;
 	short	asciiPos;
@@ -1125,32 +1129,20 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	// create bounds rectangle
 	addrRect.top = r->top;	// we need to erase seperating space
 	addrRect.left = r->left;
-	addrRect.right = r->left + kBodyDrawPos + StringWidth( "\p 000000: " ) - 3;
+	addrRect.right = r->left + kBodyDrawPos + StringWidth( "\p 0000000:" );
 	addrRect.bottom = r->bottom;
-
-	// Draw left edging?
-	if( ctHdl )
-	{
-		RGBBackColor( &( *ctHdl )->bar );
-		RGBForeColor( &( *ctHdl )->barLine );
-
-//		EraseRect( &addrRect );
-
-		MoveTo( addrRect.right, addrRect.top );
-//		LineTo( addrRect.right, addrRect.bottom );
-	}
 
 	addr = sAddr - (sAddr % kBytesPerLine);
 
-	g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kStringHexPos + kBodyStrLen] = ' ';
+	g.buffer[0] = g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kStringHexPos + kBodyStrLen] = ' ';
 
 	// draw each line of data
 	for( y = r->top + (kLineHeight - 2), j = 0; y < r->bottom && addr < eAddr; y += kLineHeight, j++ )
 	{
 		if( prefs.decimalAddr )
-			sprintf( (char *) g.buffer, " %7ld: ", addr );
+			sprintf( (char *)&g.buffer[1], "%7ld:", addr );
 		else
-			sprintf( (char *) g.buffer, "  %06lX: ", addr );
+			sprintf( (char *)&g.buffer[1], " %06lX:", addr );
 
 		// draw the address (not one big string due to different coloring!)
 		if( ctHdl )
@@ -1194,27 +1186,37 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 			}
 		}
 
-		MoveTo( kDataDrawPos, y );
-		DrawText( g.buffer, kStringHexPos, kBodyStrLen + 1 );
+		MoveTo( kDataDrawPos - kCharWidth, y );
+		DrawText( g.buffer, kStringHexPos - 1, kBodyStrLen + 2 );
+	}
+
+	// Draw left edging?
+	if( ctHdl )
+	{
+//LR 1.7		RGBBackColor( &( *ctHdl )->bar );
+		RGBForeColor( &( *ctHdl )->barLine );
+
+//LR 1.7 - not needed		EraseRect( &addrRect );
+
+		MoveTo( addrRect.right, addrRect.top );
+		LineTo( addrRect.right, addrRect.bottom );
 	}
 
 	// Draw vertical bars?
 	// based on David Emme's vertical bar mod
 	if( prefs.vertBars )
 	{
-		short w = StringWidth( "\p0" );	// get width of a character (for positioning)
-
 		if( ctHdl )
 			RGBForeColor( &( *ctHdl )->headerLine );	// LR: v1.6.5 LR - was barText
 
-		MoveTo( 22 * w, addrRect.top );
-		LineTo( 22 * w, addrRect.bottom );
+		MoveTo( CHARPOS(22) - (kCharWidth / 2), addrRect.top );
+		LineTo( CHARPOS(22) - (kCharWidth / 2), addrRect.bottom );
 
-		MoveTo( 34 * w, addrRect.top );
-		LineTo( 34 * w, addrRect.bottom );
+		MoveTo( CHARPOS(34) - (kCharWidth / 2), addrRect.top );
+		LineTo( CHARPOS(34) - (kCharWidth / 2), addrRect.bottom );
 
-		MoveTo( 46 * w, addrRect.top );
-		LineTo( 46 * w, addrRect.bottom );
+		MoveTo( CHARPOS(46) - (kCharWidth / 2), addrRect.top );
+		LineTo( CHARPOS(46) - (kCharWidth / 2), addrRect.bottom );
 	}
 
 	// LR: restore color
@@ -1232,16 +1234,12 @@ void DrawPage( EditWindowPtr dWin )
 	GrafPtr			savePort;
 	Rect			r;
 	PixMapHandle	thePixMapH; // sel, for (un)LockPixels
-// LR: 1.5 offscreen fix!	BitMap			realBits;
 
 #if PROFILE
 	_profile = 1;
 #endif
 
 	GetColorInfo( dWin );	// LR: v1.6.5 multiple routines need this
-
-// LR: offscreen fix!	realBits = ( ( GrafPtr ) dWin )->portBits;
-// LR: offscreen fix!	SetPortBits( ( BitMap * ) &dWin->pixMap );	// LR: -- pixmap change
 
 	GetPort( &savePort );
 	thePixMapH = GetGWorldPixMap( dWin->offscreen );
@@ -1250,22 +1248,6 @@ void DrawPage( EditWindowPtr dWin )
 		SetPort( ( GrafPtr )dWin->offscreen );
 
 		GetPortBounds( dWin->offscreen, &r );
-// LR 1.7		r.right -= ( kSBarSize - 1 );
-
-	/* LR: 1.5 - no longer possible
-		// don't draw outside our offscreen pixMap!
-		if( r.right - r.left > ( *dWin->offscreen->portPixMap )->bounds.right - ( *dWin->offscreen->portPixMap )->bounds.left ||
-			r.bottom - r.top > ( *dWin->offscreen->portPixMap )->bounds.bottom - ( *dWin->offscreen->portPixMap )->bounds.top )
-		{
-	// 		DebugStr( "\pOy!" );
-			return;
-		}
-	*/
-
-	// LR: 1.5 now done in theWin update!	DrawHeader( dWin, &r );
-
-//LR 1.7		r.top += kHeaderHeight;		// NS: don't erase header
-	// LR: 1.5	r.bottom -= ( kSBarSize - 1 );
 
 		if( ctHdl )
 			RGBBackColor( &( *ctHdl )->body );
@@ -1275,11 +1257,15 @@ void DrawPage( EditWindowPtr dWin )
 			BackColor( whiteColor );
 		}
 
-//		EraseRect( &r );
+		// Erase only that part of the buffer that isn't drawn to!
+		if( dWin->fileSize / kBytesPerLine < dWin->linesPerPage )
+		{
+			Rect er = r;
 
-//		r.top += TopMargin;
-	// NS: no bottom bar anymore	r.bottom -= ( kSBarSize + DescendHeight + BotMargin );
-	// 	r.bottom -= ( DescendHeight + BotMargin );
+			er.top = (dWin->fileSize / kBytesPerLine) + kHeaderHeight;
+			EraseRect( &r );
+		}
+//		EraseRect( &r );
 
 		DrawDump( dWin, &r, dWin->editOffset, dWin->fileSize );
 
