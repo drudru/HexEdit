@@ -63,11 +63,13 @@
 		#define SetPortDialogPort SetPort
 	#endif
 	#if !defined(GetDialogPort)
-		#define GetDialogPort( d ) d // BB: added (LR -- may already be defined, check!)
+		#define GetDialogPort( d ) d 	// BB: added (LR -- may already be defined, check!)
+	#endif
+	#if !defined(GetWindowPortBounds)	//LR 180 -- already defined!
+		#define GetWindowPortBounds(w,rp) *rp = (w)->portRect
 	#endif
 	#define GetWindowBounds(w,t,rp) *rp = (*((CWindowPeek)w)->port.portPixMap)->bounds
 	#define GetPortBounds(p,rp) *rp = (p)->portRect
-	#define GetWindowPortBounds(w,rp) *rp = (w)->portRect
 	#define GetPortPixMap(p) p->portPixMap
 	#define InvalWindowRect(w,r) InvalRect(r)
 	#define EnableMenuItem EnableItem
