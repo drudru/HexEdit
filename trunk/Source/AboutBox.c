@@ -89,7 +89,7 @@ void HexEditAboutBox( void )
 #ifdef __MC68K__
 				"\p68K"
 #elif TARGET_API_MAC_CARBON
-				"\pOSX"
+				"\pCarbon"
 #else
 				"\pPPC"
 #endif
