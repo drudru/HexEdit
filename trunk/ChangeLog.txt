@@ -6,9 +6,3 @@ This file will be culled to update the version history file for official release
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
 1.75 Lane Roathe [lane@roathe.com]
-- Can no longer open files twice
-- All file access is now thru FSp calls
-		(saves code and allowing all machines to open files starting with periods)
-- Updated file open error message to reflect likelyhood of already open files
-- Empty fork warnings now work!
-		(ie, if a fork is empty, you are warned about the fact before it is opened)
