@@ -224,12 +224,13 @@ short ErrorAlert( short severity, short strid, ... )
 		KeyMap keys;
 
 		GetKeys( keys );
-// 05/10/01 - GAB: DEBUGSTR not defined for non-Carbon builds
-#if !TARGET_API_MAC_CARBON
 		if( keys[1] & (1<<2) )
+// 05/10/01 - GAB: DEBUGSTR not defined for non-Carbon builds
+#if TARGET_API_MAC_CARBON
 			DEBUGSTR( (StringPtr) tbuf );
+#else
+			DebugStr( (StringPtr) tbuf );
 #endif
-// LR: v1.6.5, use safe Macro			DebugStr( (StringPtr) tbuf );
 	}
 
 	if(  severity == ES_Stop )
