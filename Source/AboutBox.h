@@ -13,10 +13,14 @@
  * 
  * The Initial Developer of the Original Code is Lane Roathe
  * Portions created by Lane Roathe are
- * Copyright (C) Copyright © 1996-2000.
+ * Copyright (C) Copyright © 1996-2002.
  * All Rights Reserved.
- * 
+ *
+ * Modified: $Date$
+ * Revision: $Id$
+ *
  * Contributor(s):
+ *		Lane Roathe
  */
 
 #include "HexEdit.h"

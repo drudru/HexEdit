@@ -13,10 +13,14 @@
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
  * Portions created by Lane Roathe are
- * Copyright (C) Copyright © 1996-2001.
+ * Copyright (C) Copyright © 1996-2002.
  * All Rights Reserved.
- * 
+ *
+ * Modified: $Date$
+ * Revision: $Id$
+ *
  * Contributor(s):
+ *		Lane Roathe
  *		Nick Shanks
  *      Brian Bergstrand
  */
