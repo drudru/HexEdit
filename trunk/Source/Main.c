@@ -693,12 +693,21 @@ static OSStatus _initGlobals( void )
 	result = 0;
 	error = Gestalt( gestaltAppearanceAttr, &result );
 	g.appearanceAvailable = (Boolean) (result & (1 << gestaltAppearanceExists));
-	if( g.appearanceAvailable )	g.useAppearance = true;
-	else						g.useAppearance = false;
-	if( g.useAppearance )		RegisterAppearanceClient();
+
+	if( g.appearanceAvailable )
+	{
+		result = 0;
+		error = Gestalt( gestaltAppearanceVersion, &result );	//LR 181 -- only use appearance v1.1 or later!
+		g.useAppearance = (result >= 0x110);
+	}
+	else
+		g.useAppearance = false;
+
+	if( g.useAppearance )
+		RegisterAppearanceClient();
 	
 	// check nav services availablilty
-// 05/10/01 - GAB: MPW environment support
+	// 05/10/01 - GAB: MPW environment support
 #if !defined(__MC68K__) && !defined(__SC__)
 	g.navAvailable = (Boolean) NavServicesAvailable();
 	// BB: check for Navlib version, older versions were very buggy 
