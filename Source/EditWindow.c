@@ -2337,8 +2337,38 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 			break;
 		
 		// delete characters
+		//LR 1.74 -- non-destructive deletes in overwrite mode (paste appr. lenght zero buffer)
 		case kBackspaceCharCode:	// normal delete
-			if( dWin->endSel > dWin->startSel )
+			if( gPrefs.overwrite && gPrefs.nonDestructive )
+			{
+				long start;
+
+				if( dWin->endSel == dWin->startSel && dWin->startSel > 0L )
+				{
+					ObscureCursor();
+					--dWin->startSel;
+				}
+
+				if( dWin->endSel > dWin->startSel )
+				{
+					EditChunk **tc = NewChunk( dWin->endSel - dWin->startSel, 0, 0, CT_Unwritten );
+					if( !tc ) ErrorAlert( ES_Caution, errMemory );
+					else
+					{
+						(*tc)->lastCtr = 1;	// external
+
+						start = dWin->startSel;
+
+						RememberOperation( dWin, EO_Paste, &gUndo );
+						PasteOperation( dWin, tc );
+						DisposeChunk( dWin, tc );
+						dWin->startSel = dWin->endSel = start;
+						ScrollToSelection( dWin, dWin->startSel, true, false );
+					}
+				}
+
+			}
+			else if( dWin->endSel > dWin->startSel )
 				ClearSelection( dWin );
 			else if( dWin->startSel > 0L )
 			{
@@ -2346,8 +2376,10 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 				--dWin->startSel;
 				ClearSelection( dWin );
 			}
-			else SysBeep(0);
+			else
+				SysBeep(0);
 			break;
+
 		case kDeleteCharCode:	// forward delete
 			if( dWin->endSel > dWin->startSel )
 				ClearSelection( dWin );
@@ -2357,7 +2389,8 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 				++dWin->endSel;
 				ClearSelection( dWin );
 			}
-			else SysBeep(0);
+			else
+				SysBeep(0);
 			break;
 		
 		// insert/overwrite characters

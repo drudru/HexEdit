@@ -656,7 +656,6 @@ void CutSelection( EditWindowPtr dWin )
 	RememberOperation( dWin, EO_Cut, &gUndo );
 	CopyOperation( dWin, &gScrapChunk );		// Copy shorto paste buffer
 	DeleteSelection( dWin );
-	dWin->dirtyFlag = true;
 	ScrollToSelection( dWin, dWin->startSel, true, false );
 }
 
@@ -694,18 +693,15 @@ void MyGetScrap( EditWindowPtr dWin )
 		{
 			ReleaseEditScrap( dWin, &gScrapChunk );
 			gScrapChunk = nc;
+
+			HLock( (*gScrapChunk)->data );
 #if TARGET_API_MAC_CARBON
-			SetHandleSize( (*gScrapChunk)->data, scrapSize );
-			anErr = MemError();
-			if( !anErr )
-			{
-				HLock( (*gScrapChunk)->data );
-				anErr = GetScrapFlavorData( scrapRef, kScrapFlavorTypeText, &scrapSize, *(*gScrapChunk)->data );
-				HUnlock( (*gScrapChunk)->data );
-			}
+			anErr = GetScrapFlavorData( scrapRef, kScrapFlavorTypeText, &scrapSize, *(*gScrapChunk)->data );
 #else
 			anErr = GetScrap( (*gScrapChunk)->data, kScrapFlavorTypeText, &offset );
 #endif
+
+			HUnlock( (*gScrapChunk)->data );
 			if( anErr >= 0 )
 				( *gScrapChunk )->lastCtr = 1;	// Flag as external
 			else
@@ -738,7 +734,6 @@ void PasteSelection( EditWindowPtr dWin )
 		RememberOperation( dWin, EO_Paste, &gUndo );
 
 		PasteOperation( dWin, gScrapChunk );
-		dWin->dirtyFlag = true;
 		ScrollToSelection( dWin, dWin->startSel, true, false );
 	}
 }
@@ -890,7 +885,6 @@ void ClearSelection( EditWindowPtr dWin )
 {
 	RememberOperation( dWin, EO_Clear, &gUndo );
 	DeleteSelection( dWin );
-	dWin->dirtyFlag = true;
 	ScrollToSelection( dWin, dWin->startSel, true, false );
 }
 
