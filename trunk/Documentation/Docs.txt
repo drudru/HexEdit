@@ -111,7 +111,7 @@ Compare Options - Brings up a dialog that lets you choose how file compares are 
 
 The Color Schemes Menu
 
-Use Color Schemes - If selected, then all of the schemes below this item will be selectable as well. In that case, windows will be created in color and you can change the color scheme used to draw windows. All windows are effected by a scheme change. Note: You can now press Option while selecting a color to change just a single window's color. The default color HexEdit uses is only changed when you change the color of all windows (the default) as changing one window's color is considered a 'temp' selection.
+Use Color Schemes - If selected, then all of the schemes below this item will be selectable as well, and the color of the frontmost window will be checked unless there is not a frontmost window, in which case the default color is checked. In that case, windows will be created in color and you can change the color scheme used to draw windows. The default is that only the frontmost window is effected by a scheme change. However, you can now press Option while selecting a color to change the default color scheme, which causes all open windows to update to that scheme. The default color HexEdit uses is only changed when you change the color of all windows in this way, as changing one window's color is considered a 'temp' selection.
 
 
 Program Notes
