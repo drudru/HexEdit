@@ -39,7 +39,7 @@
 
 UndoRecord gUndo, gRedo;
 
-EditChunk	**gScrapChunk;
+static EditChunk	**_scrapChunk;
 
 
 /*** LOAD FILE ***/
@@ -325,7 +325,7 @@ void DeleteSelection( EditWindowPtr dWin )
 		else
 		{
 			UnloadChunk( dWin, fc, true );
-			// Split shorto two chunks
+			// Split into two chunks
 			nc = NewChunk( ( *fc )->size - ( dWin->endSel - ( *fc )->addr ), 
 							0, 
 							( *fc )->filePos + ( dWin->endSel - ( *fc )->addr ), 
@@ -391,7 +391,7 @@ void InsertCharacter( EditWindowPtr dWin, short charCode )
 	// !! Remember Current State for Undo
 
 
-	// Insert Character shorto List
+	// Insert Character into List
 	// 	Identify current chunk - optimize so that if char is between
 	// 		chunks, pick the unwritten one of the two...
 
@@ -416,7 +416,7 @@ void InsertCharacter( EditWindowPtr dWin, short charCode )
 		if( dWin->startSel > ( *fc )->addr )
 		{
 
-			// Split shorto two chunks
+			// Split into two chunks
 			if( dWin->startSel < ( *fc )->addr + ( *fc )->size )
 			{
 				ec = NewChunk( ( *fc )->size - ( dWin->startSel - ( *fc )->addr ), 0, 
@@ -469,7 +469,7 @@ void InsertCharacter( EditWindowPtr dWin, short charCode )
 					*( *fc )->data + ( 1+( dWin->startSel - ( *fc )->addr ) ), 
 					( *fc )->addr + ( *fc )->size - dWin->startSel );
 
-	// 	Insert Char shorto buffer
+	// 	Insert Char into buffer
 	( *( *fc )->data )[dWin->startSel - ( *fc )->addr] = charCode;
 
 	// 	Update Fields in this chunk
@@ -514,8 +514,8 @@ void CopySelection( EditWindowPtr dWin )
 // LR: v1.6.5	PScrapStuff ScrapInfo;	// LR: see below
 #endif
 
-	CopyOperation( dWin, &gScrapChunk );
-	if( gScrapChunk )
+	CopyOperation( dWin, &_scrapChunk );
+	if( _scrapChunk )
 	{
 		OSErr anErr;
 
@@ -536,18 +536,18 @@ void CopySelection( EditWindowPtr dWin )
 			Handle tmp;
 			const char *src;
 			char *dest, bit;
-			long i, len = ( *gScrapChunk )->size * (gPrefs.formatCopies ? 3 : 2);	//LR 1.72 -- size depends on how copied
+			long i, len = ( *_scrapChunk )->size * (gPrefs.formatCopies ? 3 : 2);	//LR 1.72 -- size depends on how copied
 
 			tmp = NewHandle( len );
 			if( tmp )
 			{
-				HLock( ( *gScrapChunk )->data );
+				HLock( ( *_scrapChunk )->data );
 				HLock( tmp );
 
-				src = ( const char * ) *( *gScrapChunk )->data;
+				src = ( const char * ) *( *_scrapChunk )->data;
 				dest = *tmp;
 
-				len = ( *gScrapChunk )->size;
+				len = ( *_scrapChunk )->size;
 				for( i=0; i<len; ++i, ++src )
 				{
 					 bit = ( src[0] & 0xF0 ) >> 4;
@@ -558,7 +558,7 @@ void CopySelection( EditWindowPtr dWin )
 						 *dest++ = (i + 1) % kBytesPerLine == 0 ? '\r' : ' ';
 				}
 
-				HUnlock( ( *gScrapChunk )->data );
+				HUnlock( ( *_scrapChunk )->data );
 
 #if TARGET_API_MAC_CARBON
 				anErr = PutScrapFlavor( scrapRef, kScrapFlavorTypeText, kScrapFlavorMaskNone, GetHandleSize( tmp ), *tmp );
@@ -571,13 +571,13 @@ void CopySelection( EditWindowPtr dWin )
 		}
 		else
 		{
-			 HLock( ( *gScrapChunk )->data );
+			 HLock( ( *_scrapChunk )->data );
 #if TARGET_API_MAC_CARBON
-			anErr = PutScrapFlavor( scrapRef, kScrapFlavorTypeText, kScrapFlavorMaskNone, (*gScrapChunk)->size, *(*gScrapChunk)->data );
+			anErr = PutScrapFlavor( scrapRef, kScrapFlavorTypeText, kScrapFlavorMaskNone, (*_scrapChunk)->size, *(*_scrapChunk)->data );
 #else
-			anErr = PutScrap( (*gScrapChunk)->size, kScrapFlavorTypeText, *(*gScrapChunk)->data );
+			anErr = PutScrap( (*_scrapChunk)->size, kScrapFlavorTypeText, *(*_scrapChunk)->data );
 #endif
-			 HUnlock( ( *gScrapChunk )->data );
+			 HUnlock( ( *_scrapChunk )->data );
 		}
 
 		 // LR: the "correct" way to do things ( UniversalHeaders )
@@ -592,7 +592,7 @@ void CopySelection( EditWindowPtr dWin )
 // 		gScrapCount = ScrapInfo.scrapCount;
 #endif
 */
-		 ( *gScrapChunk )->lastCtr = 0;	// Flag as shorternal
+		 ( *_scrapChunk )->lastCtr = 0;	// Flag as shorternal
 
 	}
 }
@@ -605,7 +605,7 @@ void CopyOperation( EditWindowPtr dWin, EditChunk ***scrapChunk )
 	// Unload current scrap
 	ReleaseEditScrap( dWin, scrapChunk );
 
-	// Copy current selection shorto scrapChunk
+	// Copy current selection into scrapChunk
 	// Identify Starting Chunk
 	fc = GetChunkByAddr( dWin, dWin->startSel );
 	dWin->curChunk = fc;		// Optimize chunk searches
@@ -654,7 +654,7 @@ void CopyOperation( EditWindowPtr dWin, EditChunk ***scrapChunk )
 void CutSelection( EditWindowPtr dWin )
 {
 	RememberOperation( dWin, EO_Cut, &gUndo );
-	CopyOperation( dWin, &gScrapChunk );		// Copy shorto paste buffer
+	CopyOperation( dWin, &_scrapChunk );		// Copy into paste buffer
 	DeleteSelection( dWin );
 	ScrollToSelection( dWin, dWin->startSel, true, false );
 }
@@ -691,22 +691,22 @@ void MyGetScrap( EditWindowPtr dWin )
 		if( !nc ) ErrorAlert( ES_Caution, errMemory );
 		else
 		{
-			ReleaseEditScrap( dWin, &gScrapChunk );
-			gScrapChunk = nc;
+			ReleaseEditScrap( dWin, &_scrapChunk );
+			_scrapChunk = nc;
 
-			HLock( (*gScrapChunk)->data );
+			HLock( (*_scrapChunk)->data );
 #if TARGET_API_MAC_CARBON
-			anErr = GetScrapFlavorData( scrapRef, kScrapFlavorTypeText, &scrapSize, *(*gScrapChunk)->data );
+			anErr = GetScrapFlavorData( scrapRef, kScrapFlavorTypeText, &scrapSize, *(*_scrapChunk)->data );
 #else
-			anErr = GetScrap( (*gScrapChunk)->data, kScrapFlavorTypeText, &offset );
+			anErr = GetScrap( (*_scrapChunk)->data, kScrapFlavorTypeText, &offset );
 #endif
 
-			HUnlock( (*gScrapChunk)->data );
+			HUnlock( (*_scrapChunk)->data );
 			if( anErr >= 0 )
-				( *gScrapChunk )->lastCtr = 1;	// Flag as external
+				( *_scrapChunk )->lastCtr = 1;	// Flag as external
 			else
 			{
-				ReleaseEditScrap( dWin, &gScrapChunk );	// error!
+				ReleaseEditScrap( dWin, &_scrapChunk );	// error!
 				ErrorAlert( ES_Caution, errPaste, (int)anErr );
 			}
 		}
@@ -720,20 +720,20 @@ void PasteSelection( EditWindowPtr dWin )
 {
 	MyGetScrap( dWin );	// LR: v1.6.5 get scrap only as needed
 
-	if( gScrapChunk )	// LR: 1.7 due to bug (?) in Carbon, scrap may not be available!
+	if( _scrapChunk )	// LR: 1.7 due to bug (?) in Carbon, scrap may not be available!
 	{
 		// LR: v1.6.5 moved from PasteOperation to avoid bad Undo
 		// Hex Pasting Mode for Outside Pastes
-		if( EM_Hex == dWin->editMode && ( *gScrapChunk )->lastCtr == 1 )
+		if( EM_Hex == dWin->editMode && ( *_scrapChunk )->lastCtr == 1 )
 		{
-// LR: v1.6.5 failure not a problem!		if( !HexConvertScrap( dWin, gScrapChunk ) ) return;
-			HexConvertScrap( dWin, gScrapChunk );
+// LR: v1.6.5 failure not a problem!		if( !HexConvertScrap( dWin, _scrapChunk ) ) return;
+			HexConvertScrap( dWin, _scrapChunk );
 		}
 
 		// Do actual paste
 		RememberOperation( dWin, EO_Paste, &gUndo );
 
-		PasteOperation( dWin, gScrapChunk );
+		PasteOperation( dWin, _scrapChunk );
 		ScrollToSelection( dWin, dWin->startSel, true, false );
 	}
 }
@@ -821,7 +821,7 @@ void PasteOperation( EditWindowPtr dWin, EditChunk **scrapChunk )
 
 	DeleteSelection( dWin );
 
-	// Insert paste buffer shorto selStart
+	// Insert paste buffer into selStart
 
 	fc = GetChunkByAddr( dWin, dWin->startSel );
 	if( ( *fc )->addr < dWin->startSel )
@@ -830,7 +830,7 @@ void PasteOperation( EditWindowPtr dWin, EditChunk **scrapChunk )
 		// Unload it
 		UnloadChunk( dWin, fc, true );
 
-		// Split shorto two chunks
+		// Split into two chunks
 		if( dWin->startSel < ( *fc )->addr + ( *fc )->size )
 		{
 			ec = NewChunk( ( *fc )->size - ( dWin->startSel - ( *fc )->addr ), 0, 
