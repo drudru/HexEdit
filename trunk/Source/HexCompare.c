@@ -409,13 +409,11 @@ Boolean GetCompareFiles( short modifiers )
 	{
 //LR 180		CompareFlag=2;
 		if( -1 == AskEditWindow( kWindowCompareBtm ) )
-		{
-			if( CompWind1 )
-				CloseEditWindow( CompWind1 );	// Cancel = exit (1.65, did retry .. but was confusing)
-
-			return false;
-		}
+			goto compexit;
 	}
+
+	if( CompWind1 == CompWind2 || !CompWind1 || !CompWind2 )	//LR 180 -- if same window we compare to an open file
+		goto compexit;
 
 	ew1 = (EditWindowPtr)GetWRefCon( CompWind1 );
 	ew2 = (EditWindowPtr)GetWRefCon( CompWind2 );
@@ -425,6 +423,7 @@ Boolean GetCompareFiles( short modifiers )
 					&& (ew1->fsSpec.parID == ew2->fsSpec.parID)
 					&& !MacCompareString( ew1->fsSpec.name, ew2->fsSpec.name, NULL ) )
 	{
+compexit:
 		if( CompWind1 && ! WeFoundWind1 )
 			CloseEditWindow( CompWind1 );		// close windows (1.7 vs disposing them!) if done ( ie, not editing )
 		if( CompWind2 && ! WeFoundWind2 )
