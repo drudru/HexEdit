@@ -46,9 +46,17 @@ enum	// search dialog items
 	ReplaceAllItem
 };
 
+//LR - 188: text search can now skip UI updates (for replace all)
+typedef enum
+{
+	kSearchUpdateUI = 0,
+	kSearchSkipUI = 1
+
+} SearchUIFlag;
+
 void SetSearchButtons( void );
 void OpenSearchDialog( void );
-Boolean PerformTextSearch( EditWindowPtr dWin );
+Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag );
 OSStatus OpenGotoAddress( void );
 void DoModelessDialogEvent( EventRecord *theEvent );
 Boolean StringToSearchBuffer( Boolean matchCase );

@@ -1,6 +1,18 @@
 HexEdit Revision History
 
-01/14/03 1.87
+09/30/03 1.89
+fix date in history log
+fix find bug (was not able to find after first occurance)
+fix replace bug (was finding next occurance before find)
+
+08/14/03 1.88
+Massive speed increase for Replace All (no user interface updates until finished!)
+Replace now shows what was replaced (ie, the replacement bytes) in the destination window
+Finding a string in a window no longer brings that window forward (ie, leaves find window on top)
+Fixed printing rectangle (Ron Langley)
+Fixed highlighting of differences in file compare (probably fixed in v1.86/1.87)
+
+01/14/03 1.87 (cvs only, no official release)
 Fixed icon for main app (can't include during build, must copy/paste...no idea why)
 Give time for compare events to arrive before showing open file dialog
 New test file in documentation folder shows how to have HexEdit compare files via AppleScript
@@ -8,8 +20,8 @@ Added compare options to specify fork in AppleScript (with option "rsrc"/"data")
 Fixed crash if an AppleScript tried to compare a file to itself, now returns duplicate file error
 Release code now has traceback labels so that crash logs (gasp!) are useful
 
-12/05/02 1.86 (no public release)
-Enhanced selection hilight code to work more like finder & w/all colors
+12/05/02 1.86 (cvs only, no official release)
+Enhanced selection hilight code to work more like finder & work better with all color themes
 Cut/Copy/Paste/Clear menu items are now availabe in dialogs (ie, Find)
 Cut/Copy/Paste keys work again in dialogs under Mac OS X
 Fixed ability to cancel search/compare ops (broke by speed increase!)
