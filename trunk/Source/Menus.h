@@ -55,6 +55,7 @@ OSStatus InitMenubar( void );
 OSStatus SmartEnableMenuItem( MenuRef menu, short item, short ok );
 OSStatus AdjustMenus( void );
 short GetColorMenuResID( short menuItem );
+short GetWindowMenuItemID( StringPtr title );
 OSStatus HandleMenu( long mSelect );
 
 #if TARGET_API_MAC_CARBON
