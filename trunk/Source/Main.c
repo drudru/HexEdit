@@ -51,6 +51,10 @@ static Boolean		skipOpen = false;
 /*** MAIN ***/
 void main( void )	// LR: fix warnings
 {
+	// get system version		// NS 1.7.1
+	OSStatus error = Gestalt( gestaltSystemVersion, &g.systemVersion );		// this loads HIToolbox.framework on OS X
+	if( error ) return;
+	
 	// Standard Mac Initialization
 	InitToolbox();
 

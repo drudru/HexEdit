@@ -33,6 +33,7 @@ typedef struct
 	Boolean			ownStorage;
 	Boolean			active;
 	Boolean			floating;
+	Boolean			themeSavvy;		// NS 1.7.1
 
 	void	(*Dispose)		(WindowRef theWin);
 	void	(*Update)		(WindowRef theWin);

@@ -153,9 +153,36 @@ enum CompPref { CP_Done=1,CP_Cancel,CP_Bytes,CP_Words,CP_Longs,CP_Different,CP_M
 #define CM_StartingResourceID 128
 
 // window ID
-#define	kMainWIND		128
+#define	kSystem7Window			128		// NS 1.7.1
+#define	kAppearanceWindow		129
 
 #define kHexEditWindowTag		1000
+
+// Mac OS versions
+const SInt32 kMacOSSevenPointOne	= 0x00000710;
+const SInt32 kMacOSSevenPointFivePointFive = 0x00000755;
+const SInt32 kMacOSEight			= 0x00000800;
+const SInt32 kMacOSEightPointFive	= 0x00000850;
+const SInt32 kMacOSEightPointSix	= 0x00000860;
+const SInt32 kMacOSNine				= 0x00000900;
+const SInt32 kMacOSNinePointOne		= 0x00000910;
+const SInt32 kMacOSTen				= 0x00001000;
+
+const SInt32 kMacOS71				= kMacOSSevenPointOne;
+const SInt32 kMacOS755				= kMacOSSevenPointFivePointFive;
+const SInt32 kMacOS8				= kMacOSEight;
+const SInt32 kMacOS85				= kMacOSEightPointFive;
+const SInt32 kMacOS86				= kMacOSEightPointSix;
+const SInt32 kMacOS9				= kMacOSNine;
+const SInt32 kMacOS91				= kMacOSNinePointOne;
+const SInt32 kMacOSX				= kMacOSTen;
+
+// CarbonLib versions
+const SInt32 kCarbonLibOnePointOne	= 0x00000110;
+const SInt32 kCarbonLibOnePointThreePointOne = 0x00000131;
+
+const SInt32 kCarbonLib11			= kCarbonLibOnePointOne;
+const SInt32 kCarbonLib131			= kCarbonLibOnePointThreePointOne;
 
 /*** COLOUR TABLE ***/
 typedef struct
@@ -179,6 +206,7 @@ typedef struct
 {
 	// system info
 	Boolean		quitFlag;
+	SInt32		systemVersion;		// NS 1.7.1
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
 	Boolean		WNEImplemented;
 	Boolean		sys7Flag;

@@ -395,7 +395,8 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 	ObjectWindowPtr objectWindow;
 	Rect r;
 
-	theWin = InitObjectWindow( kMainWIND, (ObjectWindowPtr) dWin, false );
+	// NS 1.7.1; check for appearance and create appropriate window
+	theWin = InitObjectWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, (ObjectWindowPtr) dWin, false );
 	if( !theWin )
 		ErrorAlert( ES_Stop, errMemory );
 
