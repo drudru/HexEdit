@@ -312,8 +312,8 @@ void DoComparison( void )
 
 	if( iType == 2 )
 	{
-		if( CompWind1 )	DisposeEditWindow( CompWind1 );		// close windows if done ( ie, not editing )
-		if( CompWind2 )	DisposeEditWindow( CompWind2 );
+		if( CompWind1 )	CloseEditWindow( CompWind1 );		// close windows (1.7 vs disposing them!) if done ( ie, not editing )
+		if( CompWind2 )	CloseEditWindow( CompWind2 );
 	}
 
 	CompWind1 = CompWind2 = NULL;
