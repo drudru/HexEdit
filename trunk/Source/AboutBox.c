@@ -36,6 +36,12 @@ static unsigned long prevTicks;
 //LR 1.75 -- only bad on MacOS X, and the PPC version is default in OS 8/9
 #define SCROLLDELAY 3
 
+#if TARGET_API_MAC_CARBON	//LR 1.76 :slow enough in OS X!
+	#define SCROLLSPEED -3
+#else
+	#define SCROLLSPEED -1
+#endif
+
 //LR 1.73 -- make code more readable
 #ifdef __MC68K__
 	#define PLATFORM_STRING "\p68K"
@@ -57,21 +63,21 @@ pascal void DrawTEText( DialogPtr whichDialog, short itemNr )
 //	dialog filter for about box (used to scroll TE contents)
 pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
 {
-//#if !TARGET_API_MAC_CARBON	//LR 1.76 slow enough in OS X!
+#if !TARGET_API_MAC_CARBON	//LR 1.76 :slow enough in OS X!
 	if( TickCount() - prevTicks >= SCROLLDELAY )		// don't scroll too fast!
-//#endif
+#endif
 	{
 		prevTicks = TickCount();
 
 		if( (*hTE)->destRect.bottom >= endText )
-			TEScroll( 0, -1, hTE );	// show text slowly
+			TEScroll( 0, SCROLLSPEED, hTE );	// show text slowly
 		else
 		{
 			register short startOffset = (*hTE)->viewRect.bottom - (*hTE)->viewRect.top;
 	
 			(*hTE)->destRect.top = (*hTE)->viewRect.top + startOffset;	// start over
 			(*hTE)->destRect.bottom = (*hTE)->viewRect.bottom + startOffset;
-#if TARGET_API_MAC_CARBON	//LR 1.76 slow enough in OS X!
+#if TARGET_API_MAC_CARBON	//LR 1.76 :try to speed things up in OS X...doesn't have any effect?
 			InvalWindowRect( GetDialogWindow( whichDialog ), &(*hTE)->viewRect );
 #endif
 		}
