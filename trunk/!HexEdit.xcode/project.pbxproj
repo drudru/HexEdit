@@ -24,8 +24,6 @@
 //053
 //054
 		05952DFCFFF02D1B11CA0E50 = {
-			buildRules = (
-			);
 			buildSettings = {
 				COPY_PHASE_STRIP = NO;
 				GCC_DYNAMIC_NO_PIC = NO;
@@ -39,8 +37,6 @@
 			name = Development;
 		};
 		05952DFDFFF02D1B11CA0E50 = {
-			buildRules = (
-			);
 			buildSettings = {
 				COPY_PHASE_STRIP = YES;
 				GCC_ENABLE_FIX_AND_CONTINUE = NO;
@@ -60,8 +56,7 @@
 //063
 //064
 		0640BAA4FFF0323A11CA0E50 = {
-			fallbackIsa = PBXFileReference;
-			isa = PBXFrameworkReference;
+			isa = PBXFileReference;
 			lastKnownFileType = wrapper.framework;
 			name = ApplicationServices.framework;
 			path = /System/Library/Frameworks/ApplicationServices.framework;
@@ -69,8 +64,7 @@
 			sourceTree = "<absolute>";
 		};
 		0640BAA5FFF0323A11CA0E50 = {
-			fallbackIsa = PBXFileReference;
-			isa = PBXFrameworkReference;
+			isa = PBXFileReference;
 			lastKnownFileType = wrapper.framework;
 			name = CoreServices.framework;
 			path = /System/Library/Frameworks/CoreServices.framework;
@@ -200,8 +194,8 @@
 		20286C2CFDCF999611CA2CEA = {
 			children = (
 				F0FB35DE05BC26FC00673008,
-				F0FB35E905BC285900673008,
 				F0FB35DC05BC26EA00673008,
+				3DEA78EB07354D4000F21B22,
 				F0FB35D205BC26B200673008,
 				F0FB35D405BC26CA00673008,
 				F0FB35D605BC26D900673008,
@@ -229,8 +223,7 @@
 			sourceTree = "<group>";
 		};
 		20286C33FDCF999611CA2CEA = {
-			fallbackIsa = PBXFileReference;
-			isa = PBXFrameworkReference;
+			isa = PBXFileReference;
 			lastKnownFileType = wrapper.framework;
 			name = Carbon.framework;
 			path = /System/Library/Frameworks/Carbon.framework;
@@ -265,6 +258,20 @@
 //3D2
 //3D3
 //3D4
+		3DEA78EB07354D4000F21B22 = {
+			isa = PBXFileReference;
+			lastKnownFileType = image.icns;
+			name = pentagram.icns;
+			path = Resources/Icons/pentagram.icns;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		3DEA78EC07354D4000F21B22 = {
+			fileRef = 3DEA78EB07354D4000F21B22;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		3DFAAE1906EFD3EF00753EF0 = {
 			buildPhases = (
 				3DFAAE1A06EFD3EF00753EF0,
@@ -409,19 +416,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				3DFAAE2A06EFD3EF00753EF0,
-				3DFAAE2B06EFD3EF00753EF0,
+				3DEA78EC07354D4000F21B22,
 			);
 			isa = PBXResourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		3DFAAE2A06EFD3EF00753EF0 = {
 			fileRef = 0867D6AAFE840B52C02AAC07;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		3DFAAE2B06EFD3EF00753EF0 = {
-			fileRef = F0FB35E905BC285900673008;
 			isa = PBXBuildFile;
 			settings = {
 			};
@@ -589,9 +590,8 @@
 		};
 		3DFAAE4406EFD3EF00753EF0 = {
 			isa = PBXFileReference;
-			lastKnownFileType = text.plist.xml;
-			name = "Info-HexEdit.plist";
-			path = "English.lproj/Info-HexEdit.plist";
+			lastKnownFileType = text.xml;
+			path = "Info-HexEdit.plist";
 			refType = 4;
 			sourceTree = "<group>";
 		};
@@ -883,24 +883,6 @@
 			lastKnownFileType = archive.rsrc;
 			name = Pentagram.rsrc;
 			path = Resources/Icons/Pentagram.rsrc;
-			refType = 4;
-			sourceTree = "<group>";
-		};
-		F0FB35E905BC285900673008 = {
-			children = (
-				F0FB35EA05BC285900673008,
-			);
-			isa = PBXVariantGroup;
-			name = pentagram.icns;
-			path = "";
-			refType = 4;
-			sourceTree = "<group>";
-		};
-		F0FB35EA05BC285900673008 = {
-			isa = PBXFileReference;
-			lastKnownFileType = image.icns;
-			name = English;
-			path = English.lproj/pentagram.icns;
 			refType = 4;
 			sourceTree = "<group>";
 		};

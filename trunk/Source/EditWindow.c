@@ -212,13 +212,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin, tWindowType type )
 
 	//LR 190 -- Zoom state is now smaller for large files (big window) and larger for small files (small window)
 	if( r.bottom - r.top < g.maxHeight / 2 )
-	{
-#if TARGET_API_MAC_CARBON
-		size = g.maxHeight - (r.top + 24);	// need menu bar
-#else
 		size = g.maxHeight - r.top;
-#endif
-	}
 	else
 		size = (r.bottom - r.top) / 2;
 
@@ -520,10 +514,10 @@ void InitializeEditor( void )
 	Rect r;
 
 	GetAvailableWindowPositioningBounds( GetMainDevice(), &r );
-	g.maxHeight = r.bottom - r.top;
+	g.maxHeight = r.bottom - r.top - GetMBarHeight();	//LR 191 -- remove menu bar height
 }
 #else
-	g.maxHeight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - 24;	// LR: add 'qd.'
+	g.maxHeight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - GetMBarHeight();	// LR: add 'qd.'
 #endif
 
 	//LR 1.72 -- more flexability in font usage, get from string and find width/height from actual data
@@ -584,23 +578,24 @@ void SizeEditWindow( WindowRef theWin, tWindowType type )
 	}
 	else if( kWindowCompareBtm == type )
 	{
-		maxheight = g.maxHeight - 48;		//LR 180 -- required to keep window of correct height
+		maxheight = g.maxHeight / 2 - 96;		//LR 180 -- required to keep window of correct height
 		MoveWindow( theWin, 14, maxheight + 48, true );
 		CompWind2 = theWin;
 	}
 	else	// kWindowNormal
 	{
 		maxheight = g.maxHeight;
-	}
 
-	//LR 180 -- make sure bottom of window doesn't go off end of screen
-	//	NOTE:	Carbon top is positive, classic is negative!
-	GetWindowBounds( theWin, kWindowStructureRgn, &r );
-#if TARGET_API_MAC_CARBON
-		maxheight -= (r.top + 24);	// need menu bar
-#else
+		//LR 180 -- make sure bottom of window doesn't go off end of screen
+		//	NOTE:	Carbon top is positive, classic is negative!
+		GetWindowBounds( theWin, kWindowStructureRgn, &r );
+		if( r.top < GetMBarHeight() )
+		{
+			r.top = (short)(GetMBarHeight() * 2);			//LR 191 -- don't allow window to be under menu bar
+			MoveWindow( theWin, r.left, r.top, true );
+		}
 		maxheight -= r.top;
-#endif
+	}
 
 	// Check for best window size
 	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < maxheight )
@@ -2229,16 +2224,15 @@ clear:
 doclear:
 			ClearSelection( dWin );
 			if( revClearDir )
-			{
-				dWin->startSel--; dWin->endSel = dWin->startSel;
-			}
+				dWin->endSel = dWin->startSel;		//LR 191 -- Move to left or right, as expected
 			else
 				dWin->startSel = dWin->endSel;
+
 			ScrollToSelection( dWin, dWin->startSel, false );
 			break;
 
 		case kDeleteCharCode:	// forward delete
-			if( er->modifiers & optionKey )				//LR 90 -- option key clears
+			if( er->modifiers & optionKey )				//LR 190 -- option key clears
 				goto clear;
 
 			if( gPrefs.overwrite && gPrefs.nonDestructive )	//LR 190 -- bad form to use goto, but ...
