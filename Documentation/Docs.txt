@@ -2,7 +2,7 @@ HexEdit Documentation
 
 About this Document
 
-The main purpose of this file is to document the UI for HexEdit. It does not attempt to describe the source code, how to modify the program, or what to use HexEdit for. The best resource for information regarding HexEdit development is the SourceForge site: <http://hexedit.sourceforge.net>.
+The main purpose of this file is to document the UI for HexEdit. It does not attempt to describe the source code, how to modify the program, or what to use HexEdit for. The best resource for information regarding HexEdit development is the SourceForge site: <http://sourceforge.net/projects/hexedit/>.
 
 In order to be brief, features which are similar to the ResEdit hex editor are not described. (If you aren't familiar with ResEdit, you probably shouldn't be using HexEdit).
 
@@ -111,7 +111,7 @@ Thanks to Jim for releasing such a fine program, and even more so for the source
 
 <http://www.roathe.com/mac.html>		// mac site
 <http://www.roathe.com/lane.html>	// my site (interlinks abound)
-<http://www.mbyte.com> 											// we're working on cool stuff!
+<http://www.monkeybyte.com> 				// we're working on cool stuff!
 
 <lane@roathe.com>
 
