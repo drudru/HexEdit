@@ -39,8 +39,6 @@
 #include "Prefs.h"
 #include "Utility.h"
 
-static EditChunk	**_replaceChunk;	//LR 175 -- keep in chunk for ease of use
-
 /*** SET SEARCH BUTTONS ***/
 void SetSearchButtons( void )
 {
@@ -99,6 +97,7 @@ void OpenSearchDialog( void )
 		SetControl( g.searchDlg, HexModeItem, gPrefs.searchMode == EM_Hex );
 		SetControl( g.searchDlg, AsciiModeItem, gPrefs.searchMode == EM_Ascii );
 		SetControl( g.searchDlg, MatchCaseItem, gPrefs.searchCase );
+		SetControl( g.searchDlg, WrapItem, gPrefs.wrapFinds );
 		if( EM_Hex == gPrefs.searchMode )
 			DisableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
 		else
@@ -121,6 +120,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag )	//LR 17
 	short		ch, matchIdx;
 	long		addr, matchAddr, adjust;
 	register 	EditChunk **cc;
+	long 		wrapped =false;
 
 	// LR: v1.6.5 if not passed a window, get first one
 	if( !dWin )
@@ -143,6 +143,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag )	//LR 17
 		addr += adjust;			//LR 189 -- bug fix, find needs this, just not replace all!
 	}
 
+wrap:
 	matchIdx = 0;
 
 	//LR 185 -- we handle the chucks ourself to speed up searching!
@@ -155,6 +156,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag )	//LR 17
 	if( !(*cc)->loaded ) LoadChunk( dWin, cc );
 
 	// LR: 1.72 -- make sure we are searching in OK memory (ie, empty window bug fix)
+	//LR 190 -- allow for wrapping
 	while( addr >= 0 && addr < dWin->fileSize )
 	{
 		if( !(addr & 0xFFFF) )		//LR 1.72 -- don't slow our searches down unnecessarily!
@@ -163,7 +165,22 @@ Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag )	//LR 17
 				break;
 		}
 
-//LR 185		ch = GetByte( dWin, addr );
+		//LR 190 -- check for wrapping (We do this to avoid infinity if nothing found or too keep finding a single occurance)
+		if( gPrefs.wrapFinds && wrapped )
+		{
+			if( gPrefs.searchForward )
+			{
+				if( addr >= dWin->startSel )	// wrap occurs if we get past 
+					break;
+			}
+			else
+			{
+				if( addr <= dWin->startSel )	// where we started after wrapping -- exit search in that case!
+					break;
+			}
+		}
+
+//LR 185 -- replace with much faster inline code (10x at least!)		ch = GetByte( dWin, addr );
 		ch = (Byte) (*(*cc)->data)[addr - (*cc)->addr];
 		if( !gPrefs.searchCase && gPrefs.searchMode != EM_Hex )
 			ch = toupper( ch );
@@ -207,6 +224,18 @@ newchunk:
 
 			LoadChunk( dWin, cc );	// no check, most likely not loaded, and checked in routine anyway
 		}
+	}
+
+	//LR 190 -- check if we want to wrap around
+	if( gPrefs.wrapFinds && !wrapped )
+	{
+		if( gPrefs.searchForward )
+			addr = 0;
+		else
+			addr = dWin->fileSize - 1;
+
+		wrapped = true;	// we have wrapped, set flag
+		goto wrap;
 	}
 
 Failure:
@@ -355,45 +384,37 @@ ButtonHit:
 			//LR 175 -- handle new replace options
 			case ReplaceItem:
 			case ReplaceAllItem:
-				g.replaceAll = ( itemHit == ReplaceAllItem );
-				GetText( g.searchDlg, ReplaceTextItem, g.searchText );	// put in search so converter works!
-				if( StringToSearchBuffer( gPrefs.searchCase ) )
+				if( dWin )
 				{
-					if( _replaceChunk )
-						DisposeChunk( NULL, _replaceChunk );
-
-					_replaceChunk = NewChunk( g.searchBuffer[0], 0, 0, CT_Unwritten );
-					if( _replaceChunk )
+					g.replaceAll = ( itemHit == ReplaceAllItem );
+					GetText( g.searchDlg, ReplaceTextItem, g.replaceText );
+					GetText( g.searchDlg, SearchTextItem, g.searchText );		//LR 190 -- replacement text no longer effected by case flag!
+					if( StringToSearchBuffer( gPrefs.searchCase ) )
 					{
-						BlockMoveData( g.searchText, g.replaceText, g.searchText[0]+1 );
-						BlockMoveData( g.searchBuffer+1, *(*_replaceChunk)->data, g.searchBuffer[0] );
-						GetText( g.searchDlg, SearchTextItem, g.searchText );
-						if( StringToSearchBuffer( gPrefs.searchCase ) )
+						EditChunk	**replaceChunk;	//LR 190 -- why static, only used herein!
+
+						replaceChunk = NewChunk( g.replaceText[0], 0, 0, CT_Unwritten );
+						if( replaceChunk )
 						{
-							if( dWin )
+							BlockMoveData( g.replaceText+1, *(*replaceChunk)->data, g.replaceText[0] );
+
+							if( !g.replaceAll )	//LR 190 -- replace is a copy in place, don't search first!!!
 							{
-								if( !g.replaceAll )	//LR 189 -- replace is a copy in place, don't search first!!!
-								{
-									if( ReplaceItem == itemHit || PerformTextSearch( dWin, kSearchUpdateUI ) )	// seperate since we only do it once and it's undoable
-									{
-										long ss;	//LR 188 -- hilight what was replaced!
+								long ss = dWin->startSel;	//LR 188 -- hilight what was replaced!
 
-										ss = dWin->startSel;
-										
-										RememberOperation( dWin, EO_Paste, &gUndo );
-										PasteOperation( dWin, _replaceChunk );
+								RememberOperation( dWin, EO_Paste, &gUndo );
+								PasteOperation( dWin, replaceChunk );
 
-										dWin->startSel = ss;
-										dWin->endSel = ss + (*_replaceChunk)->size;
-									}
-								}
-								else while( PerformTextSearch( dWin, kSearchSkipUI ) )
-								{
-									PasteOperation( dWin, _replaceChunk );	// replace all is NOT undoable!
-								}
-								ScrollToSelection( dWin, dWin->startSel, true );
+								dWin->startSel = ss;
+								dWin->endSel = ss + (*replaceChunk)->size;
 							}
+							else while( PerformTextSearch( dWin, kSearchSkipUI ) )
+							{
+								PasteOperation( dWin, replaceChunk );	// replace all is NOT undoable!
+							}
+							ScrollToSelection( dWin, dWin->startSel, true );
 						}
+						DisposeChunk( NULL, replaceChunk );
 					}
 				}
 				break;
@@ -414,7 +435,12 @@ setmode:
 				gPrefs.searchCase ^= 1;
 				SetControl( g.searchDlg, MatchCaseItem, gPrefs.searchCase );
 				break;
-			case SearchTextItem:
+			case WrapItem:	//LR 190 -- allow finds to wrap
+				gPrefs.wrapFinds ^= 1;
+				SetControl( g.searchDlg, WrapItem, gPrefs.wrapFinds );
+				break;
+			case SearchTextItem:	//LR 190 -- nothing to do on text boxes
+			case ReplaceTextItem:
 				break;
 			}
 		}

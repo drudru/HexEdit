@@ -43,7 +43,8 @@ enum	// search dialog items
 	textReplace,
 	ReplaceTextItem,
 	ReplaceItem,
-	ReplaceAllItem
+	ReplaceAllItem,
+	WrapItem
 };
 
 //LR - 188: text search can now skip UI updates (for replace all)

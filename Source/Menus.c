@@ -586,12 +586,16 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 		switch ( menuItem )
 		{
 			case SM_Find:
+openfind:
 				OpenSearchDialog();
 				break;
 
 			case SM_FindForward:
 				if( dWin )
 				{
+					if( !g.searchBuffer[0] )	//LR 190 -- if nothing to find open dialog
+						goto openfind;
+
 					gPrefs.searchForward = true;
 					PerformTextSearch( dWin, kSearchUpdateUI );
 				}
@@ -600,8 +604,40 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 			case SM_FindBackward:
 				if( dWin )
 				{
+					if( !g.searchBuffer[0] )	//LR 190 -- if nothing to find open dialog
+						goto openfind;
+
 					gPrefs.searchForward = false;
 					PerformTextSearch( dWin, kSearchUpdateUI );
+				}
+				break;
+
+			case SM_Replace:	//LR 190 -- add replace & find next
+				if( dWin  )
+				{
+					EditChunk	**replaceChunk;
+
+					if( !g.searchBuffer[0] )	// if nothing to find open dialog
+						goto openfind;
+
+					replaceChunk = NewChunk( g.replaceText[0], 0, 0, CT_Unwritten );
+					if( replaceChunk )
+					{
+						// Copy replacement text to chunk buffer
+						BlockMoveData( g.replaceText+1, *(*replaceChunk)->data, g.replaceText[0] );
+
+						// Do the replacement (with undo)
+						g.replaceAll = false;
+						RememberOperation( dWin, EO_Paste, &gUndo );
+						PasteOperation( dWin, replaceChunk );
+
+						// We're done with the chunk now
+						DisposeChunk( NULL, replaceChunk );
+					}
+
+					// Then try to find the next occurance (in LAST direction searched!) and display it
+					if( !PerformTextSearch( dWin, kSearchUpdateUI ) )
+						ScrollToSelection( dWin, dWin->startSel, true );
 				}
 				break;
 
