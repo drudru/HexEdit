@@ -13,13 +13,18 @@
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
  * Portions created by Lane Roathe (LR) are
- * Copyright (C) Copyright © 1996-2000.
+ * Copyright (C) Copyright © 1996-2001.
  * All Rights Reserved.
  * 
  * Contributor(s):
  *		Nick Shanks (NS)
  *		Scott E. Lasley (SEL) 
  */
+
+// 05/10/01 - GAB: MPW environment support
+#ifdef __MPW__
+#include "MPWIncludes.h"
+#endif
 
 #include <stdio.h>
 
@@ -557,8 +562,8 @@ void CleanupEditor( void )
 void NewEditWindow( void )
 {
 	EditWindowPtr		dWin;
-	OSStatus				error;
-	short				refNum = NULL;
+	OSStatus			error;
+	short				refNum = 0;	// 05/10/01 - GAB: NULL is a pointer type, and doesn't fit in a short
 	Point				where = { -1, -1 };
 	FSSpec				workSpec;
 // LR: 1.5	Rect				r, offRect;
@@ -2623,7 +2628,8 @@ void SaveAsContents( WindowRef theWin )
 
 	NavGetDefaultDialogOptions( &dialogOptions );
 //LR: 1.7 not w/modified window titles!	GetWTitle( theWin, dialogOptions.savedFileName );
-	BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0] );
+	// 05/10/01 - GAB: copy the ENTIRE name, including the last character (hence, the "+ 1" on the count parameter)
+	BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0] + 1 );
 	error = NavPutFile( NULL, &reply, &dialogOptions, eventProc, kDefaultFileType, kAppCreator, NULL );
 	if( reply.validRecord || !error )
 	{

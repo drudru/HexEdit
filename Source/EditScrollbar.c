@@ -13,12 +13,17 @@
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
  * Portions created by Lane Roathe are
- * Copyright (C) Copyright © 1996-2000.
+ * Copyright (C) Copyright © 1996-2001.
  * All Rights Reserved.
  * 
  * Contributor(s):
  *		Nick Shanks
  */
+
+// 05/10/01 - GAB: MPW environment support
+#ifdef __MPW__
+#include "MPWIncludes.h"
+#endif
 
 #include "EditScrollbar.h"
 #include "EditRoutines.h"
