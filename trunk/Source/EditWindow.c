@@ -966,7 +966,7 @@ Boolean	CloseEditWindow( WindowRef theWin )
 /*** CLOSE ALL EDIT WINDOWS ***/
 Boolean CloseAllEditWindows( void )
 {
-	WindowRef next, theWin = FrontWindow();
+	WindowRef next, theWin = FrontNonFloatingWindow();
 
 	while( theWin )
 	{
@@ -974,12 +974,14 @@ Boolean CloseAllEditWindows( void )
 
 		next = GetNextWindow( theWin );
 
+/*LR 1.7 -- now closed if no windows open!
 		if( (DialogPtr)theWin == g.searchWin )
 		{
 			DisposeDialog( g.searchWin );
 			g.searchWin = NULL;
 		}
-		else if( windowKind == kHexEditWindowTag )
+		else*/
+		if( windowKind == kHexEditWindowTag )
 			if( !CloseEditWindow( theWin ) )
 				return false;
 
@@ -996,7 +998,7 @@ Boolean CloseAllEditWindows( void )
 
 EditWindowPtr LocateEditWindow( FSSpec *fs, short fork )
 {
-	WindowRef theWin = FrontWindow();
+	WindowRef theWin = FrontNonFloatingWindow();
 
 	while( theWin )
 	{
@@ -1024,7 +1026,7 @@ EditWindowPtr FindFirstEditWindow( void )
 	// Find and Select Top Window
 	//LR: 1.66 total re-write to avoid null window references!
 
-	theWin = FrontWindow();
+	theWin = FrontNonFloatingWindow();
 	if( theWin ) do
 	{
 		if( GetWindowKind( theWin ) == kHexEditWindowTag )
@@ -1461,7 +1463,7 @@ void MyIdle( WindowRef theWin, EventRecord *er )
 	Boolean			frontWindowFlag;
 	Point			w;
 
-	frontWindowFlag = (theWin == FrontWindow() && dWin->oWin.active);
+	frontWindowFlag = (theWin == FrontNonFloatingWindow() && dWin->oWin.active);
 	if( frontWindowFlag )
 	{
 		w = er->where;
@@ -1572,7 +1574,7 @@ void InvertSelection( EditWindowPtr	dWin )
 	Boolean	frontFlag;
 	RGBColor invertColor;
 
-	frontFlag = (dWin->oWin.theWin == FrontWindow() && dWin->oWin.active);
+	frontFlag = (dWin->oWin.theWin == FrontNonFloatingWindow() && dWin->oWin.active);
 
 	if( dWin->endSel <= dWin->startSel )
 		return;
@@ -2698,7 +2700,7 @@ void MyActivate( WindowRef theWin, Boolean active )
 //LR: 1.66 - avoid NULL window ref, DrawPage with CURRENT dWin (not first!)
 void UpdateEditWindows( void )
 {
-	WindowRef		theWin = FrontWindow();
+	WindowRef		theWin = FrontNonFloatingWindow();
 	EditWindowPtr	dWin;
 
 	while( theWin )
