@@ -86,8 +86,15 @@
 #define kAppCreator		FOUR_CHAR_CODE('hDmp')
 #define kDefaultFileType FOUR_CHAR_CODE('TEXT')
 
-#define kMaxFileRAM		32000L
-#define kSlushRAM		1000L
+//LR 181 -- under Carbon, alloc more RAM for faster ops
+#if TARGET_API_MAC_CARBON
+	#define kMaxFileRAM		(144L * 1024L) 	//LR 181 32000L
+	#define kSlushRAM		( 16L * 1024L)	//LR 181 1000L
+#else
+	#define kMaxFileRAM		33000L
+	#define kSlushRAM		1000L
+#endif
+
 #define kAllocIncrement	64L
 
 #define kSBarSize		16
@@ -156,7 +163,7 @@ typedef enum { EM_Hex, EM_Decimal, EM_Ascii } EditMode;
 typedef enum { EO_Undo = 1, EO_Redo, EO_Typing, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete } EditOperation;
 typedef enum { ES_Note, ES_Caution, ES_Stop, ES_Fatal } ErrorSeverity;
 typedef enum { C_Arrow, C_Watch, C_IBeam } CursorNumbers;
-typedef enum { CM_Byte, CM_Word, CM_Long } CompModeSize;
+typedef enum { CM_Byte = 1, CM_Word = 2, CM_Long = 4 } CompModeSize;	//LR 181 -- make enums be size!
 typedef enum { CM_Different, CM_Match } CompModeType;
 
 // preferences Dialog items
