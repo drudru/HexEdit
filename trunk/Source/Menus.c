@@ -228,8 +228,8 @@ OSStatus AdjustMenus( void )
 	theWin = FrontNonFloatingWindow();
 	if( theWin )
 	{
-		isGotoWin = (g.gotoWin && theWin == GetDialogWindow( g.gotoWin ));		//LR: 1.7 - don't get window info on NULL!
-		isFindWin = (g.searchWin && theWin == GetDialogWindow( g.searchWin ));
+		isGotoWin = (g.gotoDlg && theWin == GetDialogWindow( g.gotoDlg ));		//LR: 1.7 - don't get window info on NULL!
+		isFindWin = (g.searchDlg && theWin == GetDialogWindow( g.searchDlg ));
 
 		windowKind = GetWindowKind( theWin );
 		isDA = ( windowKind < 0 );
@@ -275,8 +275,8 @@ OSStatus AdjustMenus( void )
 	undoExists = (isObjectWin && gUndo.type != 0 && gUndo.theWin == dWin);	// check for NULL gUndo!
 	
 // LR: - enable file menu items during search, via Aaron D.
-// LR:	_enableMenuItem( fileMenu, FM_New, g.searchWin == NULL );
-// LR:	_enableMenuItem( fileMenu, FM_Open, g.searchWin == NULL );
+// LR:	_enableMenuItem( fileMenu, FM_New, g.searchDlg == NULL );
+// LR:	_enableMenuItem( fileMenu, FM_Open, g.searchDlg == NULL );
 
 // LR: 1.65 moved print names to string for localization
 	GetIndString( menuStr, strPrint, (isObjectWin && dWin->startSel < dWin->endSel) ? 2 : 1 );
@@ -376,10 +376,12 @@ OSStatus HandleMenu( long mSelect )
 	frontWindow = FrontNonFloatingWindow();
 	if( frontWindow )
 	{
+		DialogPtr dlg = GetDialogFromWindow( frontWindow );
+
 		if( kHexEditWindowTag == GetWindowKind( frontWindow ) )
 			dWin = (EditWindowPtr) GetWRefCon( frontWindow );
-		else if( g.gotoWin == GetDialogFromWindow( frontWindow ) || g.searchWin == GetDialogFromWindow( frontWindow ) )
-			dlgRef = GetDialogFromWindow( frontWindow );
+		else if( g.gotoDlg == dlg || g.searchDlg == dlg )
+			dlgRef = dlg;
 	}
 
 	switch( menuID )
@@ -452,8 +454,16 @@ OSStatus HandleMenu( long mSelect )
 			break;
 
 		case FM_Revert:
-			if( dWin && dWin->oWin.Revert )
-				dWin->oWin.Revert( frontWindow );
+			if( dWin && dWin->oWin.Revert )	//LR 1.72 -- check before reverting (could be dangerous!)
+			{
+				ParamText( dWin->fsSpec.name, NULL, NULL, NULL );
+				switch( CautionAlert( alertRevert, NULL ) )
+				{
+					case ok:
+						dWin->oWin.Revert( frontWindow );
+						break;
+				}
+			}
 			break;
 
 		case FM_Close:

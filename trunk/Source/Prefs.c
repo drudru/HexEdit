@@ -53,7 +53,7 @@ static OSStatus _prefsInit( void )
 	prefs.csMenuID = 3;	// default is 1'st color in menu
 	prefs.csResID = -1;
 
-	prefs.constrainSize = false;
+	prefs.constrainSize = true;
 
 	prefs.version = PREFS_VERSION;
 	return noErr;
