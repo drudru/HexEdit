@@ -52,9 +52,9 @@ static OSStatus _prefsInit( void )
 	gPrefs.backupFlag = true;
 	gPrefs.vertBars = false;
 
-	gPrefs.useColor = false;
+	gPrefs.useColor = true;
 
-	gPrefs.csMenuID = 3;	// default is 1'st color in menu
+	gPrefs.csMenuID = 3;	// default is 1'st color in menu (" Default")
 	gPrefs.csResID = -1;
 
 	gPrefs.constrainSize = true;

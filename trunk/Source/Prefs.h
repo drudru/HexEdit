@@ -37,7 +37,7 @@
 #define	kPrefsFileNameIndex	FN_PrefsFile
 
 // LR: preferences structure
-#define PREFS_VERSION	0x0207
+#define PREFS_VERSION	0x0208
 
 typedef struct
 {
@@ -64,7 +64,7 @@ typedef struct
 
 	// spare prefs entries so version file can be updated
 	// w/o reseting prefs a few times :)
-	// NOTE: these default to FALSE if the ever become used!
+	// NOTE: these default to FALSE in case they ever become used!
 	short	spare1;
 	short	spare2;
 	short	spare3;
