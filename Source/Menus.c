@@ -294,7 +294,8 @@ OSStatus AdjustMenus( void )
 
 	SetMenuItemText( fileMenu, FM_Print, menuStr );
 
-	_enableMenuItem( fileMenu, FM_PageSetup, isObjectWin );	//SEL: 1.7 - enabled for carbon
+//LR 188 -- page setup should always be enabled
+//	_enableMenuItem( fileMenu, FM_PageSetup, isObjectWin );	//SEL: 1.7 - enabled for carbon
 	_enableMenuItem( fileMenu, FM_Print, isObjectWin );
 
 	_enableMenuItem( fileMenu, FM_OtherFork, isObjectWin );
@@ -591,7 +592,7 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 				if( dWin )
 				{
 					gPrefs.searchForward = true;
-					PerformTextSearch( dWin );
+					PerformTextSearch( dWin, kSearchUpdateUI );
 				}
 				break;
 
@@ -599,7 +600,7 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 				if( dWin )
 				{
 					gPrefs.searchForward = false;
-					PerformTextSearch( dWin );
+					PerformTextSearch( dWin, kSearchUpdateUI );
 				}
 				break;
 

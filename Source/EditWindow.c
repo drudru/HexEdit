@@ -349,13 +349,13 @@ static pascal short _sourceDLOGHook( short item, DialogPtr theDialog )
 		case DataItem:
 		case RsrcItem:
 		case SmartItem:
-			SetControl( theDialog, g.forkMode + DataItem - 1, false );
-			g.forkMode = item - DataItem;
-			SetControl( theDialog, g.forkMode + DataItem - 1, true );
-			return sfHookNullEvent;	/* Redraw the List */
+			SetControl( theDialog, g.forkMode + (DataItem - 1), false );
+			g.forkMode = item - (DataItem - 1);
+//LR 185			SetControl( theDialog, g.forkMode + (DataItem - 1), true );
+//LR 185			return sfHookNullEvent;	/* Redraw the List */
 		
 		case sfHookFirstCall:
-			SetControl( theDialog, g.forkMode + DataItem - 1, true );
+			SetControl( theDialog, g.forkMode + (DataItem - 1), true );
 			return sfHookNullEvent;
 	}
 	return item;
@@ -2632,7 +2632,7 @@ void PrintWindow( EditWindowPtr dWin )
 	PMPageFormat		pageFormat;
 #else
 	Boolean			ok;
-	Rect				r;
+	Rect			pageRect, r;
 	TPPrPort		printPort;
 	TPrStatus		prStatus;
 	short		pageNbr, startPage, endPage, nbrPages;
@@ -2745,7 +2745,10 @@ void PrintWindow( EditWindowPtr dWin )
 
 		printPort = PrOpenDoc( g.HPrint, NULL, NULL );
 
-		r = printPort->gPort.portRect;
+		//LR 188 -- from Ron Langley; the below is the screen rectangle, not the page rectangle!
+		//r = printPort->gPort.portRect;
+		r = pageRect = (*g.HPrint)->prInfo.rPage;	// the printed page rectangle
+
 //LR: 1.7 -fix lpp calculation!		linesPerPage = ( r.bottom - TopMargin - ( kHeaderHeight + 1 ) ) / kLineHeight;
 			linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - (kHeaderHeight + kFooterHeight)) / kLineHeight;
 		nbrPages = ((endAddr - startAddr) / kBytesPerLine) / linesPerPage + 1;
@@ -2772,12 +2775,12 @@ void PrintWindow( EditWindowPtr dWin )
 	
 			if( pageNbr >= startPage && pageNbr <= endPage )
 			{
-				r = printPort->gPort.portRect;
+				r = pageRect;
 				r.bottom = r.top + kHeaderHeight - 1;		//LR: 1.7 - don't erase entire page!
 				_drawHeader( dWin, &r );
 		
 				r.top += kHeaderHeight;
-				r.bottom = printPort->gPort.portRect.bottom - kFooterHeight;
+				r.bottom = pageRect.bottom - kFooterHeight;
 				_drawDump( dWin, &r, addr, endAddr );
 	
 				r.top = r.bottom;

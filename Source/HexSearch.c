@@ -116,7 +116,7 @@ void OpenSearchDialog( void )
 }
 
 /*** PERFORM TEXT SEARCH ***/
-Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search succeeds (for replace)
+Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag )	//LR 175 -- now return if search succeeds (for replace)
 {
 	short		ch, matchIdx;
 	long		addr, matchAddr, adjust;
@@ -137,10 +137,13 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 	else
 		adjust = -1;
 
-	MySetCursor( C_Watch );
+	if( !uiSkipFlag && addr )
+	{
+		MySetCursor( C_Watch );
+		addr += adjust;			//LR 189 -- bug fix, find needs this, just not replace all!
+	}
 
 	matchIdx = 0;
-	addr += adjust;
 
 	//LR 185 -- we handle the chucks ourself to speed up searching!
 	//			get the chunk for the current address & load it.
@@ -212,14 +215,19 @@ Failure:
 	return( false );
 
 Success:
-	if( dWin != (EditWindowPtr) GetWRefCon( FrontNonFloatingWindow() ) )
-		SelectWindow( dWin->oWin.theWin );
-
 	dWin->startSel = matchAddr;
 	dWin->endSel = dWin->startSel + g.searchBuffer[0];
 
-	ScrollToSelection( dWin, dWin->startSel, true );
-	MySetCursor( C_Arrow );
+	//LR 188 -- only update UI if desired (ie, speed up replace all)
+	if( !uiSkipFlag )
+	{
+/* LR 188 -- why bring window to foreground?
+		if( dWin != (EditWindowPtr) GetWRefCon( FrontNonFloatingWindow() ) )
+			SelectWindow( dWin->oWin.theWin );
+*/
+		ScrollToSelection( dWin, dWin->startSel, true );
+		MySetCursor( C_Arrow );
+	}
 	return( true );
 }
 
@@ -327,7 +335,10 @@ void DoModelessDialogEvent( EventRecord *theEvent )
 		SetSearchButtons();
 	}
 
-	if( DialogSelect( theEvent, &whichDlog, &itemHit ) ) {
+	if( DialogSelect( theEvent, &whichDlog, &itemHit ) )
+	{
+		EditWindowPtr dWin = FindFirstEditWindow();
+
 ButtonHit:
 		if( whichDlog == g.searchDlg )
 		{
@@ -338,7 +349,7 @@ ButtonHit:
 				gPrefs.searchForward = ( itemHit == SearchForwardItem );
 				GetText( g.searchDlg, SearchTextItem, g.searchText );
 				if( StringToSearchBuffer( gPrefs.searchCase ) )
-					PerformTextSearch( NULL );
+					PerformTextSearch( NULL, kSearchUpdateUI );
 				break;
 
 			//LR 175 -- handle new replace options
@@ -359,18 +370,24 @@ ButtonHit:
 						GetText( g.searchDlg, SearchTextItem, g.searchText );
 						if( StringToSearchBuffer( gPrefs.searchCase ) )
 						{
-							EditWindowPtr dWin = FindFirstEditWindow();
 							if( dWin )
 							{
-								if( !g.replaceAll )
+								if( !g.replaceAll )	//LR 189 -- replace is a copy in place, don't search first!!!
 								{
-									if( PerformTextSearch( NULL ) )	// seperate since we only do it once and it's undoable
+									if( ReplaceItem == itemHit || PerformTextSearch( dWin, kSearchUpdateUI ) )	// seperate since we only do it once and it's undoable
 									{
+										long ss;	//LR 188 -- hilight what was replaced!
+
+										ss = dWin->startSel;
+										
 										RememberOperation( dWin, EO_Paste, &gUndo );
 										PasteOperation( dWin, _replaceChunk );
+
+										dWin->startSel = ss;
+										dWin->endSel = ss + (*_replaceChunk)->size;
 									}
 								}
-								else while( PerformTextSearch( NULL ) )
+								else while( PerformTextSearch( dWin, kSearchSkipUI ) )
 								{
 									PasteOperation( dWin, _replaceChunk );	// replace all is NOT undoable!
 								}
@@ -409,9 +426,7 @@ setmode:
 				{
 					long		addr = -1;
 					short		r;
-					EditWindowPtr dWin;
 
-					dWin = FindFirstEditWindow();
 					if( dWin )
 					{
 						GetText( g.gotoDlg, GAddrItem, g.gotoText );
