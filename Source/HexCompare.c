@@ -22,6 +22,7 @@
  * Contributor(s):
  *		Lane Roathe
  *		Nick Shanks
+ *		Nick Pissaro Jr. (NP)
  */
 
 // 05/10/01 - GAB: MPW environment support
@@ -42,6 +43,8 @@ extern unsigned char	gSearchBuffer[256];
 
 WindowRef		CompWind1 = NULL,
 				CompWind2 = NULL;
+Boolean			WeFoundWind1 = false,
+				WeFoundWind2 = false;
 
 /*** PERFORM TEXT DIFFERENCE COMPARE ***/
 Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
@@ -247,6 +250,9 @@ Success:
 void DoComparison( void )
 {
 	GrafPtr		oldPort;
+	
+	WindowRef	theWin;
+	
 	DialogPtr	pDlg;
 // LR: v1.6.5	Handle 		iHandle;
 // LR: v1.6.5	Rect 		iRect;
@@ -281,6 +287,7 @@ void DoComparison( void )
 	// handle event processing
 	do
 	{
+		theWin = NULL;
 		WaitNextEvent( everyEvent, &theEvent, 10L, NULL );
 
 		if( !CompWind1 || !CompWind2 )	//1.73 LR :exit if user closes one of the windows!
@@ -288,8 +295,20 @@ void DoComparison( void )
 		else
 			iType = 0;
 
-		if( IsDialogEvent( &theEvent ) )
+		// If the click is in the dialog window, make sure it always processes the click, regardless
+		// of whether it is on top or not.--NPJr.
+		if( theEvent.what == mouseDown )
+			FindWindow( theEvent.where, &theWin );
+		
+		if ( GetDialogWindow( pDlg ) == theWin ||
+			IsDialogEvent( &theEvent ) )
 		{
+			if( theWin != FrontNonFloatingWindow() )
+			{
+				// Make it so...
+				SelectWindow( theWin );
+			}
+			
 			DialogSelect( &theEvent, &pDlg, &iType );
 		
 			if( iType==1 )			// handle find forward here
@@ -324,11 +343,14 @@ void DoComparison( void )
 
 	if( iType == 2 )
 	{
-		if( CompWind1 )	CloseEditWindow( CompWind1 );		// close windows (1.7 vs disposing them!) if done ( ie, not editing )
-		if( CompWind2 )	CloseEditWindow( CompWind2 );
+		if( CompWind1 && ! WeFoundWind1 )
+			CloseEditWindow( CompWind1 );		// close windows (1.7 vs disposing them!) if done ( ie, not editing )
+		if( CompWind2 && ! WeFoundWind2 )
+			CloseEditWindow( CompWind2 );
 	}
 
 	CompWind1 = CompWind2 = NULL;
+	WeFoundWind1 = WeFoundWind2 = false;
 	gPrefs.searchForward = oldDir;
 }
 
@@ -338,43 +360,85 @@ Boolean GetCompareFiles( void )
 //	main handler for the compare of the contents of two windows
 	short 		iType;
 	EditWindowPtr ew1, ew2;
+	KeyMap keys;
+	Boolean newWindows;
+
+	// LR 177 -- find out if we want to use existing or new windows (ie, read option key)
+	GetKeys( keys );
+	newWindows = ( keys[1] & (1<<2) );
 
 	// close previous file compare windows if open
 
-	if( CompWind1 )	DisposeEditWindow( CompWind1 );
-	if( CompWind2 )	DisposeEditWindow( CompWind2 );
+	// NP 177 -- if windows are open use them instead of asking.
+	// LR 177 -- if 'Option' pressed then we do it the old-fashion way :)
 
-	// Open files ( and assoc. windows ) for comparing
-
-	CompWind1 = CompWind2 = NULL;
-	CompareFlag=1;
-	iType = AskEditWindow();
-	if( iType==-1 )
+	if( newWindows )
+	{	
+		if( CompWind1 )	DisposeEditWindow( CompWind1 );
+		if( CompWind2 )	DisposeEditWindow( CompWind2 );
+	}
+	else	// NP 177 -- See if there are windows we can use already. Rearrange them for doing the comparison.
 	{
-		CompareFlag = 0;
-		return false;		// if Cancel, exit
+		CompWind1 = CompWind2 = NULL;
+		WeFoundWind1 = WeFoundWind2 = false;
+		
+		ew1 = FindFirstEditWindow();			// look for 1st window
+		if( ew1 )
+		{
+			CompWind1 = ew1->oWin.theWin;
+			WeFoundWind1 = true;				// We found it, we shouldn't destroy it.
+			SizeEditWindow( CompWind1, kWindowCompareTop );
+
+			ew2 = FindNextEditWindow( ew1 );	// look for 2nd window
+			if( ew2 )
+			{
+				CompWind2 = ew2->oWin.theWin;
+				WeFoundWind2 = true;
+				SizeEditWindow( CompWind2, kWindowCompareBtm );
+			}
+		}
 	}
 
-	CompareFlag=2;
-	iType = AskEditWindow();
-	if( iType==-1 )
+	// NP 177 -- Open files for comparing if we did not find windows to start with.
+	
+	if( ! CompWind1 )
 	{
-		if( CompWind1 )
-			CloseEditWindow( CompWind1 );	// Cancel = exit (1.65, did retry .. but was confusing)
-		return false;
+		CompareFlag=1;
+		iType = AskEditWindow();
+		if( iType==-1 )
+		{
+			CompareFlag = 0;
+			return false;		// if Cancel, exit
+		}
+	}
+	
+	if( ! CompWind2 )
+	{
+		CompareFlag=2;
+		iType = AskEditWindow();
+		if( iType==-1 )
+		{
+			if( CompWind1 )
+				CloseEditWindow( CompWind1 );	// Cancel = exit (1.65, did retry .. but was confusing)
+			return false;
+		}
 	}
 
 	ew1 = (EditWindowPtr)GetWRefCon( CompWind1 );
 	ew2 = (EditWindowPtr)GetWRefCon( CompWind2 );
-
 
 	// LR: v1.6.5 don't allow comparing a file to itself!
 	if( ew1 && ew2	&& (ew1->fsSpec.vRefNum == ew2->fsSpec.vRefNum)
 					&& (ew1->fsSpec.parID == ew2->fsSpec.parID)
 					&& !MacCompareString( ew1->fsSpec.name, ew2->fsSpec.name, NULL ) )
 	{
-		CloseEditWindow( CompWind1 );
-		CloseEditWindow( CompWind2 );
+		if( CompWind1 && ! WeFoundWind1 )
+			CloseEditWindow( CompWind1 );		// close windows (1.7 vs disposing them!) if done ( ie, not editing )
+		if( CompWind2 && ! WeFoundWind2 )
+			CloseEditWindow( CompWind2 );
+		
+		CompWind1 = CompWind2 = NULL;
+		WeFoundWind1 = WeFoundWind2 = false;
 		CompareFlag = 0;
 
 		return false;
