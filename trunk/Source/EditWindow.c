@@ -379,7 +379,7 @@ void InitializeEditor( void )
 /*** CLEANUP EDITOR ***/
 void CleanupEditor( void )
 {
-	SavePrefs();
+	PrefsSave();
 
 	// LR: v1.6.5 now need to dispose of these at exit since they never truly "close"
 	if( g.searchWin )

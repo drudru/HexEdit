@@ -66,7 +66,7 @@ void main( void )	// LR: fix warnings
 	InitAppleEvents();
 	InitMenubar();
 
-	LoadPrefs();
+	PrefsLoad();
 	InitializeEditor();
 	AdjustMenus();
 
