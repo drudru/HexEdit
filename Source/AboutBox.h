@@ -24,7 +24,7 @@
 #ifndef _HexEdit_AboutBox_
 #define _HexEdit_AboutBox_
 
-#define itemFirstURL 7	// all the rest must follow WITHOUT BREAKS!
+#define itemFirstURL 11	// all the rest must follow WITHOUT BREAKS!
 
 pascal void DrawTEText( DialogPtr whichDialog, short itemNr );
 pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit );
