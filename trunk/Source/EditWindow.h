@@ -30,6 +30,18 @@
 #ifndef _HexEdit_EditWindow_
 #define _HexEdit_EditWindow_
 
+/*** Window Types ***/
+typedef enum
+{
+	kWindowNormal = 0,
+
+	kWindowCompareTop = 1,
+	kWindowCompareBtm = 2,
+
+	kWindowTypeCount
+
+}tWindowType;
+
 /*** EDIT CHUNK ***/
 typedef struct EditChunk
 {
@@ -81,14 +93,14 @@ void InitializeEditor( void );
 void CleanupEditor( void );
 GWorldPtr NewCOffScreen( short width, short height );
 void NewEditWindow( void );
-pascal short SourceDLOGHook( short item, DialogPtr theDialog );
-pascal Boolean SourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item );
-OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr );
+OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr );
 void DisposeEditWindow( WindowRef theWin );
 Boolean	CloseEditWindow( WindowRef theWin );
 Boolean CloseAllEditWindows( void );
+void SizeEditWindow( WindowRef theWin, tWindowType type );
 EditWindowPtr LocateEditWindow( FSSpec *fs, short fork );
 EditWindowPtr FindFirstEditWindow( void );
+EditWindowPtr FindNextEditWindow( EditWindowPtr curr );
 OSStatus InitColorTable( HEColorTablePtr ct );
 OSStatus GetColorInfo( EditWindowPtr dWin );
 void DrawHeader( EditWindowPtr dWin, Rect *r );
@@ -105,28 +117,26 @@ void OffsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFlag );
 void MyProcessKey( WindowRef theWin, EventRecord *er );
 void CursorOff( WindowRef theWin );
 void CursorOn( WindowRef theWin );
-OSStatus CopyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType );
 void SaveContents( WindowRef theWin );
 void SaveAsContents( WindowRef theWin );
 void RevertContents( WindowRef theWin );
 void MyActivate( WindowRef theWin, Boolean active );
 void UpdateEditWindows( void );
 
-//short AskEditWindow( void ); BB: split into two functions and made into an inline
-short AskEditWindowNav( void );
+// In order to support Nav and SF we have to go through some pain
+
+short AskEditWindowNav( tWindowType type );
 #if !TARGET_API_MAC_CARBON
-short AskEditWindowSF( void );
+short AskEditWindowSF( tWindowType type );
 #endif
 
 // BB: now a wrapper for Nav or SF based functions
 #if __MWERKS__ && !__POWERPC__		//LR 1.73 -- not available for 68K (won't even link!)
-//    inline short AskEditWindow( void ) {return AskEditWindowSF();}
 	#define AskEditWindow AskEditWindowSF
 #elif !TARGET_API_MAC_CARBON
-inline short AskEditWindow( void )
-{if (g.useNavServices) {return AskEditWindowNav();} else {return AskEditWindowSF();}}
+inline short AskEditWindow( tWindowType type )
+{if (g.useNavServices) {return AskEditWindowNav( type );} else {return AskEditWindowSF( type );}}
 #else
-//    inline short AskEditWindow( void ) {return AskEditWindowNav();}
     #define AskEditWindow AskEditWindowNav
 #endif
 

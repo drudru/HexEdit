@@ -38,7 +38,7 @@
 #include "Utility.h"
 
 // variables
-extern short CompareFlag;
+//LR 177 extern short CompareFlag;
 extern unsigned char	gSearchBuffer[256];
 
 WindowRef		CompWind1 = NULL,
@@ -358,7 +358,7 @@ void DoComparison( void )
 Boolean GetCompareFiles( void )
 {
 //	main handler for the compare of the contents of two windows
-	short 		iType;
+//LR 177	short 		iType;
 	EditWindowPtr ew1, ew2;
 	KeyMap keys;
 	Boolean newWindows;
@@ -403,23 +403,22 @@ Boolean GetCompareFiles( void )
 	
 	if( ! CompWind1 )
 	{
-		CompareFlag=1;
-		iType = AskEditWindow();
-		if( iType==-1 )
+//LR 177		CompareFlag=1;
+		if( -1 == AskEditWindow( kWindowCompareTop ) )
 		{
-			CompareFlag = 0;
+//LR 177			CompareFlag = 0;
 			return false;		// if Cancel, exit
 		}
 	}
 	
 	if( ! CompWind2 )
 	{
-		CompareFlag=2;
-		iType = AskEditWindow();
-		if( iType==-1 )
+//LR 177		CompareFlag=2;
+		if( -1 == AskEditWindow( kWindowCompareBtm ) )
 		{
 			if( CompWind1 )
 				CloseEditWindow( CompWind1 );	// Cancel = exit (1.65, did retry .. but was confusing)
+
 			return false;
 		}
 	}
@@ -439,12 +438,12 @@ Boolean GetCompareFiles( void )
 		
 		CompWind1 = CompWind2 = NULL;
 		WeFoundWind1 = WeFoundWind2 = false;
-		CompareFlag = 0;
+//LR 177		CompareFlag = 0;
 
 		return false;
 	}
 
-	CompareFlag = 0;
+//LR 177	CompareFlag = 0;
 	return true;
 }
 
