@@ -35,6 +35,8 @@
 #include "Prefs.h"
 #include "Utility.h"
 
+static EditChunk	**_replaceChunk;	//LR 175 -- keep in chunk for ease of use
+
 /*** SET SEARCH BUTTONS ***/
 void SetSearchButtons( void )
 {
@@ -52,6 +54,20 @@ void SetSearchButtons( void )
 			DisableButton( g.searchDlg, SearchForwardItem );
 			DisableButton( g.searchDlg, SearchBackwardItem );
 			g.searchDisabled = true;
+		}
+
+		//LR 175 -- set the replace buttons
+		if( !g.searchDisabled && *g.replaceText && g.replaceDisabled )
+		{
+			EnableButton( g.searchDlg, ReplaceItem );
+			EnableButton( g.searchDlg, ReplaceAllItem );
+			g.replaceDisabled = false;
+		}
+		else if( (g.searchDisabled || !*g.replaceText) && !g.replaceDisabled )
+		{
+			DisableButton( g.searchDlg, ReplaceItem );
+			DisableButton( g.searchDlg, ReplaceAllItem );
+			g.replaceDisabled = true;
 		}
 	}
 }
@@ -72,6 +88,7 @@ void OpenSearchDialog( void )
 	{
 		// Convert Existing Search Scrap, if it exists to text
 		SetText( g.searchDlg, SearchTextItem, g.searchText );
+		SetText( g.searchDlg, ReplaceTextItem, g.replaceText );
 
 		// Set Radio Buttons
 		SetControl( g.searchDlg, HexModeItem, gPrefs.searchMode == EM_Hex );
@@ -94,7 +111,7 @@ void OpenSearchDialog( void )
 }
 
 /*** PERFORM TEXT SEARCH ***/
-void PerformTextSearch( EditWindowPtr dWin )
+Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search succeeds (for replace)
 {
 	short		ch, matchIdx;
 	long		addr, matchAddr, adjust;
@@ -104,7 +121,7 @@ void PerformTextSearch( EditWindowPtr dWin )
 	{
 		dWin = FindFirstEditWindow();
 		if( !dWin )
-			return;
+			return( false );
 	}
 
 	// Get starting index into file
@@ -160,7 +177,7 @@ void PerformTextSearch( EditWindowPtr dWin )
 Failure:
 	SysBeep( 1 );
 	MySetCursor( C_Arrow );
-	return;
+	return( false );
 
 Success:
 	if( dWin != (EditWindowPtr) GetWRefCon( FrontNonFloatingWindow() ) )
@@ -171,6 +188,7 @@ Success:
 
 	ScrollToSelection( dWin, dWin->startSel, true, true );
 	MySetCursor( C_Arrow );
+	return( true );
 }
 
 #define GGotoAddr		1
@@ -273,6 +291,7 @@ void DoModelessDialogEvent( EventRecord *theEvent )
 	if( theEvent->what == nullEvent && whichDlog == g.searchDlg )	// LR: v1.6.5 must check which dialog!
 	{
 		GetText( g.searchDlg, SearchTextItem, g.searchText );
+		GetText( g.searchDlg, ReplaceTextItem, g.replaceText );
 		SetSearchButtons();
 	}
 
@@ -289,6 +308,47 @@ ButtonHit:
 				if( StringToSearchBuffer( gPrefs.searchCase ) )
 					PerformTextSearch( NULL );
 				break;
+
+			//LR 175 -- handle new replace options
+			case ReplaceItem:
+			case ReplaceAllItem:
+				g.replaceAll = ( itemHit == ReplaceAllItem );
+				GetText( g.searchDlg, ReplaceTextItem, g.searchText );	// put in search so converter works!
+				if( StringToSearchBuffer( gPrefs.searchCase ) )
+				{
+					if( _replaceChunk )
+						DisposeChunk( NULL, _replaceChunk );
+
+					_replaceChunk = NewChunk( g.searchBuffer[0], 0, 0, CT_Unwritten );
+					if( _replaceChunk )
+					{
+						BlockMoveData( g.searchText, g.replaceText, g.searchText[0]+1 );
+						BlockMoveData( g.searchBuffer+1, *(*_replaceChunk)->data, g.searchBuffer[0] );
+						GetText( g.searchDlg, SearchTextItem, g.searchText );
+						if( StringToSearchBuffer( gPrefs.searchCase ) )
+						{
+							EditWindowPtr dWin = FindFirstEditWindow();
+							if( dWin )
+							{
+								if( !g.replaceAll )
+								{
+									if( PerformTextSearch( NULL ) )	// seperate since we only do it once and it's undoable
+									{
+										RememberOperation( dWin, EO_Paste, &gUndo );
+										PasteOperation( dWin, _replaceChunk );
+									}
+								}
+								else while( PerformTextSearch( NULL ) )
+								{
+									PasteOperation( dWin, _replaceChunk );	// replace all is NOT undoable!
+								}
+								ScrollToSelection( dWin, dWin->startSel, true, true );
+							}
+						}
+					}
+				}
+				break;
+
 			case HexModeItem:
 				gPrefs.searchMode = EM_Hex;
 				DisableButton( g.searchDlg, MatchCaseItem );	// LR 1.65
@@ -425,7 +485,7 @@ Boolean StringToSearchBuffer( Boolean matchCase )
 	}
 	else
 	{
-		BlockMove( g.searchText, g.searchBuffer, g.searchText[0]+1 );
+		BlockMoveData( g.searchText, g.searchBuffer, g.searchText[0]+1 );
 		if( !matchCase )
 			UppercaseText( (Ptr) g.searchBuffer, g.searchText[0] + 1, smSystemScript );	// NS: function name changed and script constant added
 	}
