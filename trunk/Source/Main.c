@@ -228,7 +228,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 						Rect r;
 
 						SelectWindow( theWin );
-						SetRect( &r, kHexWindowWidth + 1, 64, kHexWindowWidth + 1, g.maxHeight );
+						SetRect( &r, kHexWindowWidth + 1, kHeaderHeight + (10 * kLineHeight), kHexWindowWidth + 1, g.maxHeight );
 
 						// Handle the mouse tracking for the resizing
 						growResult = GrowWindow( theWin, theEvent->where, &r );
