@@ -1,17 +1,18 @@
 HexEdit Revision History
 
 04/29/02 1.80
-Major re-arrangement of EditWindow.c to be easier to follow
 Removed per-window offscreen drawing surface
 	(a single color capable offscreen is now used for all windows)
 Single offscreen means memory usage goes WAY DOWN, a very good thing
 Single offscreen means flickering of selection no longer happens
 Single offscreen means slower drawing speed, only noticable on older Macs
+Re-arranged the distribution files for a cleaner layout that is more user-friendly
 Windows zoom is now restricted to full line height at window creation
 Open/Save dialogs now get prompt at load, including Nav dialogs!
 Re-layed out window to handle files of huge size (ie, 8 chars for hex addresses!)
 Re-layed out header to reflect larger file size handling (8 chars per hex address!)
 Positioning of vertical lines now relative to body draw position (in code)
+Major re-arrangement of EditWindow.c to be easier to follow
 Windows no longer grow below bottom of screen
 Fixed problem where data file w/no resource fork didn't display correct error message
 Cleaned up some opening code (to not duplicate functionality)
