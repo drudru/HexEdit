@@ -2350,7 +2350,7 @@ doclear:
 				}
 				else
 				{
-					if( gPrefs.overwrite && dWin->startSel < dWin->fileSize - 1 )
+					if( gPrefs.overwrite && dWin->startSel < dWin->fileSize )
 					{
 						++dWin->endSel;
 						DeleteSelection( dWin );
