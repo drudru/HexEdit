@@ -34,8 +34,10 @@
 
 // variables
 extern short CompareFlag;
-extern WindowRef CompWind1, CompWind2;
 extern unsigned char	gSearchBuffer[256];
+
+WindowRef		CompWind1 = NULL,
+				CompWind2 = NULL;
 
 /*** PERFORM TEXT DIFFERENCE COMPARE ***/
 Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 )
@@ -254,8 +256,8 @@ void DoComparison( void )
 	pDlg = GetNewDialog ( dlgCompare, 0L, kFirstWindowOfClass );
 
 	MoveWindow( GetDialogWindow( pDlg ), 22, g.maxHeight -64 +8, true );
-	ShowWindow( GetDialogWindow( pDlg ) );
-	SetPort( (GrafPtr)GetDialogPort( pDlg ) );
+//LR 1.73	SetPort( (GrafPtr)GetDialogPort( pDlg ) );
+	SetPortDialogPort( pDlg );
 
 	SetDialogDefaultItem( pDlg, 1 );	// LR: v1.6.5 LR -- correct way of showing default button
 /*
@@ -265,6 +267,7 @@ void DoComparison( void )
 	FrameRoundRect( &iRect, 16, 16 );
 */
 	// show the contents of the windows
+	ShowWindow( GetDialogWindow( pDlg ) );
 
 	DrawPage( (EditWindowPtr) GetWRefCon( CompWind1 ) );
 	UpdateOnscreen( CompWind1 );
@@ -275,7 +278,12 @@ void DoComparison( void )
 	do
 	{
 		WaitNextEvent( everyEvent, &theEvent, 10L, NULL );
-		iType=0;
+
+		if( !CompWind1 || !CompWind2 )	//1.73 LR :exit if user closes one of the windows!
+			iType = 4;
+		else
+			iType = 0;
+
 		if( IsDialogEvent( &theEvent ) )
 		{
 			DialogSelect( &theEvent, &pDlg, &iType );
@@ -400,7 +408,9 @@ void ComparisonPreferences( void )
 	SetControl( pDlg, CP_Case, prefs.searchCase );
 
 	SetDialogDefaultItem( pDlg, CP_Done );	// LR: v1.6.5 LR -- correct way of showing default button
-			
+
+	ShowWindow( GetDialogWindow( pDlg ) );	// LR 1.73 -- dialog now hidden at first launch!
+
 	// handle event processing
 	do
 	{
