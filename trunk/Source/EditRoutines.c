@@ -22,13 +22,18 @@
 
 #include <ctype.h>
 
-#include "EditRoutines.h"
 #include "EditScrollbar.h"
+#include "Menus.h"
 #include "Utility.h"
+
+#include "EditRoutines.h"
+
+// Global Vars
 
 UndoRecord gUndo, gRedo;
 
 EditChunk	**gScrapChunk;
+
 
 /*** LOAD FILE ***/
 void LoadFile( EditWindowPtr dWin )
@@ -47,10 +52,10 @@ void LoadFile( EditWindowPtr dWin )
 
 	while( count )
 	{
-		if( count <= ( MaxFileRAM - SlushRAM ) )
+		if( count <= ( kMaxFileRAM - kSlushRAM ) )
 			chunkSize = count;
 		else
-			chunkSize = ( MaxFileRAM - SlushRAM );
+			chunkSize = ( kMaxFileRAM - kSlushRAM );
 		count -= chunkSize;
 		nc = NewChunk( chunkSize, pos, pos, CT_Original );
 		dWin->firstChunk = AppendChunk( dWin->firstChunk, nc );
@@ -198,7 +203,7 @@ void LoadChunk( EditWindowPtr dWin, EditChunk **cc )
 		return;
 	// Check if we can fit within MaxFileRam, if not, deallocate old chunks
 	// until we're ok
-	while( dWin->totLoaded+( *cc )->size > MaxFileRAM )
+	while( dWin->totLoaded+( *cc )->size > kMaxFileRAM )
 		UnloadLeastUsedChunk( dWin );
 	( *cc )->data = NewHandleClear( ( *cc )->size );
 	if( !( *cc )->data )
@@ -442,7 +447,7 @@ void InsertCharacter( EditWindowPtr dWin, short charCode )
 	// 	Expand Ptr if Necessary
 	if( ( *fc )->allocSize <= ( *fc )->size )
 	{
-		( *fc )->allocSize += AllocIncr;		// !! consider expanding as size goes up
+		( *fc )->allocSize += kAllocIncrement;		// !! consider expanding as size goes up
 		SetHandleSize( ( *fc )->data, ( *fc )->allocSize );
 	}
 
@@ -542,7 +547,7 @@ void CopySelection( EditWindowPtr dWin )
 					 *dest++ = bit > 9 ? ( bit-10+'A' ) : ( bit+'0' );
 					 bit = ( src[0] & 0x0F );
 					 *dest++ = bit > 9 ? ( bit-10+'A' ) : ( bit+'0' );
-					 *dest++ = ( i+1 )%16==0 ? '\r' : ' ';
+					 *dest++ = (i + 1) % kBytesPerLine == 0 ? '\r' : ' ';
 				}
 
 				HUnlock( ( *gScrapChunk )->data );

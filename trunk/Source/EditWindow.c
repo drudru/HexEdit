@@ -154,8 +154,9 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 			}
 
 			addr = startAddr;
-			linesPerPage = (pageRect.bottom - TopMargin - (HeaderHeight + 1)) / LineHeight;
-			realNumberOfPagesinDoc = ((endAddr - startAddr) / 16) / linesPerPage + 1;
+//LR: 1.7 -fix lpp calculation!			linesPerPage = (pageRect.bottom - TopMargin - (kHeaderHeight + 1)) / kLineHeight;
+			linesPerPage = ((pageRect.bottom - pageRect.top) + (kLineHeight / 3) - (kHeaderHeight + kFooterHeight)) / kLineHeight;
+			realNumberOfPagesinDoc = (((endAddr - startAddr) / kBytesPerLine) / linesPerPage) + 1;
 		}
 	}
 
@@ -213,13 +214,13 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 
 				//  Draw the page.
 				DrawHeader( dWin, &r );
-				r.top += ( HeaderHeight+TopMargin+LineHeight-DescendHeight );
-				r.bottom -= ( FooterHeight + DescendHeight + BotMargin );
+				r.top += kHeaderHeight;
+				r.bottom -= kFooterHeight;
 
 				DrawDump( dWin, &r, addr, endAddr );
 
-				r.top = r.bottom + DescendHeight + BotMargin;
-				r.bottom = r.top + FooterHeight;
+				r.top = r.bottom;
+				r.bottom = r.top + kFooterHeight;
 				DrawFooter( dWin, &r, pageNumber, realNumberOfPagesinDoc );
 
 				//  Close the page.
@@ -227,8 +228,8 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 				if (status != noErr)
 				  break;
 
-				addr += linesPerPage*16;
-				addr -= ( addr % 16 );
+				addr += linesPerPage * kBytesPerLine;
+				addr -= ( addr % kBytesPerLine );
 
 				//  And loop.
 				pageNumber++;
@@ -251,6 +252,7 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 // NS: v1.6.6, event filters for navigation services
 
 /*** NAV SERVICES EVENT FILTER ***/
+/*
 static pascal void _navEventFilter( NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, NavCallBackUserData callBackUD )
 {
 	#pragma unused( callBackUD )
@@ -263,14 +265,15 @@ static pascal void _navEventFilter( NavEventCallbackMessage callBackSelector, Na
 			switch( callBackParms->eventData.eventDataParms.event->what )
 			{
 				case updateEvt:
-/*					RgnHandle updateRgn;
-					GetWindowRegion( theWindow, kWindowUpdateRgn, updateRgn );
-					updateWindow( theWindow, updateRgn );
-*/					break;
+//					RgnHandle updateRgn;
+//					GetWindowRegion( theWindow, kWindowUpdateRgn, updateRgn );
+//					updateWindow( theWindow, updateRgn );
+//					break;
 			}
 			break;
 	}
 }
+*/
 
 /*** NAV SERVICES PREVIEW FILTER ***/
 /*
@@ -357,10 +360,7 @@ void InitializeEditor( void )
 #endif
 
 	// LR: v1.6.5 round this to a size showing only full lines
-	g.maxHeight = (g.maxHeight / LineHeight) * LineHeight;
-
-// LR: 1.5	if( g.maxHeight < 342 )
-// 		g.maxHeight = 342;
+	g.maxHeight = (((g.maxHeight - 1) / kLineHeight) * kLineHeight) + kHeaderHeight;
 
 #if TARGET_API_MAC_CARBON	// LR: v1.6
 // bug: carbon printing not written
@@ -379,14 +379,6 @@ void InitializeEditor( void )
 /*** CLEANUP EDITOR ***/
 void CleanupEditor( void )
 {
-/*	// LR: keep from locking up
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-	else CloseWindow( GetDialogWindow( g.searchWin ) );
-#else
-	else CloseWindow( g.searchWin );
-#endif
-*/
-// LR:	SavePreferences();
 	SavePrefs();
 
 	// LR: v1.6.5 now need to dispose of these at exit since they never truly "close"
@@ -411,41 +403,34 @@ OSStatus SetupNewEditWindow( EditWindowPtr dWin, StringPtr title )
 	Rect r;
 	int l;
 
-	theWin = InitObjectWindow( MainWIND, (ObjectWindowPtr) dWin, false );
+	theWin = InitObjectWindow( kMainWIND, (ObjectWindowPtr) dWin, false );
 	if( !theWin )
 		ErrorAlert( ES_Stop, errMemory );
 
 	// LR:	Hack for comparing two files
 	if( CompareFlag == 1 )
 	{
-		SetRect( &r, 0, 0, MaxWindowWidth /*+ ( SBarSize-1 ) */, g.maxHeight/2 - 64 );
+		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight / 2 - 64 );
 		CompWind1 = theWin;
 	}
 	else if( CompareFlag == 2 )
 	{
-		SetRect( &r, 0, 0, MaxWindowWidth /*+ ( SBarSize-1 ) */, g.maxHeight/2 - 64 );
+		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight / 2 - 64 );
 		MoveWindow( theWin, 14, g.maxHeight/2, true );
 		CompWind2 = theWin;
 	}
 	else
-		SetRect( &r, 0, 0, MaxWindowWidth /*+ ( SBarSize-1 ) */, g.maxHeight - 64 );
+		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight - 64 );
 
 	// Check for best window size
-	if( dWin->fileSize && ( dWin->linesPerPage-1 ) * SBarSize > dWin->fileSize )
-		r.bottom -= LineHeight * ( ( ( dWin->linesPerPage-1 ) * SBarSize ) - dWin->fileSize ) / SBarSize;
-	if( r.bottom < SBarSize + TopMargin + BotMargin + HeaderHeight + ( LineHeight * 3 ) )
-		r.bottom = SBarSize + TopMargin + BotMargin + HeaderHeight + ( LineHeight * 3 );
+	if( ((dWin->linesPerPage - 1) * kLineHeight) > dWin->fileSize )
+		r.bottom = (dWin->fileSize / kBytesPerLine) * kLineHeight;
+//LR 1.7		r.bottom = (kLineHeight * (((dWin->linesPerPage - 1) * kBytesPerLine) - dWin->fileSize)) / kLineHeight;
+
+	if( r.bottom < (kHeaderHeight + (kLineHeight * 5)) )
+		r.bottom = (kHeaderHeight + (kLineHeight * 5));
 
 	SizeWindow( theWin, r.right, r.bottom, true );
-
-// LR: 1.5	SetRect( &r, 0, 0, MaxWindowWidth /*+ ( SBarSize-1 ) */, g.maxHeight - 44 );
-// LR: 1.5	OffsetRect( &r, 14, 44 );
-// LR: 1.5 zoom rect just modified to correct width.
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-// bug: how to handle zoom init?
-#else
-	( ( WStateData * ) * ( (WindowPeek)theWin )->dataHandle )->stdState.right = ( ( WStateData * ) * ( (WindowPeek)theWin )->dataHandle )->stdState.left + MaxWindowWidth;
-#endif
 
 	// LR: 1.66 make sure the name is good (for instance "icon/r" is bad!)
 	l = (int)title[0];
@@ -472,7 +457,7 @@ OSStatus SetupNewEditWindow( EditWindowPtr dWin, StringPtr title )
 	objectWindow->Revert		= RevertContents;
 	objectWindow->Activate		= MyActivate;
 	
-// LR: 1.5	SetRect( &offRect, 0, 0, MaxWindowWidth, g.maxHeight );
+// LR: 1.5	SetRect( &offRect, 0, 0, kHexWindowWidth, g.maxHeight );
 
 	if( prefs.useColor )
 		dWin->csResID = prefs.csResID;	// LR: 1.5 - color selection
@@ -482,26 +467,30 @@ OSStatus SetupNewEditWindow( EditWindowPtr dWin, StringPtr title )
 	// Make it the current grafport
 	SetPortWindowPort( theWin );
 	
-/* LR: 1.5 -- this was bad to begin with!
-	( *dWin->offscreen->portPixMap )->rowBytes = (((MaxWindowWidth -1) / 32) + 1) * 4;
-	( *dWin->offscreen->portPixMap )->baseAddr = NewPtrClear( (long) ( *dWin->offscreen->portPixMap )->rowBytes * g.maxHeight );
-	if( !( *dWin->offscreen->portPixMap )->baseAddr )
-*/
-	dWin->offscreen = _newCOffScreen( MaxWindowWidth, g.maxHeight );
+	dWin->offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
 	if( !dWin->offscreen )
 			ErrorAlert( ES_Stop, errMemory );
 
-// LR: 1/5	( *dWin->offscreen->portPixMap )->bounds = offRect;
-	
 	// Show the theWin
 	ShowWindow( theWin );
 
 	SetupScrollBars( dWin );
 
 	GetWindowPortBounds( theWin, &r );
-	dWin->linesPerPage = ( r.bottom - TopMargin - BotMargin - ( HeaderHeight-1 ) ) / LineHeight + 1;
+
+//LR: 1.7 -fix lpp calculation!	dWin->linesPerPage = ( r.bottom - TopMargin - BotMargin - ( kHeaderHeight-1 ) ) / kLineHeight + 1;
+	dWin->linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - kHeaderHeight) / kLineHeight;
 	dWin->startSel = dWin->endSel = 0L;
 	dWin->editMode = EM_Hex;
+
+	//LR: 1.7 - what was this??? ((WStateData *) *((WindowPeek)theWin)->dataHandle)->stdState.left + kHexWindowWidth;
+
+	LocalToGlobal( (Point *)&r.top );
+	LocalToGlobal( (Point *)&r.bottom );
+
+	r.bottom /= 2;		// zoom'd state is 1/2 of normal (actually the reverse of standard zoom!)
+
+	SetWindowStandardState( theWin, &r );
 
 	return noErr;
 }
@@ -516,8 +505,7 @@ void NewEditWindow( void )
 	FSSpec				workSpec;
 // LR: 1.5	Rect				r, offRect;
 
-	// Get the Template & Create the Window, it is set up in the resource fork
-	// to not be initially visible 
+	// Get the Template & Create the Window, initially set to the file's data fork
 
 	dWin = (EditWindowPtr) NewPtrClear( sizeof(EditWindowRecord) );
 	if( !dWin )
@@ -618,14 +606,14 @@ short AskEditWindow( void )
 	OSStatus error = noErr;
 	NavReplyRecord		reply;
 	NavDialogOptions	dialogOptions;
- 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
+//LR 1.7 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
 	NavPreviewUPP		previewProc = NULL;
 	NavObjectFilterUPP	filterProc = NULL;
 	NavTypeListHandle	openTypeList = NULL;
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
 	dialogOptions.dialogOptionFlags += kNavNoTypePopup;
-	error = NavGetFile( NULL, &reply, &dialogOptions, eventProc, previewProc, filterProc, openTypeList, NULL);
+	error = NavGetFile( NULL, &reply, &dialogOptions, NULL/*eventProc*/, previewProc, filterProc, openTypeList, NULL);
 	if( reply.validRecord || !error )
 	{
 		AEKeyword 	keyword;
@@ -638,7 +626,7 @@ short AskEditWindow( void )
 		NavDisposeReply( &reply );
 	}
 	else error = ioErr;		// user cancelled
-	DisposeNavEventUPP( eventProc );
+//LR 1.7	DisposeNavEventUPP( eventProc );
 	AdjustMenus();
 	return error == noErr? 0 : -1;
 #else
@@ -926,7 +914,7 @@ Boolean CloseAllEditWindows( void )
 			DisposeDialog( g.searchWin );
 			g.searchWin = NULL;
 		}
-		else if( windowKind == HexEditWindowID )
+		else if( windowKind == kHexEditWindowTag )
 			if( !CloseEditWindow( theWin ) )
 				return false;
 
@@ -947,7 +935,7 @@ EditWindowPtr LocateEditWindow( FSSpec *fs, short fork )
 
 	while( theWin )
 	{
-		if( HexEditWindowID == GetWindowKind( theWin ) )	// LR: v1.6.5 fix search
+		if( kHexEditWindowTag == GetWindowKind( theWin ) )	// LR: v1.6.5 fix search
 		{
 			EditWindowPtr dWin = (EditWindowPtr)GetWRefCon( theWin );
 
@@ -974,7 +962,7 @@ EditWindowPtr FindFirstEditWindow( void )
 	theWin = FrontWindow();
 	if( theWin ) do
 	{
-		if( GetWindowKind( theWin ) == HexEditWindowID )
+		if( GetWindowKind( theWin ) == kHexEditWindowTag )
 			editWin = theWin;
 
 		theWin = GetNextWindow( theWin );
@@ -1049,10 +1037,10 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 
 	EraseRect( r );	// uses back color
 
-	r->right -= SBarSize;	// LR: v1.6.5 don't overwrite scroll bar icon
+	r->right -= kSBarSize;	// LR: v1.6.5 don't overwrite scroll bar icon
 
-	MoveTo( r->left, r->bottom - 0 );	// LR: 1.7 - only one line, darker above scroll bar looked bogus
-	LineTo( r->right, r->bottom - 0 );	// uses fore color
+	MoveTo( r->left, r->bottom );	// LR: 1.7 - only one line, darker above scroll bar looked bogus
+	LineTo( r->right, r->bottom );	// uses fore color
 
 	if( ctHdl )
 		RGBForeColor( &( *ctHdl )->headerText );
@@ -1070,7 +1058,7 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 	GetIndString( (StringPtr) str2, strHeader, dWin->fork );
 	CopyPascalStringToC( (StringPtr) str2, str2 );
 	sprintf( (char *) g.buffer, str, dWin->fileSize, &dWin->fileType, &dWin->creator, str2, dWin->startSel, dWin->endSel );
-	MoveTo( 5, r->top + HeaderHeight - DescendHeight - 5 );
+	MoveTo( 5, r->top + kLineHeight );
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 	
 	if( ctHdl )	// reset colors to known state
@@ -1102,19 +1090,19 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 	DateString( dt, abbrevDate, s1, NULL );	//LR: 1.7 - get date/time strings as users wants them
 	TimeString( dt, false, s2, NULL );
 	sprintf( (char *)g.buffer, "%.*s %.*s", (int)s1[0], (char *)&s1[1], (int)s2[0], (char *)&s2[1] );
-	MoveTo( 10, r->top+FooterHeight-DescendHeight-2 );
+	MoveTo( 10, r->top + kLineHeight );
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 
 	// Draw filename in middle of footer
 	GetIndString( s1, strHeader, HD_Footer );
 	GetWTitle( dWin->oWin.theWin, s2 );
 	sprintf( (char *)g.buffer, "%.s %.*s", (int)s1[0], (char *)&s1[1], (int)s2[0], (char *)&s2[1] );
-	MoveTo( ( r->left + r->right ) / 2 - TextWidth( g.buffer, 0, strlen((char *)g.buffer )) / 2, r->top + FooterHeight - DescendHeight - 2 );
+	MoveTo( ( r->left + r->right ) / 2 - TextWidth( g.buffer, 0, strlen((char *)g.buffer )) / 2, r->top + kLineHeight );
 	DrawText( g.buffer, 0, strlen( (char *)g.buffer ) );
 
 	// Draw page # & count on right edge of footer
 	sprintf( (char *)g.buffer, "%d of %d", pageNbr, nbrPages );
-	MoveTo( r->right - TextWidth( g.buffer, 0, strlen((char *)g.buffer )) - 8, r->top + FooterHeight - DescendHeight - 2 );
+	MoveTo( r->right - TextWidth( g.buffer, 0, strlen((char *)g.buffer )) - 8, r->top + kLineHeight );
 	DrawText( g.buffer, 0, strlen( (char *)g.buffer ) );
 }
 
@@ -1122,22 +1110,23 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 {
 //	draws the actual hex/decimal and ASCII panes in the window
-	short	i, j, y, x;
+	short	i, j, y;
 	short	hexPos;
 	short	asciiPos;
 	register short	ch, ch1, ch2;
 	long	addr;
-	Rect br = *r;
+	Rect addrRect;
 
 	TextFont( fontID );
 	TextSize( 9 );
 	TextFace( normal );
 	TextMode( srcCopy );
 
-	x = StringWidth( "\p 000000: " );
-
-	br.top -= SBarSize;
-	br.right = br.left + x + 1;
+	// create bounds rectangle
+	addrRect.top = r->top;	// we need to erase seperating space
+	addrRect.left = r->left;
+	addrRect.right = r->left + kBodyDrawPos + StringWidth( "\p 000000: " ) - 3;
+	addrRect.bottom = r->bottom;
 
 	// Draw left edging?
 	if( ctHdl )
@@ -1145,45 +1134,45 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		RGBBackColor( &( *ctHdl )->bar );
 		RGBForeColor( &( *ctHdl )->barLine );
 
-		EraseRect( &br );
+//		EraseRect( &addrRect );
 
-		MoveTo( br.right, br.top );
-		LineTo( br.right, br.bottom );
+		MoveTo( addrRect.right, addrRect.top );
+//		LineTo( addrRect.right, addrRect.bottom );
 	}
 
-	addr = sAddr - ( sAddr % 16 );
+	addr = sAddr - (sAddr % kBytesPerLine);
 
-	g.buffer[57] = g.buffer[58] = g.buffer[75] = ' ';
+	g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kStringHexPos + kBodyStrLen] = ' ';
 
-	for( y = r->top, j = 0; y < r->bottom && addr < eAddr; y += LineHeight, j++ )
+	// draw each line of data
+	for( y = r->top + (kLineHeight - 2), j = 0; y < r->bottom && addr < eAddr; y += kLineHeight, j++ )
 	{
 		if( prefs.decimalAddr )
-			sprintf( (char *) g.buffer, "%7ld:", addr );
+			sprintf( (char *) g.buffer, " %7ld: ", addr );
 		else
-			sprintf( (char *) g.buffer, "%06lX:", addr );
+			sprintf( (char *) g.buffer, "  %06lX: ", addr );
 
+		// draw the address (not one big string due to different coloring!)
 		if( ctHdl )
 		{
 			RGBBackColor( &( *ctHdl )->bar );
 			RGBForeColor( &( *ctHdl )->barText );
 		}
 
-		MoveTo( AddrPos, y );
-		DrawText( g.buffer, 0, 8 );
+		MoveTo( kBodyDrawPos, y );
+		DrawText( g.buffer, 0, kStringHexPos - 1 );
 
-		if( ctHdl )
+		// draw the data (hex and ascii)
+		if( ctHdl && !(j & 1) )
 		{
-			if( !( j & 1 ) )
-			{
-				RGBBackColor( &( *ctHdl )->body );
-				RGBForeColor( &( *ctHdl )->text );
-			}
+			RGBBackColor( &( *ctHdl )->body );
+			RGBForeColor( &( *ctHdl )->text );
 		}
 
-		hexPos = HexStart;
-		asciiPos = AsciiStart;
+		hexPos = kStringHexPos;
+		asciiPos = kStringTextPos;
 
-		for( i = 16; i; --i, ++addr )
+		for( i = kBytesPerLine; i; --i, ++addr )
 		{
 			if( addr >= sAddr && addr < eAddr )
 			{
@@ -1204,10 +1193,9 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 				g.buffer[asciiPos++] = ' ';
 			}
 		}
-		g.buffer[HexStart-1] = ' ';
 
-		MoveTo( AddrPos + x - 6, y );
-		DrawText( g.buffer, HexStart-1, 75-( HexStart-2 ) );
+		MoveTo( kDataDrawPos, y );
+		DrawText( g.buffer, kStringHexPos, kBodyStrLen + 1 );
 	}
 
 	// Draw vertical bars?
@@ -1219,14 +1207,14 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		if( ctHdl )
 			RGBForeColor( &( *ctHdl )->headerLine );	// LR: v1.6.5 LR - was barText
 
-		MoveTo( 22 * w, br.top );
-		LineTo( 22 * w, br.bottom );
+		MoveTo( 22 * w, addrRect.top );
+		LineTo( 22 * w, addrRect.bottom );
 
-		MoveTo( 34 * w, br.top );
-		LineTo( 34 * w, br.bottom );
+		MoveTo( 34 * w, addrRect.top );
+		LineTo( 34 * w, addrRect.bottom );
 
-		MoveTo( 46 * w, br.top );
-		LineTo( 46 * w, br.bottom );
+		MoveTo( 46 * w, addrRect.top );
+		LineTo( 46 * w, addrRect.bottom );
 	}
 
 	// LR: restore color
@@ -1262,7 +1250,7 @@ void DrawPage( EditWindowPtr dWin )
 		SetPort( ( GrafPtr )dWin->offscreen );
 
 		GetPortBounds( dWin->offscreen, &r );
-		r.right -= ( SBarSize - 1 );
+// LR 1.7		r.right -= ( kSBarSize - 1 );
 
 	/* LR: 1.5 - no longer possible
 		// don't draw outside our offscreen pixMap!
@@ -1276,8 +1264,8 @@ void DrawPage( EditWindowPtr dWin )
 
 	// LR: 1.5 now done in theWin update!	DrawHeader( dWin, &r );
 
-		r.top += HeaderHeight;		// NS: don't erase header
-	// LR: 1.5	r.bottom -= ( SBarSize - 1 );
+//LR 1.7		r.top += kHeaderHeight;		// NS: don't erase header
+	// LR: 1.5	r.bottom -= ( kSBarSize - 1 );
 
 		if( ctHdl )
 			RGBBackColor( &( *ctHdl )->body );
@@ -1287,10 +1275,10 @@ void DrawPage( EditWindowPtr dWin )
 			BackColor( whiteColor );
 		}
 
-		EraseRect( &r );
+//		EraseRect( &r );
 
-		r.top += ( TopMargin + LineHeight - DescendHeight );
-	// NS: no bottom bar anymore	r.bottom -= ( SBarSize + DescendHeight + BotMargin );
+//		r.top += TopMargin;
+	// NS: no bottom bar anymore	r.bottom -= ( kSBarSize + DescendHeight + BotMargin );
 	// 	r.bottom -= ( DescendHeight + BotMargin );
 
 		DrawDump( dWin, &r, dWin->editOffset, dWin->fileSize );
@@ -1329,7 +1317,7 @@ void MyDraw( WindowRef theWin )
 /*** UPDATE ONSCREEN ***/
 void UpdateOnscreen( WindowRef theWin )
 {
-	Rect			r1, r2, r3;
+	Rect			r1, r2;//, r3;
 	GrafPtr			oldPort;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	PixMapHandle thePixMap = GetPortPixMap( dWin->offscreen );
@@ -1345,21 +1333,25 @@ void UpdateOnscreen( WindowRef theWin )
 		g.cursorFlag = false;
 
 		// LR: Header drawn here due to overlapping vScrollBar
-		r2.bottom = r2.top + HeaderHeight - 1;
+		r2.bottom = r2.top + kHeaderHeight - 1;
 		DrawHeader( dWin, &r2 );
 
 		// LR: adjust for scrollbar & header
 		GetWindowPortBounds( theWin, &r2 );
-		r2.right -= SBarSize - 1;
-		r2.top += (HeaderHeight);
+// LR: 1.7		r2.right -= kSBarSize - 1;
+//		r2.top += kHeaderHeight;
+//		SectRect( &r1, &r2, &r3 );
 
-		SectRect( &r1, &r2, &r3 );
+		// restrict draw height to height of window port!
+		r2.top = kHeaderHeight;
+		r2.right -= kSBarSize;
+		r1.bottom = r1.top + (r2.bottom - r2.top);
 
 	// LR: offscreen fix!	CopyBits( ( BitMap * ) &dWin->pixMap, &theWin->portBits, &r3, &r3, srcCopy, 0L );	// LR: -- PixMap change
 	#if TARGET_API_MAC_CARBON	// LR: v1.6
-		CopyBits( GetPortBitMapForCopyBits( dWin->offscreen ), GetPortBitMapForCopyBits( GetWindowPort( theWin ) ), &r3, &r3, srcCopy, 0L );
+		CopyBits( GetPortBitMapForCopyBits( dWin->offscreen ), GetPortBitMapForCopyBits( GetWindowPort( theWin ) ), &r1, &r2, srcCopy, 0L );
 	#else
-		CopyBits( ( BitMap * ) &( dWin->offscreen )->portPixMap, &theWin->portBits, &r3, &r3, srcCopy, 0L );
+		CopyBits( ( BitMap * ) &( dWin->offscreen )->portPixMap, &theWin->portBits, &r1, &r2, srcCopy, 0L );
 	#endif
 
 		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage << 4) ) 
@@ -1387,14 +1379,14 @@ void MyIdle( WindowRef theWin, EventRecord *er )
 		SetPortWindowPort( theWin );
 
 		GlobalToLocal( &w );
-		if( w.v >= HeaderHeight+TopMargin && 
-			w.v < HeaderHeight+TopMargin+( dWin->linesPerPage*LineHeight ) )
+		if( w.v >= kHeaderHeight && 
+			w.v < kHeaderHeight + ( dWin->linesPerPage*kLineHeight ) )
 		{
-				if( w.h >= AddrPos+CharPos( HexStart ) &&
-					w.h < AddrPos+CharPos( HexStart )+( HexWidth<<4 ) ) 
+				if( w.h >= kDataDrawPos &&
+					w.h < kDataDrawPos + ( kHexWidth<<4 ) ) 
 					MySetCursor( C_IBeam );
-				else if( w.h >= AddrPos+CharPos( AsciiStart ) &&
-						 w.h < AddrPos+CharPos( AsciiStart )+( CharWidth<<4 ) )
+				else if( w.h >= kTextDrawPos &&
+						 w.h < kTextDrawPos + ( kCharWidth<<4 ) )
 					MySetCursor( C_IBeam );
 				else
 					MySetCursor( C_Arrow );
@@ -1430,25 +1422,21 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 		return;
 	// Else handle editing chore
 	CursorOff( theWin );
-	if( w.v >= HeaderHeight+TopMargin && w.v < HeaderHeight+TopMargin+( dWin->linesPerPage*LineHeight ) )
+	if( w.v >= kHeaderHeight && w.v < kHeaderHeight+( dWin->linesPerPage*kLineHeight ) )
 	{
 		do
 		{
 			AutoScroll( dWin, w );
 
-			if( w.h >= AddrPos+CharPos( HexStart ) &&
-				w.h < AddrPos+CharPos( HexStart )+( HexWidth<<4 ) ) 
+			if( w.h >= kDataDrawPos && w.h < kDataDrawPos + ( kHexWidth<<4 ) )
 			{
 
-				pos = ( ( w.v - ( HeaderHeight+TopMargin ) )/LineHeight ) * SBarSize +
-						( w.h - ( AddrPos+CharPos( HexStart ) )+12 ) / HexWidth;
+				pos = ((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine + ( w.h - (kDataDrawPos + 12)) / kHexWidth;
 				dWin->editMode = EM_Hex;
 			}
-			else if( w.h >= AddrPos+CharPos( AsciiStart ) &&
-					 w.h < AddrPos+CharPos( AsciiStart )+( CharWidth<<4 ) )
+			else if( w.h >= kTextDrawPos && w.h < kTextDrawPos + ( kCharWidth<<4 ) )
 			{
-				pos = ( ( w.v - ( HeaderHeight+TopMargin ) )/LineHeight ) * SBarSize +
-						( w.h - ( AddrPos+CharPos( AsciiStart ) )+3 ) / CharWidth;
+				pos = ((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine + (w.h -  (kTextDrawPos + 3)) / kCharWidth;
 				dWin->editMode = EM_Ascii;
 			}
 			else
@@ -1513,20 +1501,20 @@ void InvertSelection( EditWindowPtr	dWin )
 	
 	PenMode( patXor );
 	
-	startX = ColNbr( start );
-	endX = ColNbr( end );
+	startX = COLUMN( start );
+	endX = COLUMN( end );
 	
 	if( !frontFlag )
 	{
-		if( LineNbr( start ) < LineNbr( end ) )
+		if( LINENUM( start ) < LINENUM( end ) )
 		{
 			// Invert Hex
-			r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight;
-			r.bottom = r.top+LineHeight;
-			r.left = AddrPos+CharPos( HexStart )+HexPos( startX )-3;
-			r.right = AddrPos+CharPos( HexStart )+HexPos( 16 )-3;
+			r.top = kHeaderHeight+LINENUM( start ) *kLineHeight;
+			r.bottom = r.top+kLineHeight;
+			r.left = kDataDrawPos + HEXPOS( startX ) - 2;
+			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 2;
 
-			MoveTo( AddrPos+CharPos( HexStart )-3, r.bottom );
+			MoveTo( kDataDrawPos - 3, r.bottom );
 
 			LineTo( r.left, r.bottom );
 			LineTo( r.left, r.top );
@@ -1539,10 +1527,10 @@ void InvertSelection( EditWindowPtr	dWin )
 			LineTo( r.right, r.bottom );
 
 			// Outline Box around Ascii
-			r.left = AddrPos+CharPos( AsciiStart )+CharPos( startX )-1;
-			r.right = AddrPos+CharPos( AsciiStart )+CharPos( 16 );
+			r.left = kTextDrawPos + CHARPOS( startX ) - 1;
+			r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
 			
-			MoveTo( AddrPos+CharPos( AsciiStart ), r.bottom );
+			MoveTo( kTextDrawPos, r.bottom );
 			LineTo( r.left, r.bottom );
 
 			LineTo( r.left, r.top );
@@ -1554,61 +1542,61 @@ void InvertSelection( EditWindowPtr	dWin )
 				MoveTo( r.right, r.top );
 			LineTo( r.right, r.bottom );
 
-			if( LineNbr( start ) < LineNbr( end )-1 )
+			if( LINENUM( start ) < LINENUM( end ) - 1 )
 			{
-				r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight+LineHeight;
-				r.bottom = HeaderHeight+TopMargin+LineNbr( end ) *LineHeight;
-				r.left = AddrPos+CharPos( HexStart )-3;
-				r.right = AddrPos+CharPos( HexStart )+HexPos( 16 )-3;
+				r.top = kHeaderHeight+LINENUM( start ) *kLineHeight+kLineHeight;
+				r.bottom = kHeaderHeight+LINENUM( end ) *kLineHeight;
+				r.left = kDataDrawPos - 3;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
 				MoveTo( r.right, r.top );
 				LineTo( r.right, r.bottom );
 
-				r.left = AddrPos+CharPos( AsciiStart )-1;
-				r.right = AddrPos+CharPos( AsciiStart )+CharPos( 16 );
+				r.left = kTextDrawPos - 1;
+				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
 				MoveTo( r.right, r.top );
 				LineTo( r.right, r.bottom );
 			}
-			r.top = HeaderHeight+TopMargin+LineNbr( end ) *LineHeight;
-			r.bottom = r.top+LineHeight;
-			r.left = AddrPos+CharPos( HexStart )-3;
-			r.right = AddrPos+CharPos( HexStart )+HexPos( endX )+HexWidth-3;
+			r.top = kHeaderHeight  +LINENUM( end ) * kLineHeight;
+			r.bottom = r.top + kLineHeight;
+			r.left = kDataDrawPos - 3;
+			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage*16 )
+			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
 			{
 				LineTo( r.right, r.bottom );
 			}
 			else
 				MoveTo( r.right, r.bottom );
 			LineTo( r.right, r.top );
-			LineTo( AddrPos+CharPos( HexStart )+HexPos( 16 )-3, r.top );
+			LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
 
-			r.left = AddrPos+CharPos( AsciiStart )-1;
-			r.right = AddrPos+CharPos( AsciiStart )+CharPos( endX )+CharWidth-1;
+			r.left = kTextDrawPos - 1;
+			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom-1 );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage*16 )
+			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
 			{
 				LineTo( r.right, r.bottom-1 );
 			}
 			else
 				MoveTo( r.right, r.bottom-1 );
 			LineTo( r.right, r.top );
-			LineTo( AddrPos+CharPos( AsciiStart )+CharPos( 16 ), r.top );
+			LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
 		}
 		else
 		{
-			r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight;
-			r.bottom = r.top+LineHeight;
-			r.left = AddrPos+CharPos( HexStart )+HexPos( startX )-3;
-			r.right = AddrPos+CharPos( HexStart )+HexPos( endX )+HexWidth-3;
+			r.top = kHeaderHeight+LINENUM( start ) *kLineHeight;
+			r.bottom = r.top+kLineHeight;
+			r.left = kDataDrawPos + +HEXPOS( startX )-3;
+			r.right = kDataDrawPos + HEXPOS( endX )+kHexWidth-3;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage*16 )
+			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
 			{
 				LineTo( r.right, r.bottom );
 			}
@@ -1620,12 +1608,12 @@ void InvertSelection( EditWindowPtr	dWin )
 				LineTo( r.left, r.top );
 			}
 
-			r.left = AddrPos+CharPos( AsciiStart )+CharPos( startX )-1;
-			r.right = AddrPos+CharPos( AsciiStart )+CharPos( endX )+CharWidth-1;
+			r.left = kTextDrawPos + CHARPOS( startX )-1;
+			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
 
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom-1 );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage*16 )
+			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
 			{
 				LineTo( r.right, r.bottom-1 );
 			}
@@ -1642,24 +1630,24 @@ void InvertSelection( EditWindowPtr	dWin )
 	{
 		if( dWin->editMode == EM_Hex )
 		{
-			if( LineNbr( start ) < LineNbr( end ) )
+			if( LINENUM( start ) < LINENUM( end ) )
 			{
 	
 				// Invert Hex
-				r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight;
-				r.bottom = r.top+LineHeight;
-				r.left = AddrPos+CharPos( HexStart )+HexPos( startX )-3;
-				r.right = AddrPos+CharPos( HexStart )+HexPos( 16 )-3;
+				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
+				r.bottom = r.top+kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
 	
 	HiliteColor( &invertColor );
 				InvertRect( &r );
 	
 	
 				// Outline Box around Ascii
-				r.left = AddrPos+CharPos( AsciiStart )+CharPos( startX )-1;
-				r.right = AddrPos+CharPos( AsciiStart )+CharPos( 16 );
+				r.left = kTextDrawPos + CHARPOS( startX )-1;
+				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
 				
-				MoveTo( AddrPos+CharPos( AsciiStart ), r.bottom );
+				MoveTo( kTextDrawPos, r.bottom );
 				LineTo( r.left, r.bottom );
 	
 				LineTo( r.left, r.top );
@@ -1671,55 +1659,55 @@ void InvertSelection( EditWindowPtr	dWin )
 					MoveTo( r.right, r.top );
 				LineTo( r.right, r.bottom );
 	
-				if( LineNbr( start ) < LineNbr( end )-1 )
+				if( LINENUM( start ) < LINENUM( end )-1 )
 				{
-					r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight+LineHeight;
-					r.bottom = HeaderHeight+TopMargin+LineNbr( end ) *LineHeight;
-					r.left = AddrPos+CharPos( HexStart )-3;
-					r.right = AddrPos+CharPos( HexStart )+HexPos( 16 )-3;
+					r.top = kHeaderHeight+LINENUM( start ) * kLineHeight + kLineHeight;
+					r.bottom = kHeaderHeight+LINENUM( end ) * kLineHeight;
+					r.left = kDataDrawPos - 3;
+					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
 					InvertRect( &r );
 	
-					r.left = AddrPos+CharPos( AsciiStart )-1;
-					r.right = AddrPos+CharPos( AsciiStart )+CharPos( 16 );
+					r.left = kTextDrawPos - 1;
+					r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
 					MoveTo( r.left, r.top );
 					LineTo( r.left, r.bottom );
 					MoveTo( r.right, r.top );
 					LineTo( r.right, r.bottom );
 				}
-				r.top = HeaderHeight+TopMargin+LineNbr( end ) *LineHeight;
-				r.bottom = r.top+LineHeight;
-				r.left = AddrPos+CharPos( HexStart )-3;
-				r.right = AddrPos+CharPos( HexStart )+HexPos( endX )+HexWidth-3;
+				r.top = kHeaderHeight+LINENUM( end ) * kLineHeight;
+				r.bottom = r.top+kLineHeight;
+				r.left = kDataDrawPos - 3;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 				InvertRect( &r );
 	
-				r.left = AddrPos+CharPos( AsciiStart )-1;
-				r.right = AddrPos+CharPos( AsciiStart )+CharPos( endX )+CharWidth-1;
+				r.left = kTextDrawPos - 1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom-1 );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage*16 )
+				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
 				{
 					LineTo( r.right, r.bottom-1 );
 				}
 				else
 					MoveTo( r.right, r.bottom-1 );
 				LineTo( r.right, r.top );
-				LineTo( AddrPos+CharPos( AsciiStart )+CharPos( 16 ), r.top );
+				LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
 			}
 			else
 			{
-				r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight;
-				r.bottom = r.top+LineHeight;
-				r.left = AddrPos+CharPos( HexStart )+HexPos( startX )-3;
-				r.right = AddrPos+CharPos( HexStart )+HexPos( endX )+HexWidth-3;
+				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
+				r.bottom = r.top+kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX )-3;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 
 				InvertRect( &r );
 	
-				r.left = AddrPos+CharPos( AsciiStart )+CharPos( startX )-1;
-				r.right = AddrPos+CharPos( AsciiStart )+CharPos( endX )+CharWidth-1;
+				r.left = kTextDrawPos + CHARPOS( startX )-1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
 	
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom-1 );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage*16 )
+				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
 				{
 					LineTo( r.right, r.bottom-1 );
 				}
@@ -1736,16 +1724,16 @@ void InvertSelection( EditWindowPtr	dWin )
 		{
 			// Ascii Mode!!
 			// 
-			if( LineNbr( start ) < LineNbr( end ) )
+			if( LINENUM( start ) < LINENUM( end ) )
 			{
 	
 				// Invert Hex
-				r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight;
-				r.bottom = r.top+LineHeight;
-				r.left = AddrPos+CharPos( HexStart )+HexPos( startX )-3;
-				r.right = AddrPos+CharPos( HexStart )+HexPos( 16 )-3;
+				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
+				r.bottom = r.top+kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX )-3;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine )-3;
 	
-				MoveTo( AddrPos+CharPos( HexStart )-3, r.bottom );
+				MoveTo( kDataDrawPos - 3, r.bottom );
 				LineTo( r.left, r.bottom );
 				LineTo( r.left, r.top );
 				if( dWin->startSel >= dWin->editOffset )
@@ -1757,54 +1745,54 @@ void InvertSelection( EditWindowPtr	dWin )
 				LineTo( r.right, r.bottom );
 	
 				// Outline Box around Ascii
-				r.left = AddrPos+CharPos( AsciiStart )+CharPos( startX )-1;
-				r.right = AddrPos+CharPos( AsciiStart )+CharPos( 16 )-1;
+				r.left = kTextDrawPos + CHARPOS( startX )-1;
+				r.right = kTextDrawPos + CHARPOS( kBytesPerLine )-1;
 				
 				InvertRect( &r );
 	
-				if( LineNbr( start ) < LineNbr( end )-1 )
+				if( LINENUM( start ) < LINENUM( end )-1 )
 				{
-					r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight+LineHeight;
-					r.bottom = HeaderHeight+TopMargin+LineNbr( end ) *LineHeight;
-					r.left = AddrPos+CharPos( HexStart )-3;
-					r.right = AddrPos+CharPos( HexStart )+HexPos( 16 )-3;
+					r.top = kHeaderHeight+LINENUM( start ) * kLineHeight + kLineHeight;
+					r.bottom = kHeaderHeight+LINENUM( end ) * kLineHeight;
+					r.left = kDataDrawPos - 3;
+					r.right = kDataDrawPos + HEXPOS( kBytesPerLine )-3;
 					MoveTo( r.left, r.top );
 					LineTo( r.left, r.bottom );
 					MoveTo( r.right, r.top );
 					LineTo( r.right, r.bottom );
 	
-					r.left = AddrPos+CharPos( AsciiStart )-1;
-					r.right = AddrPos+CharPos( AsciiStart )+CharPos( 16 )-1;
+					r.left = kTextDrawPos - 1;
+					r.right = kTextDrawPos + CHARPOS( kBytesPerLine )-1;
 					InvertRect( &r );
 				}
-				r.top = HeaderHeight+TopMargin+LineNbr( end ) *LineHeight;
-				r.bottom = r.top+LineHeight;
-				r.left = AddrPos+CharPos( HexStart )-3;
-				r.right = AddrPos+CharPos( HexStart )+HexPos( endX )+HexWidth-3;
+				r.top = kHeaderHeight+LINENUM( end ) * kLineHeight;
+				r.bottom = r.top+kLineHeight;
+				r.left = kDataDrawPos - 3;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage*16 )
+				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
 				{
 					LineTo( r.right, r.bottom );
 				}
 				else
 					MoveTo( r.right, r.bottom );
 				LineTo( r.right, r.top );
-				LineTo( AddrPos+CharPos( HexStart )+HexPos( 16 )-3, r.top );
+				LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
 	
-				r.left = AddrPos+CharPos( AsciiStart )-1;
-				r.right = AddrPos+CharPos( AsciiStart )+CharPos( endX )+CharWidth-1;
+				r.left = kTextDrawPos - 1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
 				InvertRect( &r );
 			}
 			else
 			{
-				r.top = HeaderHeight+TopMargin+LineNbr( start ) *LineHeight;
-				r.bottom = r.top+LineHeight;
-				r.left = AddrPos+CharPos( HexStart )+HexPos( startX )-3;
-				r.right = AddrPos+CharPos( HexStart )+HexPos( endX )+HexWidth-3;
+				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
+				r.bottom = r.top+kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX )-3;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage*16 )
+				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
 				{
 					LineTo( r.right, r.bottom );
 				}
@@ -1816,8 +1804,8 @@ void InvertSelection( EditWindowPtr	dWin )
 					LineTo( r.left, r.top );
 				}
 	
-				r.left = AddrPos+CharPos( AsciiStart )+CharPos( startX )-1;
-				r.right = AddrPos+CharPos( AsciiStart )+CharPos( endX )+CharWidth-1;
+				r.left = kTextDrawPos + CHARPOS( startX )-1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
 				InvertRect( &r );
 			}
 		}
@@ -1951,8 +1939,9 @@ void PrintWindow( EditWindowPtr dWin )
 		printPort = PrOpenDoc( g.HPrint, NULL, NULL );
 
 		r = printPort->gPort.portRect;
-		linesPerPage = ( r.bottom - TopMargin - ( HeaderHeight +1 ) ) / LineHeight;
-		nbrPages = ( ( endAddr - startAddr ) /16 ) /linesPerPage + 1;
+//LR: 1.7 -fix lpp calculation!		linesPerPage = ( r.bottom - TopMargin - ( kHeaderHeight + 1 ) ) / kLineHeight;
+			linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - (kHeaderHeight + kFooterHeight)) / kLineHeight;
+		nbrPages = ((endAddr - startAddr) / kBytesPerLine) / linesPerPage + 1;
 
 		startPage = ( **g.HPrint ).prJob.iFstPage;
 		endPage = ( **g.HPrint ).prJob.iLstPage;
@@ -1979,18 +1968,18 @@ void PrintWindow( EditWindowPtr dWin )
 				r = printPort->gPort.portRect;
 				DrawHeader( dWin, &r );
 		
-				r.top += ( HeaderHeight+TopMargin+LineHeight-DescendHeight );
-				r.bottom -= ( FooterHeight + DescendHeight + BotMargin );
+				r.top += kHeaderHeight;
+				r.bottom -= kFooterHeight;
 		
 				DrawDump( dWin, &r, addr, endAddr );
 	
-				r.top = r.bottom + DescendHeight + BotMargin;
-				r.bottom = r.top + FooterHeight;
+				r.top = r.bottom;
+				r.bottom = r.top + kFooterHeight;
 				DrawFooter( dWin, &r, pageNbr, nbrPages );	//SEL: 1.7 - fix Lane's DrawDump usage (what was I thinking? P)
 			}
 
-			addr += linesPerPage*16;
-			addr -= ( addr % 16 );
+			addr += linesPerPage * kBytesPerLine;
+			addr -= ( addr % kBytesPerLine );
 			PrClosePage( printPort );
 		}
 		PrCloseDoc( printPort );
@@ -2088,18 +2077,18 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 			OffsetSelection( dWin, 1, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kUpArrowCharCode:
-			OffsetSelection( dWin, -16, (er->modifiers & shiftKey) > 0 );
+			OffsetSelection( dWin, -kBytesPerLine, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kDownArrowCharCode:
-			OffsetSelection( dWin, 16, (er->modifiers & shiftKey) > 0 );
+			OffsetSelection( dWin, kBytesPerLine, (er->modifiers & shiftKey) > 0 );
 			break;
 		
 		// scroll document
 		case kPageUpCharCode:
-			OffsetSelection( dWin, -16 * (dWin->linesPerPage -1), (er->modifiers & shiftKey) > 0 );
+			OffsetSelection( dWin, -kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
 			break;
 		case kPageDownCharCode:
-			OffsetSelection( dWin, 16 * (dWin->linesPerPage -1), (er->modifiers & shiftKey) > 0 );
+			OffsetSelection( dWin, kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
 			break;
 		case kHomeCharCode:
 			OffsetSelection( dWin, 0xFEED, (er->modifiers & shiftKey) > 0 );
@@ -2219,7 +2208,6 @@ void CursorOn( WindowRef theWin )
 {
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	long			start;
-	Rect			r;
 
 	if( !g.cursorFlag && dWin->startSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + ( dWin->linesPerPage << 4 ) ) 
 	{
@@ -2230,21 +2218,21 @@ void CursorOn( WindowRef theWin )
 
 		if( dWin->editMode == EM_Hex )
 		{
-			r.top = HeaderHeight + TopMargin + LineNbr(start) * LineHeight;
-			r.bottom = r.top + LineHeight;
-			r.left = AddrPos + CharPos(HexStart) + ColNbr(start) * HexWidth -3;
-			r.right = r.left +2;
-			InvertRect( &r );
-			g.cursRect = r;
+			g.cursRect.top = kHeaderHeight + LINENUM(start) * kLineHeight;
+			g.cursRect.bottom = g.cursRect.top + kLineHeight;
+			g.cursRect.left = kDataDrawPos /*kBodyDrawPos + CHARPOS(kStringHexPos - 1)*/ + (COLUMN(start) * kHexWidth) - 2;
+			g.cursRect.right = g.cursRect.left + 2;
+
+			InvertRect( &g.cursRect );
 		}
 		else
 		{
-			r.top = HeaderHeight + TopMargin + LineNbr(start) * LineHeight;
-			r.bottom = r.top + LineHeight;
-			r.left = AddrPos + CharPos(AsciiStart) + ColNbr(start) * CharWidth -2;
-			r.right = r.left +2;
-			InvertRect( &r );
-			g.cursRect = r;
+			g.cursRect.top = kHeaderHeight + LINENUM(start) * kLineHeight;
+			g.cursRect.bottom = g.cursRect.top + kLineHeight;
+			g.cursRect.left = kTextDrawPos /*kBodyDrawPos + CHARPOS(kStringTextPos)*/ + (COLUMN(start) * kCharWidth) - 1;
+			g.cursRect.right = g.cursRect.left + 2;
+
+			InvertRect( &g.cursRect );
 		}
 	}
 }
@@ -2559,12 +2547,12 @@ void SaveAsContents( WindowRef theWin )
 	OSStatus error = noErr;
 	NavReplyRecord		reply;
 	NavDialogOptions	dialogOptions;
- 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
+//LR 1.7 unused 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
 	GetWTitle( theWin, dialogOptions.savedFileName );
-	error = NavPutFile( NULL, &reply, &dialogOptions, eventProc, kDefaultFileType, kAppCreator, NULL );
+	error = NavPutFile( NULL, &reply, &dialogOptions, NULL/*eventProc*/, kDefaultFileType, kAppCreator, NULL );
 	if( reply.validRecord || !error )
 	{
 		AEKeyword 	keyword;
@@ -2582,7 +2570,7 @@ void SaveAsContents( WindowRef theWin )
 		}
 		NavDisposeReply( &reply );
 	}
-	DisposeNavEventUPP( eventProc );
+//LR 1.7	DisposeNavEventUPP( eventProc );
 #else
 	StandardFileReply	reply;
 	EditWindowPtr		dWin = (EditWindowPtr) GetWRefCon( theWin );
@@ -2623,7 +2611,7 @@ void RevertContents( WindowRef theWin )
 	LoadFile( dWin );
 
 	// Reset scroll offset, if necessary
-	if( dWin->editOffset > dWin->fileSize -16 * dWin->linesPerPage )
+	if( dWin->editOffset > dWin->fileSize - kBytesPerLine * dWin->linesPerPage )
 		dWin->editOffset = 0;
 	DrawPage( dWin );
 	UpdateOnscreen( theWin );
@@ -2649,7 +2637,7 @@ void UpdateEditWindows( void )
 	while( theWin )
 	{
 		long windowKind = GetWindowKind( theWin );
-		if( windowKind == HexEditWindowID )
+		if( windowKind == kHexEditWindowTag )
 		{
 			dWin = (EditWindowPtr)GetWRefCon( theWin );
 			DrawPage( dWin );
