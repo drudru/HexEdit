@@ -37,7 +37,6 @@ WindowRef		CompWind1,
 				CompWind2;
 
 HEColorTableHandle ctHdl = NULL;	// LR: global to file, for speed
-short fontID;
 
 RGBColor black = { 0, 0, 0 };
 RGBColor white = { 0xFFFF, 0xFFFF, 0xFFFF };
@@ -516,6 +515,9 @@ void InitializeEditor( void )
 
 	// LR: v1.6.5 round this to a size showing only full lines
 	g.maxHeight = (((g.maxHeight - 1) / kLineHeight) * kLineHeight) + kHeaderHeight;
+
+	GetFNum( kFontFace, &g.fontFaceID );		// 1.7 carsten-unhardcoded font name & size
+	g.fontSize = kFontSize;
 
 #if TARGET_API_MAC_CARBON	// LR: v1.6
 // bug: carbon printing not written
@@ -1045,8 +1047,6 @@ OSStatus InitColorTable( HEColorTablePtr ct )
 /*** GET COLOUR INFO ***/
 OSStatus GetColorInfo( EditWindowPtr dWin )
 {
-	GetFNum( "\pMonaco", &fontID );		// LR: handle using color schemes
-
 	// NS: 1.3, set hilight colour
 /*	Handle vars = dWin->oWin.theWin.port.grafVars;
 	RGBColor hilightColour = (** (GVarHandle) vars).rgbHiliteColor;
@@ -1073,8 +1073,8 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 
 	GetColorInfo( dWin );	// LR: v1.6.5 ensure that updates are valid!
 
-	TextFont( fontID );
-	TextSize( 9 );
+	TextFont( g.fontFaceID );
+	TextSize( g.fontSize );
 	TextFace( normal );	// LR: v1.6.5 LR - can't be bold 'cause then the new stuff doesn fit :0
 	TextMode( srcCopy );
 
@@ -1131,8 +1131,8 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 	unsigned long	dt;
 	Str63	s1, s2;
 
-	TextFont( fontID );
-	TextSize( 9 );
+	TextFont( g.fontFaceID );
+	TextSize( g.fontSize );
 	TextFace( normal );
 	TextMode( srcCopy );
 
@@ -1176,8 +1176,8 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	long	addr;
 	Rect addrRect;
 
-	TextFont( fontID );
-	TextSize( 9 );
+	TextFont( g.fontFaceID );
+	TextSize( g.fontSize );
 	TextFace( normal );
 	TextMode( srcCopy );
 
@@ -1241,6 +1241,8 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 			}
 		}
 
+		// %% NOTE: Carsten says to move this into for loop (ie, draw each byte's data) to
+		//			prevent font smoothing from messing up the spacing
 		MoveTo( kDataDrawPos - kCharWidth, y );
 		DrawText( g.buffer, kStringHexPos - 1, kBodyStrLen + 2 );
 	}
@@ -1472,12 +1474,12 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 			if( w.h >= kDataDrawPos && w.h < kDataDrawPos + ( kHexWidth<<4 ) )
 			{
 
-				pos = ((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine + ( w.h - (kDataDrawPos + 12)) / kHexWidth;
+				pos = (((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine) + (w.h - kDataDrawPos) / kHexWidth;
 				dWin->editMode = EM_Hex;
 			}
 			else if( w.h >= kTextDrawPos && w.h < kTextDrawPos + ( kCharWidth<<4 ) )
 			{
-				pos = ((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine + (w.h -  (kTextDrawPos + 3)) / kCharWidth;
+				pos = (((w.v - kHeaderHeight) / kLineHeight) * kBytesPerLine) + (w.h -  kTextDrawPos) / kCharWidth;
 				dWin->editMode = EM_Ascii;
 			}
 			else
