@@ -346,7 +346,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 						Rect r;
 
 						SelectWindow( theWin );
-						SetRect( &r, kHexWindowWidth, 64, kHexWindowWidth, g.maxHeight );
+						SetRect( &r, kHexWindowWidth + 1, 64, kHexWindowWidth + 1, g.maxHeight );
 
 						// Handle the mouse tracking for the resizing
 						growResult = GrowWindow( theWin, theEvent->where, &r );
@@ -358,9 +358,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 						GetWindowPortBounds( theWin, &r );
 						if( gPrefs.constrainSize )
 						{
-							int h = (r.bottom - r.top);
-
-							r.bottom = r.top + (short)(((h / kLineHeight) - 1) * kLineHeight) + kHeaderHeight;	// force to full line heights
+							r.bottom = r.top + (short)((((r.bottom - r.top) / kLineHeight) - 1) * kLineHeight) + kHeaderHeight;	// force to full line heights
 							SizeWindow( theWin, (r.right - r.left), (r.bottom - r.top), true );
 						}
 
