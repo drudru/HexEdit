@@ -53,6 +53,8 @@ HEColorTableHandle ctHdl = NULL;	// LR: global to file, for speed
 RGBColor black = { 0, 0, 0 };
 RGBColor white = { 0xFFFF, 0xFFFF, 0xFFFF };
 
+RGBColor grey = { 0x7FFF, 0x7FFF, 0x7FFF };
+
 // BB: selector to determine Nav dialog type
 #define kNavOpenDialogType ((NavCallBackUserData)-1L)
 enum
@@ -1240,7 +1242,7 @@ static void _offsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFla
 //LR 185 -- macros to easy playing with hiliting
 //#define SETHILITE()	{char c = LMGetHiliteMode(); BitClr( &c, pHiliteBit ); LMSetHiliteMode( c ); }
 //#define SETHILITE()
-#define HILITERECT(r) PaintRect(r)
+#define HILITERECT(r) {	RGBForeColor( &hColor ); PenMode( adMin ); PaintRect(r); RGBForeColor( &grey ); PenMode( srcCopy ); }
 //#define HILITERECT(r) SETHILITE(); InvertRect(r)
 
 /*** INVERT SELECTION ***/
@@ -1260,12 +1262,12 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 		return;
 
 	GetPortHiliteColor( GetWindowPort( dWin->oWin.theWin ), &hColor );
-	RGBForeColor( &hColor );
-	PenMode( adMin );
 
 	// Set our inversion color
 	if( ctHdl )
 		RGBBackColor( &(*ctHdl)->body );
+	RGBForeColor( &grey );
+
 /*185
 	if( ctHdl )
 		invertColor = ( *ctHdl )->body;
@@ -1576,7 +1578,7 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 		RGBBackColor( &white );
 
 	RGBForeColor( &black );
-	PenMode( srcCopy );
+//	PenMode( srcCopy );
 }
 
 /*** INIT COLOUR TABLE ***/
