@@ -366,9 +366,11 @@ void DoModelessDialogEvent( EventRecord *theEvent )
 
 	if( DialogSelect( theEvent, &whichDlog, &itemHit ) )
 	{
-		EditWindowPtr dWin = FindFirstEditWindow();
+		EditWindowPtr dWin;
 
 ButtonHit:
+		dWin = FindFirstEditWindow();	//192 -- per m. Reeves
+
 		if( whichDlog == g.searchDlg )
 		{
 			switch( itemHit )
