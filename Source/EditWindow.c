@@ -815,6 +815,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 			dWin->readOnlyFlag = true;
 			error = FSpOpenDF( fsSpec, fsRdPerm, &refNum );	//LR 180 -- on error try to open read-only
 		}
+		// Check for empty for this way instead of via pb.fileParam.ioFlLgLen so that the user can create the fork if desired!
 		if( !error )
 			error = GetEOF( refNum, &fileEOF );		//LR 175
 
@@ -872,6 +873,7 @@ contData:
 			dWin->readOnlyFlag = true;
 			error = FSpOpenRF( fsSpec, fsRdPerm, &refNum );	//LR 180 -- on error try to open read-only
 		}
+		// Check for empty for this way instead of via pb.fileParam.ioFlRLgLen so that the user can create the fork if desired!
 		if( !error )
 			error = GetEOF( refNum, &fileEOF );		//LR 175
 
