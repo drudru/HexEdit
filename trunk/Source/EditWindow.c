@@ -487,7 +487,9 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 /*** INITIALIZE EDITOR ***/
 void InitializeEditor( void )
 {
-	CursHandle			cursorHandle = NULL;
+	CursHandle	cursorHandle = NULL;
+	Str255		str;
+	SInt32		val;
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
 	PScrapStuff			ScrapInfo;
 #endif
@@ -519,11 +521,18 @@ void InitializeEditor( void )
 	g.maxHeight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - 24;	// LR: add 'qd.'
 #endif
 
+	GetIndString( str, strFont, 1 );
+	GetFNum( str, &g.fontFaceID );		// 1.7 carsten-unhardcoded font name & size
+	GetIndString( str, strFont, 2 );
+	StringToNum( str, &val );			//LR 1.72 -- get font info from resource
+	g.fontSize = (short)val;
+	g.lineHeight = (short)((float)(val) * 1.2f + 0.5f);	//LR 1.72 -- estimate line height
+	TextFont( g.fontFaceID );
+	TextSize( g.fontSize );
+	g.charWidth = StringWidth( "\pM" );	//LR 1.72 -- more flexability in font usage
+
 	// LR: v1.6.5 round this to a size showing only full lines
 	g.maxHeight = (((g.maxHeight - 1) / kLineHeight) * kLineHeight) + kHeaderHeight;
-
-	GetFNum( kFontFace, &g.fontFaceID );		// 1.7 carsten-unhardcoded font name & size
-	g.fontSize = kFontSize;
 
 #if TARGET_API_MAC_CARBON	// LR: v1.6
 // bug: carbon printing not written

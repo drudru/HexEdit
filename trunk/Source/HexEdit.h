@@ -93,10 +93,10 @@
 #define kStringTextPos	(kStringHexPos+(kBytesPerLine*3)+1)
 #define kBodyStrLen		(kStringTextPos+kBytesPerLine-kStringHexPos)	// LR: 1.7 was 75 - (kStringHexPos -  2) in EditWindow.c
 
-#define kFontFace		"\pMonaco"
-#define kFontSize		9
-#define kLineHeight		11	//%% make flexible (and char width?)
-#define kCharWidth		6
+//LR 1.72 from resource #define kFontFace		"\pMonaco"
+//#define kFontSize		9
+#define kLineHeight		(g.lineHeight)	//11	//%% make flexible (and char width?)
+#define kCharWidth		(g.charWidth)	//6
 #define kHexWidth		(kCharWidth*3)
 
 #define kBodyDrawPos	0	// LR: 12 - let's not have any undrawn areas, to avoid erasing!
@@ -105,8 +105,8 @@
 
 #define LINENUM(a)		((a) >> 4)
 #define COLUMN(a)		((a) & 0x0F)
-#define CHARPOS(a)		(((a) << 2) + ((a) << 1))	// Multiply by 6
-#define HEXPOS(a)		(((a) << 4) + ((a) << 1))	// Multiply by 18
+#define CHARPOS(a)		(a * kCharWidth)	//1.72 (((a) << 2) + ((a) << 1))	// Multiply by 6
+#define HEXPOS(a)		(CHARPOS(a) * 3)	//1.72 ((a) << 4) + ((a) << 1))	// Multiply by 18
 
 #define kHexWindowWidth	(((kStringHexPos + kBodyStrLen) * kCharWidth) + kSBarSize)	//LR 1.7 - renamed to show windows are not sizable horizontally! Must be multiple of 2
 
@@ -125,7 +125,7 @@
 // LR: 1.6.5 -- better ID defs, and include all references
 enum AlertIDs		{ alertSave = 10000, alertError, alertNoFork, alertMessage };
 enum DialogIDs		{ dlgSearch = 128, dlgGoto, dlgAbout, dlgCompare, dlgComparePref, dlgGetFile = 1401 };
-enum StringIDs		{ strUndo = 128, strPrint, strHeader, strError, strColor, strPrompt, strFiles, strURLs };
+enum StringIDs		{ strUndo = 128, strPrint, strHeader, strError, strColor, strPrompt, strFiles, strURLs, strFont };
 
 enum ErrorIDs		{ errMemory = 1, errSeek, errRead, errSetFPos, errWrite, errPaste, errFindFolder,
 						errCreate, errOpen, errFileInfo, errPrintRange, errSetFileInfo, errBackup,
@@ -224,6 +224,8 @@ typedef struct
 
 	short		fontFaceID;
 	short		fontSize;
+	short		charWidth;
+	short		lineHeight;
 
 #ifndef __MC68K__
 	ICInstance	icRef;
