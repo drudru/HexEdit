@@ -569,7 +569,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
 /*** INITIALIZE EDITOR ***/
 void InitializeEditor( void )
 {
-	CursHandle	cursorHandle = NULL;
+//LR 175	CursHandle	cursorHandle = NULL;
 	Str255		str;
 	SInt32		val;
 	FontInfo	finfo;
@@ -656,7 +656,7 @@ void NewEditWindow( void )
 	EditWindowPtr		dWin;
 	OSStatus			error;
 	short				refNum = 0;	// 05/10/01 - GAB: NULL is a pointer type, and doesn't fit in a short
-	Point				where = { -1, -1 };
+//LR 175	Point				where = { -1, -1 };
 	FSSpec				workSpec;
 // LR: 1.5	Rect				r, offRect;
 
@@ -851,7 +851,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	EditWindowPtr		dWin;
 	OSStatus			error;
 	short				refNum=0, redo = false;
-	Point				where={-1, -1};
+//LR 175	Point				where={-1, -1};
 	HParamBlockRec		pb;
 	FSSpec				workSpec;
 	Str31				tempStr;

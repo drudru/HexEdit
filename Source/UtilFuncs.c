@@ -26,7 +26,11 @@
 #endif
 
 #include <stdio.h>
+#if __MWERKS__
 #include <debugging.h>	// LR: v1.6.5, via Max Horn - safe on systems w/o debugger
+#else
+//    #include <CarbonCore/Debugging.h>
+#endif
 
 #include "Utility.h"
 
@@ -226,7 +230,7 @@ short ErrorAlert( short severity, short strid, ... )
 		GetKeys( keys );
 		if( keys[1] & (1<<2) )
 // 05/10/01 - GAB: DEBUGSTR not defined for non-Carbon builds
-#if TARGET_API_MAC_CARBON
+#if __MWERKS__ && TARGET_API_MAC_CARBON
 			DEBUGSTR( (StringPtr) tbuf );
 #else
 			DebugStr( (StringPtr) tbuf );
