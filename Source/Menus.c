@@ -220,7 +220,7 @@ OSStatus AdjustMenus( void )
 	Str255			frontWindowName, menuItemTitle;
 	Boolean			namesMatch;
 
-	theWin = FrontWindow();
+	theWin = FrontNonFloatingWindow();
 	if( theWin )
 	{
 		isGotoWin = (g.gotoWin && theWin == GetDialogWindow( g.gotoWin ));		//LR: 1.7 - don't get window info on NULL!
@@ -368,13 +368,13 @@ OSStatus HandleMenu( long mSelect )
 	WindowRef		currentWindow;								// NS:			this too
 	
 	// Predetermine what type of window we have to work with
-	frontWindow = FrontWindow();
+	frontWindow = FrontNonFloatingWindow();
 	if( frontWindow )
 	{
 		if( kHexEditWindowTag == GetWindowKind( frontWindow ) )
 			dWin = (EditWindowPtr) GetWRefCon( frontWindow );
-		else if( g.gotoWin == (DialogPtr)frontWindow || g.searchWin == (DialogPtr)frontWindow )
-			dlgRef = (DialogPtr)frontWindow;
+		else if( g.gotoWin == GetDialogFromWindow( frontWindow ) || g.searchWin == GetDialogFromWindow( frontWindow ) )
+			dlgRef = GetDialogFromWindow( frontWindow );
 	}
 
 	switch( menuID )
@@ -456,7 +456,7 @@ OSStatus HandleMenu( long mSelect )
 				CloseEditWindow( frontWindow );
 			else if( dlgRef )
 			{
-				HideWindow( GetDialogWindow( dlgRef ) );
+				HideWindow( frontWindow );	//LR: 1.7 -- no need.GetDialogWindow( dlgRef ) );
 			}
 			break;
 
@@ -625,7 +625,7 @@ OSStatus HandleMenu( long mSelect )
 	// LR : 1.7 - rewrite with bug checking (could crash accessing NULL window)
 	case kWindowMenu:
 		GetMenuItemText( windowMenu, menuItem, newFrontWindowName );
-		currentWindow = GetWindowList();
+		currentWindow = FrontNonFloatingWindow();
 		while( currentWindow )
 		{
 			GetWTitle( currentWindow, currentWindowName );

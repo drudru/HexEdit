@@ -247,7 +247,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 
 			default:			// Cursor was inside our theWin
 				// If the theWin isn't in the front
-				if( theWin != FrontWindow() )
+				if( theWin != FrontNonFloatingWindow() )
 				{
 					// Make it so...
 					SelectWindow( theWin );
@@ -295,15 +295,17 @@ OSStatus DoEvent( EventRecord *theEvent )
 							// Hide or close the theWin
 							windowKind = GetWindowKind( theWin );
 							if( windowKind == kHexEditWindowTag )
+							{
 								CloseEditWindow( theWin );
-							else if( theWin == (WindowRef) g.searchWin )
+							}
+							else if( g.searchWin && theWin == GetDialogWindow( g.searchWin ) )		//LR: 1.7 -- compares also need GetDialogWindow!
 							{
 // LR: v1.6.5					DisposeDialog( g.searchWin );
 // LR: v1.6.5					g.searchWin = NULL;
 
 								HideWindow( GetDialogWindow( g.searchWin ) );
 							}
-							else if( theWin == (WindowRef) g.gotoWin )		// LR: v1.6.5
+							else if( g.gotoWin && theWin == GetDialogWindow( g.gotoWin ) )		// LR: v1.6.5
 							{
 								HideWindow( GetDialogWindow( g.gotoWin ) );
 							}
@@ -380,7 +382,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 		}
 		else
 		{
-			theWin = FrontWindow();	//LR: 1.66 don't use NULL window!
+			theWin = FrontNonFloatingWindow();	//LR: 1.66 don't use NULL window!
 			if( theWin )
 			{
 				windowKind = GetWindowKind( theWin );
@@ -419,7 +421,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 		switch ( theEvent->message >> 24 )
 		{
 			case suspendResumeMessage:
-				theWin = FrontWindow();
+				theWin = FrontNonFloatingWindow();
 				if( theWin )
 				{
 					objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
@@ -448,7 +450,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 /*** IDLE OBJECTS ***/
 OSStatus IdleObjects( EventRecord *er )
 {
-	WindowRef theWin = FrontWindow();
+	WindowRef theWin = FrontNonFloatingWindow();
 	ObjectWindowPtr objectWindow;
 
 	while( theWin )
@@ -515,10 +517,10 @@ static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 		{
 			if( noErr == OpenEditWindow( &myFSS, false ) )
 			{
-				if( print && kHexEditWindowTag == GetWindowKind( FrontWindow() ) )	// LR: 1.7 -- allow printing documents
+				if( print && kHexEditWindowTag == GetWindowKind( FrontNonFloatingWindow() ) )	// LR: 1.7 -- allow printing documents
 				{
-					PrintWindow( (EditWindowPtr)GetWRefCon( FrontWindow() ) );
-					CloseEditWindow( FrontWindow() );
+					PrintWindow( (EditWindowPtr)GetWRefCon( FrontNonFloatingWindow() ) );
+					CloseEditWindow( FrontNonFloatingWindow() );
 				}
 			}
 		}

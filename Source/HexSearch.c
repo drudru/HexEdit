@@ -170,7 +170,7 @@ Failure:
 	return;
 
 Success:
-	if( dWin != (EditWindowPtr) GetWRefCon( FrontWindow() ) )
+	if( dWin != (EditWindowPtr) GetWRefCon( FrontNonFloatingWindow() ) )
 		SelectWindow( dWin->oWin.theWin );
 
 	dWin->startSel = matchAddr;
@@ -246,11 +246,12 @@ void DoModelessDialogEvent( EventRecord *theEvent )
 	DialogPtr	whichDlog;
 	short		itemHit;
 
-#if TARGET_API_MAC_CARBON	// LR: v1.6.5 do this for all refs
-	whichDlog = (DialogRef)FrontWindow();
-#else
-	whichDlog = FrontWindow();
-#endif
+//#if TARGET_API_MAC_CARBON	// LR: v1.6.5 do this for all refs
+//LR: 1.7 -- fix for OS X, which requires below code	whichDlog = (DialogRef)FrontWindow();
+	whichDlog = GetDialogFromWindow( FrontNonFloatingWindow() );
+//#else
+//	whichDlog = FrontWindow();
+//#endif
 
 	// Do Event Filtering
 	if( whichDlog && theEvent->what == keyDown )	//LR: 1.66 avoid NULL reference

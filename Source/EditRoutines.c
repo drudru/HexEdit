@@ -947,7 +947,7 @@ void UndoOperation( void )
 	if( gUndo.type == 0 ) return;
 
 	//LR: 1.66 check for null front window!
-	win = FrontWindow();
+	win = FrontNonFloatingWindow();
 	if( !win || dWin != (EditWindowPtr)GetWRefCon( win ) )
 		SelectWindow( dWin->oWin.theWin );
 	
