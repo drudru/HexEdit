@@ -5,5 +5,3 @@ This is to track changes made to files checked in. This is NOT the history file!
 This file will be culled to update the version history file for official releases. (ie, for each official release this file is emptied!)
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
-1.76 Lane Roathe [lane@roathe.com]
-
