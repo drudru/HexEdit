@@ -351,7 +351,7 @@ OSStatus AdjustMenus( void )
 	_cmCheckedItem = isObjectWin ? dWin->csMenuID : gPrefs.csMenuID;
 	CheckMenuItem( colorMenu, _cmCheckedItem, true );
 
-	selection = gPrefs.useColor && isObjectWin && dWin->csResID > 0;
+	selection = gPrefs.useColor;	//LR 1.899 -- && isObjectWin && dWin->csResID > 0;
 	i = CountMenuItems( colorMenu );
 	do
 	{
@@ -388,6 +388,7 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 {
 	short			menuID = HiWord( mSelect );
 	short			menuItem = LoWord( mSelect );
+	short 		colorResID;
 	WindowRef		frontWindow;
 	DialogPtr		dlgRef = NULL;
 	EditWindowPtr	dWin = NULL;
@@ -662,14 +663,14 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 
 	// LR: Add color scheme menu
 	case kColorMenu:
+		colorResID = GetColorMenuResID( menuItem );
+
 		if( menuItem == CM_UseColor )
 		{
 			gPrefs.useColor = !gPrefs.useColor;		// toggle color usage
 		}
 		else if( dWin && dWin->csResID > 0 )		// can't color B&W windows!
 		{
-			short colorResID = GetColorMenuResID( menuItem );
-
 			if( _cmCheckedItem )
 				CheckMenuItem( colorMenu, _cmCheckedItem, false );
 
@@ -687,9 +688,7 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 
 					eWin = FindNextEditWindow( eWin );
 				}
-
-				gPrefs.csResID = colorResID;	//LR 180 -- save prefs when changing all
-				gPrefs.csMenuID = menuItem;
+				goto savepref;
 			}
 			else	//LR 181 -- default is (back) to changing color of a single window!
 			{
@@ -700,6 +699,13 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 				}
 			}
 		}
+		else
+		{
+savepref:	//LR 1.899 -- no window open == set preferred color
+			gPrefs.csResID = colorResID;	//LR 180 -- save prefs when changing all
+			gPrefs.csMenuID = menuItem;
+		}
+
 		UpdateEditWindows();
 		break;
 
