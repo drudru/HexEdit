@@ -60,6 +60,7 @@ static OSStatus _prefsInit( void )
 
 	gPrefs.constrainSize = true;
 	gPrefs.formatCopies = true;
+ 	gPrefs.dialogAtLaunch = true;
 
 	gPrefs.version = PREFS_VERSION;
 	return noErr;

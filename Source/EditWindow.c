@@ -579,7 +579,7 @@ void SizeEditWindow( WindowRef theWin, tWindowType type )
 	else if( kWindowCompareBtm == type )
 	{
 		maxheight = g.maxHeight / 2 - 96;		//LR 180 -- required to keep window of correct height
-		MoveWindow( theWin, 14, maxheight + 48, true );
+		MoveWindow( theWin, 14, maxheight + (48 + 24), true );
 		CompWind2 = theWin;
 	}
 	else	// kWindowNormal

@@ -389,45 +389,53 @@ ButtonHit:
 				if( dWin )
 				{
 					g.replaceAll = ( itemHit == ReplaceAllItem );
-					GetText( g.searchDlg, ReplaceTextItem, g.replaceText );
-					GetText( g.searchDlg, SearchTextItem, g.searchText );		//LR 190 -- replacement text no longer effected by case flag!
-					if( StringToSearchBuffer( gPrefs.searchCase ) )
+					GetText( g.searchDlg, ReplaceTextItem, g.searchText );
+					if( StringToSearchBuffer( true ) )	//LR 192 -- no longer effected by case, but still gets Hex!
 					{
 						EditChunk	**replaceChunk;	//LR 190 -- why static, only used herein!
 
-						replaceChunk = NewChunk( g.replaceText[0], 0, 0, CT_Unwritten );
+						replaceChunk = NewChunk( g.searchBuffer[0], 0, 0, CT_Unwritten );
 						if( replaceChunk )
 						{
-							BlockMoveData( g.replaceText+1, *(*replaceChunk)->data, g.replaceText[0] );
+							// move replace text from search buffer and put replace data (hex or ascii) in replace buffer
+							BlockMoveData( g.searchText, g.replaceText, g.searchText[0]+1 );
+							BlockMoveData( g.searchBuffer+1, *(*replaceChunk)->data, g.searchBuffer[0] );
 
-							if( !g.replaceAll )	//LR 190 -- replace is a copy in place, don't search first!!!
+							GetText( g.searchDlg, SearchTextItem, g.searchText );
+							if( StringToSearchBuffer( gPrefs.searchCase ) )
 							{
-								long ss = dWin->startSel;	//LR 188 -- hilight what was replaced!
+								if( g.replaceAll )	//LR 190 -- replace is a copy in place, don't search first!!!
+								{
+									while( PerformTextSearch( dWin, kSearchSkipUI ) )
+									{
+										PasteOperation( dWin, replaceChunk );	// replace all is NOT undoable!
+									}
+								}
+								else	// simple replace or replace & find next
+								{
+									long ss = dWin->startSel;	//LR 188 -- hilight what was replaced!
 
-								//LR 190 -- only replace if a selection is there (ie, a previous find)
-								if( dWin->startSel != dWin->endSel )
-								{
-									RememberOperation( dWin, EO_Paste, &gUndo );
-									PasteOperation( dWin, replaceChunk );
+									//LR 190 -- only replace if a selection is there (ie, a previous find)
+									if( dWin->startSel != dWin->endSel )
+									{
+										RememberOperation( dWin, EO_Paste, &gUndo );
+										PasteOperation( dWin, replaceChunk );
+									}
+									//LR 190 -- Option key on Replace is "replace and find next"
+									if( theEvent->modifiers & optionKey )
+									{
+										PerformTextSearch( dWin, kSearchUpdateUI );
+									}
+									else	// otherwise it's just normal replace
+									{
+										dWin->startSel = ss;
+										dWin->endSel = ss + (*replaceChunk)->size;
+									}
 								}
-								//LR 190 -- Option key on Replace is "replace and find next"
-								if( theEvent->modifiers & optionKey )
-								{
-									PerformTextSearch( dWin, kSearchUpdateUI );
-								}
-								else	// otherwise it's just normal replace
-								{
-									dWin->startSel = ss;
-									dWin->endSel = ss + (*replaceChunk)->size;
-								}
+								ScrollToSelection( dWin, dWin->startSel, true );
 							}
-							else while( PerformTextSearch( dWin, kSearchSkipUI ) )
-							{
-								PasteOperation( dWin, replaceChunk );	// replace all is NOT undoable!
-							}
-							ScrollToSelection( dWin, dWin->startSel, true );
+							DisposeChunk( NULL, replaceChunk );	//LR 192 -- only dispose if allocate worked!
 						}
-						DisposeChunk( NULL, replaceChunk );
 					}
 				}
 				break;

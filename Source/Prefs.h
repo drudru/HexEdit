@@ -65,10 +65,11 @@ typedef struct
 
 	short	wrapFinds;		//LR 190 -- true to wrap finds when reaching end/beg of file
 
+ 	short	dialogAtLaunch;	//functionality added WD-rpw 12-18-04
+
 	// spare prefs entries so version file can be updated
 	// w/o reseting prefs a few times :)
 	// NOTE: these default to FALSE in case they ever become used!
-	short	spare2;
 	short	spare3;
 	short	spare4;
 

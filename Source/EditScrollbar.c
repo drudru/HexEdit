@@ -105,24 +105,27 @@ static pascal void _scrollAction( ControlHandle theControl, short thePart )
 /*** SETUP SCROLL BARS ***/
 void SetupScrollBars( EditWindowPtr dWin )
 {
-	Rect	sRect, r;
+	if( !dWin->vScrollBar )	//LR 192 -- only create the control one time!
+	{
+		Rect	sRect, r;
 
-	//LR 1.73 -- setup track action proc if not already done
-	if( !_trackActionUPP )
-		_trackActionUPP = NewControlActionUPP( _scrollAction );
+		//LR 1.73 -- setup track action proc if not already done
+		if( !_trackActionUPP )
+			_trackActionUPP = NewControlActionUPP( _scrollAction );
 
-	GetWindowPortBounds( dWin->oWin.theWin, &r );
+		GetWindowPortBounds( dWin->oWin.theWin, &r );
 
-	sRect.left = r.right - ( kSBarSize - 1 );
-	sRect.top = r.top + kHeaderHeight;	// NS: move to below header
-	sRect.right = r.right + 1;
-	sRect.bottom = r.bottom	- kGrowIconSize;
-	// BB: detect Appearance manager, and create a live scroll bar if we do
-    dWin->vScrollBar = NewControl( dWin->oWin.theWin, &sRect, "\p", true, 0, 0, sRect.bottom - sRect.top, g.useAppearance ? kControlScrollBarLiveProc : scrollBarProc, 1L );
+		sRect.left = r.right - ( kSBarSize - 1 );
+		sRect.top = r.top + kHeaderHeight;	// NS: move to below header
+		sRect.right = r.right + 1;
+		sRect.bottom = r.bottom	- kGrowIconSize;
+		// BB: detect Appearance manager, and create a live scroll bar if we do
+		 dWin->vScrollBar = NewControl( dWin->oWin.theWin, &sRect, "\p", true, 0, 0, sRect.bottom - sRect.top, g.useAppearance ? kControlScrollBarLiveProc : scrollBarProc, 1L );
+
+		//LR 1.73 -- save window for callback procedure
+		SetControlReference( dWin->vScrollBar, (SInt32)dWin );
+	}
 	AdjustScrollBars( dWin->oWin.theWin, 1 );
-
-	//LR 1.73 -- save window for callback procedure
-	SetControlReference( dWin->vScrollBar, (SInt32)dWin );
 }
 
 // Adjust scroll bars when they need to be redrawn for some reason.
