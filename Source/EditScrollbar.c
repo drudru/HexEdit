@@ -30,6 +30,8 @@
 
 ControlActionUPP trackActionUPP;		// LR: init'd in Main!
 
+#define LIMIT_CALC ((((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) - dWin->linesPerPage) * kBytesPerLine)
+
 /*** SETUP SCROLL BARS ***/
 void SetupScrollBars( EditWindowPtr dWin )
 {
@@ -79,7 +81,7 @@ void AdjustScrollBars( WindowRef theWin, short resizeFlag )
 
 	// Reposition painting if you have resized or scrolled past the legal
 	// bounds	Note: this call will usually be followed by an update
-	limit = dWin->fileSize - (dWin->fileSize % kBytesPerLine) - (dWin->linesPerPage * kBytesPerLine);
+	limit = LIMIT_CALC;
 //LR 1.72	limit = ((dWin->fileSize + 15) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
 	if( dWin->editOffset > limit )
 		dWin->editOffset = limit;
@@ -191,7 +193,7 @@ Boolean MyHandleControlClick( WindowRef window, Point mouseLoc )
 		GetWindowPortBounds( window, &winRect );
 		h = winRect.bottom - winRect.top - (kGrowIconSize - 1) - (kHeaderHeight - 1);
 
-		limit = dWin->fileSize - (dWin->fileSize % kBytesPerLine) - (dWin->linesPerPage * kBytesPerLine);
+		limit = LIMIT_CALC;
 //LR 1.72		limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
 		if( vPos == h )
 			newPos = limit;	// LR: v1.6.5 LR already computed! ( ( dWin->fileSize+( kSBarSize-1 ) ) & 0xFFFFFFF0 ) - ( dWin->linesPerPage << 4 );
@@ -256,7 +258,7 @@ void HEditScrollToPosition( EditWindowPtr dWin, long newPos )
 	SetPortWindowPort( dWin->oWin.theWin );
 
 	// Constrain scrolling position to legal limits
-		limit = (dWin->fileSize + kBytesPerLine) - (dWin->fileSize % kBytesPerLine) - (dWin->linesPerPage * kBytesPerLine);
+		limit = LIMIT_CALC;
 //LR 1.72	limit = ((dWin->fileSize + (kBytesPerLine - 1)) & 0xFFFFFFF0) - (dWin->linesPerPage / kBytesPerLine);
 	if( newPos > limit )
 		newPos = limit;
