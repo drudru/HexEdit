@@ -485,9 +485,9 @@ void InitializeEditor( void )
 	PScrapStuff			ScrapInfo;
 #endif
 
-#if TARGET_API_MAC_CARBON	// LR: v1.6.5
-	OSStatus anErr = ClearCurrentScrap();
-#else
+#if !TARGET_API_MAC_CARBON	// LR: v1.6.5
+//	OSStatus anErr = ClearCurrentScrap();
+//#else
 	ScrapInfo = InfoScrap();
 	if( ScrapInfo->scrapState < 0 )
 		ZeroScrap();
