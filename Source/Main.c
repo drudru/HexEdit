@@ -44,7 +44,7 @@ prefs_t prefs;
 
 // LR: --- These are used to setup new UPP stuff ---
 AEEventHandlerUPP AEHandlerUPP, AECompareHandlerUPP;
-extern ControlActionUPP trackActionUPP;
+
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
 	extern DlgHookUPP myGetFileUPP;
 #endif
@@ -679,8 +679,6 @@ OSStatus InitAppleEvents( void )
 
 		AECompareHandlerUPP = NewAEEventHandlerUPP( CompareEventHandler );
 		AEInstallEventHandler( kCompareEventClass, kAECompareEvent, AECompareHandlerUPP, 0, false );
-
-		trackActionUPP = NewControlActionUPP( MyScrollAction );
 	}
 	return noErr;
 }
