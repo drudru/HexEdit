@@ -1138,10 +1138,10 @@ void MyActivate( WindowRef theWin, Boolean active )
 /*** OFFSET SELECTION ***/
 static void _offsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFlag )
 {
-	long	selWidth;
+//LR 180	long	selWidth;
 //LR 180	Boolean	fullUpdate;
 
-	selWidth = dWin->endSel - dWin->startSel;
+//LR 180	selWidth = dWin->endSel - dWin->startSel;
 //LR 180	fullUpdate = shiftFlag || selWidth > 1;
 
 	if( offset < 0 )
@@ -1233,135 +1233,13 @@ static void _invertSelection( EditWindowPtr	dWin )
 	startX = COLUMN( start );
 	endX = COLUMN( end );
 	
-	if( !frontFlag )
+	// Are we the frontmost window? (ie, draw filled selection)
+	if( frontFlag )
 	{
-		if( LINENUM( start ) < LINENUM( end ) )
+		if( dWin->editMode == EM_Hex )	// color hex area?
 		{
-			// Outline Hex
-			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
-			r.bottom = r.top + kLineHeight;
-			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-
-			MoveTo( kDataDrawPos - 3, r.bottom );
-
-			LineTo( r.left, r.bottom );
-			LineTo( r.left, r.top );
-			if( dWin->startSel >= dWin->editOffset )
+			if( LINENUM( start ) < LINENUM( end ) )	// yes, do we have more than one line?
 			{
-				LineTo( r.right, r.top );
-			}
-			else
-				MoveTo( r.right, r.top );
-			LineTo( r.right, r.bottom );
-
-			// Outline Box around Ascii
-			r.left = kTextDrawPos + CHARPOS( startX ) - 1;
-			r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-			
-			MoveTo( kTextDrawPos, r.bottom );
-			LineTo( r.left, r.bottom );
-
-			LineTo( r.left, r.top );
-			if( dWin->startSel >= dWin->editOffset )
-			{
-				LineTo( r.right, r.top );
-			}
-			else
-				MoveTo( r.right, r.top );
-			LineTo( r.right, r.bottom );
-
-			if( LINENUM( start ) < LINENUM( end ) - 1 )
-			{
-				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
-				r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
-				r.left = kDataDrawPos - 3;
-				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-				MoveTo( r.left, r.top );
-				LineTo( r.left, r.bottom );
-				MoveTo( r.right, r.top );
-				LineTo( r.right, r.bottom );
-
-				r.left = kTextDrawPos - 1;
-				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-				MoveTo( r.left, r.top );
-				LineTo( r.left, r.bottom );
-				MoveTo( r.right, r.top );
-				LineTo( r.right, r.bottom );
-			}
-			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
-			r.bottom = r.top + kLineHeight;
-			r.left = kDataDrawPos - 3;
-			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-			MoveTo( r.left, r.top );
-			LineTo( r.left, r.bottom );
-			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
-			{
-				LineTo( r.right, r.bottom );
-			}
-			else
-				MoveTo( r.right, r.bottom );
-			LineTo( r.right, r.top );
-			LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
-
-			r.left = kTextDrawPos - 1;
-			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
-			MoveTo( r.left, r.top );
-			LineTo( r.left, r.bottom-1 );
-			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
-			{
-				LineTo( r.right, r.bottom-1 );
-			}
-			else
-				MoveTo( r.right, r.bottom-1 );
-			LineTo( r.right, r.top );
-			LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
-		}
-		else
-		{
-			r.top = (kHeaderHeight / 2)+LINENUM( start ) * kLineHeight;
-			r.bottom = r.top+kLineHeight;
-			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-			MoveTo( r.left, r.top );
-			LineTo( r.left, r.bottom );
-			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
-			{
-				LineTo( r.right, r.bottom );
-			}
-			else
-				MoveTo( r.right, r.bottom );
-			LineTo( r.right, r.top );
-			if( dWin->startSel >= dWin->editOffset )
-			{
-				LineTo( r.left, r.top );
-			}
-
-			r.left = kTextDrawPos + CHARPOS( startX )-1;
-			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
-
-			MoveTo( r.left, r.top );
-			LineTo( r.left, r.bottom-1 );
-			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
-			{
-				LineTo( r.right, r.bottom-1 );
-			}
-			else
-				MoveTo( r.right, r.bottom-1 );
-			LineTo( r.right, r.top );
-			if( dWin->startSel >= dWin->editOffset )
-			{
-					LineTo( r.left, r.top );
-			}
-		}
-	}
-	else
-	{
-		if( dWin->editMode == EM_Hex )
-		{
-			if( LINENUM( start ) < LINENUM( end ) )
-			{
-	
 				// Invert Hex
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
@@ -1418,7 +1296,7 @@ static void _invertSelection( EditWindowPtr	dWin )
 				LineTo( r.right, r.top );
 				LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
 			}
-			else
+			else	// we only have a single line or less!
 			{
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
@@ -1445,9 +1323,9 @@ static void _invertSelection( EditWindowPtr	dWin )
 				}
 			}
 		}
-		else	// Ascii Mode!!
+		else	// color in the ASCII area
 		{
-			if( LINENUM( start ) < LINENUM( end ) )
+			if( LINENUM( start ) < LINENUM( end ) )		// more than one line?
 			{
 				// Outline Hex
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
@@ -1505,10 +1383,10 @@ static void _invertSelection( EditWindowPtr	dWin )
 				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
 				InvertRect( &r );
 			}
-			else
+			else	// one line only
 			{
-				r.top = (kHeaderHeight / 2)+LINENUM( start ) * kLineHeight;
-				r.bottom = r.top+kLineHeight;
+				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
+				r.bottom = r.top + kLineHeight;
 				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
 				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
 				MoveTo( r.left, r.top );
@@ -1530,6 +1408,118 @@ static void _invertSelection( EditWindowPtr	dWin )
 				InvertRect( &r );
 			}
 		}
+	}
+	else	// We are in the background
+	{
+		if( LINENUM( start ) < LINENUM( end ) )
+		{
+			// Outline Hex
+			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
+			r.bottom = r.top + kLineHeight;
+			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+
+			MoveTo( kDataDrawPos - 3, r.bottom );
+			LineTo( r.left, r.bottom );
+			LineTo( r.left, r.top );
+			if( dWin->startSel >= dWin->editOffset )
+			{
+				LineTo( r.right, r.top );
+			}
+			else
+				MoveTo( r.right, r.top );
+			LineTo( r.right, r.bottom );
+
+			// Outline Box around Ascii
+			r.left = kTextDrawPos + CHARPOS( startX ) - 1;
+			r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
+			
+			MoveTo( kTextDrawPos, r.bottom );
+			LineTo( r.left, r.bottom );
+
+			LineTo( r.left, r.top );
+			if( dWin->startSel >= dWin->editOffset )
+				LineTo( r.right, r.top );
+			else
+				MoveTo( r.right, r.top );
+			LineTo( r.right, r.bottom );
+
+			if( LINENUM( start ) < LINENUM( end ) - 1 )
+			{
+				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
+				r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
+				r.left = kDataDrawPos - 3;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+				MoveTo( r.left, r.top );
+				LineTo( r.left, r.bottom );
+				MoveTo( r.right, r.top );
+				LineTo( r.right, r.bottom );
+
+				r.left = kTextDrawPos - 1;
+				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
+				MoveTo( r.left, r.top );
+				LineTo( r.left, r.bottom );
+				MoveTo( r.right, r.top );
+				LineTo( r.right, r.bottom );
+			}
+			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
+			r.bottom = r.top + kLineHeight;
+			r.left = kDataDrawPos - 3;
+			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+			MoveTo( r.left, r.top );
+			LineTo( r.left, r.bottom );
+			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
+				LineTo( r.right, r.bottom );
+			else
+				MoveTo( r.right, r.bottom );
+			LineTo( r.right, r.top );
+			LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
+
+			r.left = kTextDrawPos - 1;
+			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
+			MoveTo( r.left, r.top );
+			LineTo( r.left, r.bottom-1 );
+			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
+				LineTo( r.right, r.bottom-1 );
+			else
+				MoveTo( r.right, r.bottom-1 );
+			LineTo( r.right, r.top );
+			LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
+		}
+		else
+		{
+			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
+			r.bottom = r.top + kLineHeight;
+			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+			MoveTo( r.left, r.top );
+			LineTo( r.left, r.bottom );
+			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
+				LineTo( r.right, r.bottom );
+			else
+				MoveTo( r.right, r.bottom );
+			LineTo( r.right, r.top );
+			if( dWin->startSel >= dWin->editOffset )
+				LineTo( r.left, r.top );
+
+			r.left = kTextDrawPos + CHARPOS( startX )-1;
+			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
+
+			MoveTo( r.left, r.top );
+			LineTo( r.left, r.bottom-1 );
+			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
+			{
+				LineTo( r.right, r.bottom-1 );
+			}
+			else
+				MoveTo( r.right, r.bottom-1 );
+			LineTo( r.right, r.top );
+			if( dWin->startSel >= dWin->editOffset )
+			{
+					LineTo( r.left, r.top );
+			}
+		}
+	
 	}
 }
 
