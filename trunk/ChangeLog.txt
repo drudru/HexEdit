@@ -1,0 +1,18 @@
+FILE PURPOSE:
+
+This is to track changes made to files checked in. This is NOT the history file! This is a work-in-progress file. used to inform other programers of what you have changed., what to watch out for, any problems, and other items of interest.
+
+This file will be culled to update the version history file for official releases. (ie, for each official release this file is emptied!)
+
+ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
+
+2001-01-25 Lane Roathe <lane@roathe.com>
+
+cleaned up sources for SourceForge CVS
+new text files and names for easier use
+new directory structure for SF
+Merged Nick Shanks 1.66
+URL's now attached to About links
+FAT Carbonized application
+Fixed SaveAs problem (and made sure no lingering (EditWindowPtr) coersions existed!)
+Fixed Goto/Search dialog paste crashes (involved re-writing HandleMenus!)
