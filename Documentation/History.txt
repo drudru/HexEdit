@@ -1,5 +1,20 @@
 HexEdit Revision History
 
+03/20/02 Version 1.76
+fixed DisposeChunk to check for NULL window (fixes replace all crash) thanks to Ben H.
+fixed printing in classic (removed check for error on PrValidate, it doesn't return errors)
+about box now invalidates rect in carbon build to try and get better speed in os x
+carbon precompiled header include now from carbon support folder
+updated project to have carbon builds look in carbon support folder first
+error alert into debugger updated for new universal headers
+fixed about dialog box scroll speed in OS X (speed now based on time elapsed)
+updated all source to include CVS version/edit information
+updated copyright dates
+prefs now set vertical bars on by default
+created new default color scheme (slightly modified turquoise)
+color is now on by default
+updated pref version # to force above prefs changes on everyone :)
+
 12/17/01 Version 1.75
 Added Replace and Replace All functionality! (Available the Find dialog)
 Can no longer open files twice
