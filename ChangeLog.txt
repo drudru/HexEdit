@@ -5,4 +5,10 @@ This is to track changes made to files checked in. This is NOT the history file!
 This file will be culled to update the version history file for official releases. (ie, for each official release this file is emptied!)
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
-1.73 Lane Roathe [lane@roathe.com]
+1.75 Lane Roathe [lane@roathe.com]
+- Can no longer open files twice
+- All file access is now thru FSp calls
+		(saves code and allowing all machines to open files starting with periods)
+- Updated file open error message to reflect likelyhood of already open files
+- Empty fork warnings now work!
+		(ie, if a fork is empty, you are warned about the fact before it is opened)
