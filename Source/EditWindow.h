@@ -61,17 +61,31 @@ typedef struct
 {
 	ObjectWindowRecord	oWin;			// Window Record
 	ControlHandle		vScrollBar;		// Vertical Scroll Bar
+
 	EditChunk			**firstChunk;	// File's First Chunk
 	EditChunk			**curChunk;		// File's Current Chunk
+	long				useCtr;			// Chunk access Counter
+										// Chunks are unloaded from memory based on usage
+	long				totLoaded;		// Amount of bytes in Memory
+
 	FSSpec				fsSpec,workSpec;// File Specs for Original, Work File
 	FSSpec				destSpec;		// File Spec for Save, Save As
+
+	/* very latest type of info */
+#if !defined(__MC68K__) && !defined(__SC__)
+	FSCatalogInfo 		catinfo;		// File permissions (including unix bytes, etc.)
+	long				OKToSetCatInfo;	// true if no error getting permissions
+#endif
+
+	/* old type of info */
 	long				fileSize;		// Total File Size
 	long				fileType;		// File Type
 	long				creator;		// File Creator
 	unsigned long		creationDate;	// Creation Date
-	long				useCtr;			// Chunk access Counter
-										// Chunks are unloaded from memory based on usage
-	long				totLoaded;		// Amount of bytes in Memory
+
+	short				refNum;			// File's Reference Number
+	short				workRefNum;		// Work File's Reference Number
+
 	long				editOffset;		// Display Offset
 	long				startSel;		// First Character of Selection
 	long				endSel;			// First Character AFTER Selection
@@ -79,8 +93,6 @@ typedef struct
 	long				workBytesWritten;	// Size of Work File
 	long				linesPerPage;	// Lines that fit in the theWin
 
-	short				refNum;			// File's Reference Number
-	short				workRefNum;		// Work File's Reference Number
 	EditMode			editMode;		// defines whether we are in the hex or ascii portion
 	short				fork;			// 0=data 1=resource
 	short				lastNybble;		// Last Hex Edit Nibble
