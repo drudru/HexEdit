@@ -1,6 +1,10 @@
 HexEdit Revision History
 
 4/15/01 Version 1.70
+Fixed many bad uses of a WindowRef as a DialogRef (ie, if dialogRef == FrontWindow() fails on OS X!)
+	(As a side note, this also fixe the not pasting on entry...very cool!)
+Changed all uses of "FrontWindow" to "FrontNonFloatingWindow" in carbon builds
+	(sourcce is all this usage, but non-carbon builds macro out to FrontWindow)
 Fixed printing (and prettied it up a bit in the process)
 Fixed menus not being set after AppleEvent opens, closes
 Navigation (open/save) dialogs no longer system modal
