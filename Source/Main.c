@@ -249,7 +249,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 						if( gPrefs.constrainSize )
 						{
 							r.bottom = r.top + (short)((((r.bottom - r.top) / kLineHeight) - 1) * kLineHeight) + kHeaderHeight;	// force to full line heights
-							SizeWindow( theWin, (r.right - r.left), (r.bottom - r.top), true );
+							SizeWindow( theWin, (r.right - r.left - 1), (r.bottom - r.top), true );
 						}
 
 						AdjustScrollBars( theWin, true );
