@@ -523,6 +523,7 @@ static OSStatus DoOpenAppleEvent( const AppleEvent *theEvent, Boolean print )
 			}
 		}
 	}
+	AdjustMenus();	//LR: 1.7 -- show change in menus if required
 
 	// event was handled successfully
 	AEDisposeDesc( &theList );
