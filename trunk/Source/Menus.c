@@ -12,12 +12,13 @@
  * The Original Code is Copyright 1993 Jim Bumgardner.
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
- * Portions created by Lane Roathe are
+ * Portions created by Lane Roathe (LR) are
  * Copyright (C) Copyright © 1996-2000.
  * All Rights Reserved.
  * 
  * Contributor(s):
- *		Nick Shanks
+ *		Nick Shanks (NS)
+ *		Scott E. Lasley (SEL) 
  */
 
 #include "Prefs.h"
@@ -34,6 +35,133 @@ static MenuRef appleMenu, fileMenu, editMenu, findMenu, optionsMenu, colorMenu, 
 
 // Externals
 extern WindowRef CompWind1, CompWind2;
+
+/*** SMART ENABLE MENU ITEM ***/
+static OSStatus _enableMenuItem( MenuRef menu, short item, short ok )
+{
+//	Code to simplify enabling/disabling menu items.
+	if( ok )
+		EnableMenuItem( menu, item );
+	else
+		DisableMenuItem( menu, item );
+
+	if( item == 0 )
+		DrawMenuBar();
+
+	return noErr;
+}
+
+#if TARGET_API_MAC_CARBON // SEL: 1.7 - carbon session based printing
+
+/*------------------------------------------------------------------------------
+    Allow the user define the page setup for printing to current printer
+
+    Parameters:
+        printSession    -   current printing session
+        pageFormat      -   a PageFormat object addr
+
+    Description:
+        If the caller passes in an empty PageFormat object, create a new one,
+        otherwise validate the one provided by the caller.
+        Invokes the Page Setup dialog and checks for Cancel.
+        Flattens the PageFormat object so it can be saved with the document.
+        Note that the PageFormat object is modified by this function.
+
+------------------------------------------------------------------------------*/
+static void _doPageSetupDialog(PMPageFormat* pageFormat)
+{
+	OSStatus    		status;
+	Boolean     		accepted;
+	PMPrintSession	printSession;
+
+	status = PMCreateSession(&printSession);
+	if ( noErr != status )
+	{
+		PostPrintingErrors(status);
+		return;
+	}
+
+	//  Set up a valid PageFormat object.
+	if (*pageFormat == kPMNoPageFormat)
+	{
+	  status = PMCreatePageFormat(pageFormat);
+
+	  //  Note that PMPageFormat is not session-specific, but calling
+	  //  PMSessionDefaultPageFormat assigns values specific to the printer
+	  //  associated with the current printing session.
+		if ((status == noErr) && (*pageFormat != kPMNoPageFormat))
+			status = PMSessionDefaultPageFormat(printSession, *pageFormat);
+	}
+	else
+	{
+		status = PMSessionValidatePageFormat(printSession, *pageFormat, kPMDontWantBoolean);
+	}
+
+	//  Display the Page Setup dialog.
+	if (status == noErr)
+	{
+		status = PMSessionPageSetupDialog(printSession, *pageFormat, &accepted);
+		if (!accepted)
+		{
+			status = kPMCancel; // user clicked Cancel button
+		}
+	}
+
+	status = PMRelease(printSession);
+	return;
+}
+
+/*------------------------------------------------------------------------------
+    Display error alert to end user
+
+    Parameters:
+        status  -   error code
+
+    Description:
+        This is where we post an alert to report any problem encountered by the Printing Manager.
+
+------------------------------------------------------------------------------*/
+void PostPrintingErrors( OSStatus status )
+{
+	switch ( status )
+	{
+		case kPMNoDefaultPrinter:
+			ErrorAlert(ES_Caution, errDefaultPrinter);
+			break;
+		default:
+			ErrorAlert(ES_Caution, errGenericPrinting);
+	}
+}
+
+#endif
+
+
+/* --------------------
+| GetColorMenuResID -- return resID of a color menu item
+|						( also, marks the menu item passed in as checked )
+|	ENTRY:	menu item
+|	 EXIT:	resID
+*/
+
+/*** GET COLOUR MENU RES ID ***/
+short GetColorMenuResID( short menuItem )
+{
+	Handle	h;
+	Str255	menuText;
+	short	resID;
+	ResType	resType;
+
+	CheckMenuItem( colorMenu, menuItem, true );
+	GetMenuItemText( colorMenu, menuItem, menuText );
+	h = GetNamedResource( 'HEct', menuText );
+	if( h )
+	{
+		GetResInfo( h, &resID, &resType, menuText );
+		return resID;
+	}
+	else
+		return( CM_StartingResourceID );
+}
 
 /*** INITALISE MENUBAR ***/
 OSStatus InitMenubar( void )
@@ -62,21 +190,6 @@ OSStatus InitMenubar( void )
 	return noErr;
 }
 
-/*** SMART ENABLE MENU ITEM ***/
-OSStatus SmartEnableMenuItem( MenuRef menu, short item, short ok )
-{
-//	Code to simplify enabling/disabling menu items.
-	if( ok )
-		EnableMenuItem( menu, item );
-	else
-		DisableMenuItem( menu, item );
-
-	if( item == 0 )
-		DrawMenuBar();
-
-	return noErr;
-}
-
 /*** ADJUST MENUS ***/
 OSStatus AdjustMenus( void )
 {
@@ -94,19 +207,25 @@ OSStatus AdjustMenus( void )
 	if( theWin )
 	{
 	#if TARGET_API_MAC_CARBON
-		isGotoWin = (theWin == GetDialogWindow( g.gotoWin ));
-		isFindWin = (theWin == GetDialogWindow( g.searchWin ));
+		isGotoWin = (g.gotoWin && theWin == GetDialogWindow( g.gotoWin ));		//LR: 1.7 - don't get window info on NULL!
+		isFindWin = (g.searchWin && theWin == GetDialogWindow( g.searchWin ));
 	#else
-		isGotoWin = (theWin == g.gotoWin);
+		isGotoWin = (theWin == g.gotoWin);		//LR: 1.7 - no need here, because theWin != NULL && no function call!
 		isFindWin = (theWin == g.searchWin);
 	#endif
 
 		windowKind = GetWindowKind( theWin );
 		isDA = ( windowKind < 0 );
 		isObjectWin = GetWindowKind( theWin ) == HexEditWindowID;
-		selection = ( isObjectWin && dWin->endSel > dWin->startSel );
 		if( isObjectWin )
+		{
 			dWin = (EditWindowPtr)GetWRefCon( theWin );	//LR: 1.66 - don't set unless an edit window!
+			selection = dWin->endSel > dWin->startSel;
+		}
+		else
+		{
+			selection = false;
+		}
 	}
 	else	// LR: v1.6.5 if no window is visible, then nothing is true!
 	{
@@ -139,43 +258,38 @@ OSStatus AdjustMenus( void )
 	undoExists = (gUndo.type != 0);	// check for NULL gUndo!
 	
 // LR: - enable file menu items during search, via Aaron D.
-// LR:	SmartEnableMenuItem( fileMenu, FM_New, g.searchWin == NULL );
-// LR:	SmartEnableMenuItem( fileMenu, FM_Open, g.searchWin == NULL );
+// LR:	_enableMenuItem( fileMenu, FM_New, g.searchWin == NULL );
+// LR:	_enableMenuItem( fileMenu, FM_Open, g.searchWin == NULL );
 
 // LR: 1.65 moved print names to string for localization
 	GetIndString( menuStr, strPrint, (isObjectWin && dWin->startSel < dWin->endSel) ? 2 : 1 );
 
 	SetMenuItemText( fileMenu, FM_Print, menuStr );
 
-// bug: 1.65 NO PRINTING YET! (so disable menus for now!)
-#if TARGET_API_MAC_CARBON
-	SmartEnableMenuItem( fileMenu, FM_PageSetup, false );
-	SmartEnableMenuItem( fileMenu, FM_Print, false );
-#else
-	SmartEnableMenuItem( fileMenu, FM_Print, isObjectWin );
-#endif
+	_enableMenuItem( fileMenu, FM_PageSetup, isObjectWin );	//SEL: 1.7 - enabled for carbon
+	_enableMenuItem( fileMenu, FM_Print, isObjectWin );
 
-	SmartEnableMenuItem( fileMenu, FM_OtherFork, isObjectWin );
-	SmartEnableMenuItem( fileMenu, FM_Close, isDA || isObjectWin || isFindWin || isGotoWin );	// LR: v1.6.5 rewrite via Max Horn
-	SmartEnableMenuItem( fileMenu, FM_Save, isObjectWin && dWin->dirtyFlag );
-	SmartEnableMenuItem( fileMenu, FM_SaveAs, isObjectWin );
-	SmartEnableMenuItem( fileMenu, FM_Revert, isObjectWin && dWin->refNum && dWin->dirtyFlag );
+	_enableMenuItem( fileMenu, FM_OtherFork, isObjectWin );
+	_enableMenuItem( fileMenu, FM_Close, isDA || isObjectWin || isFindWin || isGotoWin );	// LR: v1.6.5 rewrite via Max Horn
+	_enableMenuItem( fileMenu, FM_Save, isObjectWin && dWin->dirtyFlag );
+	_enableMenuItem( fileMenu, FM_SaveAs, isObjectWin );
+	_enableMenuItem( fileMenu, FM_Revert, isObjectWin && dWin->refNum && dWin->dirtyFlag );
 
-	SmartEnableMenuItem( editMenu, 0, theWin != NULL );
-	SmartEnableMenuItem( editMenu, EM_Undo, isDA || undoExists );
-	SmartEnableMenuItem( editMenu, EM_Cut, isDA || selection );
-	SmartEnableMenuItem( editMenu, EM_Copy, isDA || selection );
-	SmartEnableMenuItem( editMenu, EM_Paste, isDA || scrapExists );
-	SmartEnableMenuItem( editMenu, EM_Clear, isDA || selection );
+	_enableMenuItem( editMenu, 0, theWin != NULL );
+	_enableMenuItem( editMenu, EM_Undo, isDA || undoExists );
+	_enableMenuItem( editMenu, EM_Cut, isDA || selection );
+	_enableMenuItem( editMenu, EM_Copy, isDA || selection );
+	_enableMenuItem( editMenu, EM_Paste, isDA || scrapExists );
+	_enableMenuItem( editMenu, EM_Clear, isDA || selection );
 
-	SmartEnableMenuItem( editMenu, EM_SelectAll, isDA || isObjectWin );
+	_enableMenuItem( editMenu, EM_SelectAll, isDA || isObjectWin );
 
-	SmartEnableMenuItem( findMenu, 0, isObjectWin || isFindWin || isGotoWin );
+	_enableMenuItem( findMenu, 0, isObjectWin || isFindWin || isGotoWin );
 /* 1.65
-	SmartEnableMenuItem( findMenu, SM_Find, isObjectWin );
-	SmartEnableMenuItem( findMenu, SM_FindForward, isObjectWin );
-	SmartEnableMenuItem( findMenu, SM_FindBackward, isObjectWin );
-	SmartEnableMenuItem( findMenu, SM_GotoAddress, isObjectWin );
+	_enableMenuItem( findMenu, SM_Find, isObjectWin );
+	_enableMenuItem( findMenu, SM_FindForward, isObjectWin );
+	_enableMenuItem( findMenu, SM_FindBackward, isObjectWin );
+	_enableMenuItem( findMenu, SM_GotoAddress, isObjectWin );
 */
 	CheckMenuItem( optionsMenu, OM_HiAscii, prefs.asciiMode );
 	CheckMenuItem( optionsMenu, OM_DecimalAddr, prefs.decimalAddr );
@@ -200,7 +314,7 @@ OSStatus AdjustMenus( void )
 	i = CountMenuItems( colorMenu );
 	do
 	{
-		SmartEnableMenuItem( colorMenu, i, selection );	// LR: v1.6.5 only enable for color windows
+		_enableMenuItem( colorMenu, i, selection );	// LR: v1.6.5 only enable for color windows
 	} while( --i > 2 );
 	
 	// NS: v1.6.6 checkmark front window in window menu
@@ -220,32 +334,6 @@ OSStatus AdjustMenus( void )
 	}
 
 	return( noErr );
-}
-
-/* --------------------
-| GetColorMenuResID -- return resID of a color menu item
-|						( also, marks the menu item passed in as checked )
-|	ENTRY:	menu item
-|	 EXIT:	resID
-*/
-
-/*** GET COLOUR MENU RES ID ***/
-short GetColorMenuResID( short menuItem )
-{
-	Handle	h;
-	Str255	menuText;
-	short	resID;
-	ResType	resType;
-
-	CheckMenuItem( colorMenu, menuItem, true );
-	GetMenuItemText( colorMenu, menuItem, menuText );
-	h = GetNamedResource( 'HEct', menuText );
-	if( h )
-	{
-		GetResInfo( h, &resID, &resType, menuText );
-		return resID;
-	}
-	else return CM_StartingResourceID;
 }
 
 // 	Handle the menu selection. mSelect is what MenuSelect() and
@@ -368,8 +456,8 @@ OSStatus HandleMenu( long mSelect )
 			break;
 
 		case FM_PageSetup:
-#if TARGET_API_MAC_CARBON
-// bug: printing
+#if TARGET_API_MAC_CARBON  // sel - carbon session based printing
+			_doPageSetupDialog(&g.pageFormat);
 #else
 			PrOpen();
 			PrStlDialog( g.HPrint );

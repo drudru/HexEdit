@@ -12,12 +12,13 @@
  * The Original Code is Copyright 1993 Jim Bumgardner.
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
- * Portions created by Lane Roathe are
+ * Portions created by Lane Roathe (LR) are
  * Copyright (C) Copyright © 1996-2000.
  * All Rights Reserved.
  * 
  * Contributor(s):
- *		Nick Shanks
+ *		Nick Shanks (NS)
+ *		Scott E. Lasley (SEL) 
  */
 
 #include "ObjectWindow.h"
@@ -109,8 +110,5 @@ void SaveAsContents( WindowRef theWin );
 void RevertContents( WindowRef theWin );
 void MyActivate( WindowRef theWin, Boolean active );
 void UpdateEditWindows( void );
-pascal void NavEventFilter( NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, NavCallBackUserData callBackUD );
-pascal Boolean NavPreviewFilter( NavCBRecPtr callBackParms, void *callBackUD );
-pascal Boolean NavFileFilter( AEDesc* theItem, void* info, void *callBackUD, NavFilterModes filterMode );
 
 #endif

@@ -12,12 +12,13 @@
  * The Original Code is Copyright 1993 Jim Bumgardner.
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
- * Portions created by Lane Roathe are
+ * Portions created by Lane Roathe (LR) are
  * Copyright (C) Copyright © 1996-2000.
  * All Rights Reserved.
  * 
  * Contributor(s):
- *		Nick Shanks
+ *		Nick Shanks (NS)
+ *		Scott E. Lasley (SEL) 
  */
 
 #include <stdio.h>
@@ -41,47 +42,284 @@ short fontID;
 RGBColor black = { 0, 0, 0 };
 RGBColor white = { 0xFFFF, 0xFFFF, 0xFFFF };
 
-/* nav services filters */
-pascal void NavEventFilter( NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, NavCallBackUserData callBackUD );
-pascal Boolean NavPreviewFilter( NavCBRecPtr callBackParms, void *callBackUD );
-pascal Boolean NavFileFilter( AEDesc* theItem, void* info, void *callBackUD, NavFilterModes filterMode );
+#if TARGET_API_MAC_CARBON
 
-/*** LOAD PREFERENCES ***/
-/* LR -- removed in 1.5
-void LoadPreferences( void )
+// SEL: 1.7 - added carbon printing (function rearrangment by LR)
+
+/*------------------------------------------------------------------------------
+    Get the printing information from the end user
+
+    Parameters:
+        printSession    -   current printing session
+        pageFormat      -   a PageFormat object addr
+        printSettings   -   a PrintSettings object addr
+
+    Description:
+        If the caller passes an empty PrintSettings object, create a new one,
+        otherwise validate the one provided by the caller.
+        Invokes the Print dialog and checks for Cancel.
+        Note that the PrintSettings object is modified by this function.
+
+------------------------------------------------------------------------------*/
+static OSStatus _doPrintDialog( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings* printSettings )
 {
-	Handle prefHandle;
-	prefHandle = GetResource( PrefResType, PrefResID );
-	if( !prefHandle || ResError( void ) ) return;
-	BlockMove( *prefHandle, &gPrefs, sizeof( Preferences ) );
-	ReleaseResource( prefHandle );
-	if( prefs.asciiMode )	gHighChar = 0xFF;
-	else					gHighChar = 0x7E;
+    OSStatus    status;
+    Boolean     accepted;
+    UInt32      minPage = 1,
+                maxPage = 9999;
+
+    //  In this sample code the caller provides a valid PageFormat reference but in
+    //  your application you may want to load and unflatten the PageFormat object
+    //  that was saved at PageSetup time.  See LoadAndUnflattenPageFormat below.
+
+    //  Set up a valid PrintSettings object.
+    if (*printSettings == kPMNoPrintSettings)
+    {
+        status = PMCreatePrintSettings(printSettings);
+
+        //  Note that PMPrintSettings is not session-specific, but calling
+        //  PMSessionDefaultPrintSettings assigns values specific to the printer
+        //  associated with the current printing session.
+        if ((status == noErr) && (*printSettings != kPMNoPrintSettings))
+            status = PMSessionDefaultPrintSettings(printSession, *printSettings);
+    }
+    else
+        status = PMSessionValidatePrintSettings(printSession, *printSettings,
+                    kPMDontWantBoolean);
+    //  Set a valid page range before displaying the Print dialog
+    if (status == noErr)
+        status = PMSetPageRange(*printSettings, minPage, maxPage);
+
+    //  Display the Print dialog.
+    if (status == noErr)
+    {
+        status = PMSessionPrintDialog(printSession, *printSettings, pageFormat,
+                    &accepted);
+        if (!accepted)
+            status = kPMCancel; // user clicked Cancel button
+    }
+
+    return( status );
+}
+
+/*------------------------------------------------------------------------------
+	Print the pages
+
+    Parameters:
+        printSession    -   current printing session
+        pageFormat      -   a PageFormat object addr
+        printSettings   -   a PrintSettings object addr
+
+    Description:
+        Assumes the caller provides validated PageFormat and PrintSettings objects.
+        Calculates a valid page range and prints each page by calling DrawPage.
+
+------------------------------------------------------------------------------*/
+static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings printSettings, EditWindowPtr dWin )
+{
+	OSStatus  	status,
+	          printError;
+	PMRect		pageRect;
+	SInt32		startAddr, endAddr, linesPerPage, addr;
+	UInt32			realNumberOfPagesinDoc,
+	          pageNumber,
+	          firstPage,
+	          lastPage;
+
+	//  PMGetAdjustedPaperRect returns the paper size taking into account rotation,
+	//  resolution, and scaling settings.  Note this is the paper size selected
+	//  the Page Setup dialog.  It is not guaranteed to be the same as the paper
+	//  size selected in the Print dialog on Mac OS X.
+	status = PMGetAdjustedPaperRect(pageFormat, &pageRect);
+
+	//  PMGetAdjustedPageRect returns the page size taking into account rotation,
+	//  resolution, and scaling settings.  Note this is the imageable area of the
+	//  paper selected in the Page Setup dialog.
+	//  DetermineNumberOfPagesInDoc returns the number of pages required to print
+	//  the document.
+	if (status == noErr)
+	{
+	  status = PMGetAdjustedPageRect(pageFormat, &pageRect);
+	  if (status == noErr)
+	  {
+			if( dWin->startSel == dWin->endSel )
+			{
+				startAddr = 0;
+				endAddr = dWin->fileSize;
+			}
+			else
+			{
+				startAddr = dWin->startSel;
+				endAddr = dWin->endSel;
+			}
+
+			addr = startAddr;
+			linesPerPage = (pageRect.bottom - TopMargin - (HeaderHeight + 1)) / LineHeight;
+			realNumberOfPagesinDoc = ((endAddr - startAddr) / 16) / linesPerPage + 1;
+		}
+	}
+
+	//  Get the user's selection for first and last pages
+	if (status == noErr)
+	{
+	  status = PMGetFirstPage(printSettings, &firstPage);
+	  if (status == noErr)
+	      status = PMGetLastPage(printSettings, &lastPage);
+	}
+
+	//  Check that the selected page range does not go beyond the actual
+	//  number of pages in the document.
+	if (status == noErr)
+	{
+		if( firstPage > realNumberOfPagesinDoc )
+		{
+			status = kPMValueOutOfRange;
+			PMSessionSetError (printSession, kPMValueOutOfRange);
+		}
+
+		if (realNumberOfPagesinDoc < lastPage)
+			lastPage = realNumberOfPagesinDoc;
+	}
+
+	//  NOTE:  We don't have to worry about the number of copies.  The Printing
+	//  Manager handles this.  So we just iterate through the document from the
+	//  first page to be printed, to the last.
+	if (status == noErr)
+	{ //  Establish a graphics context for drawing the document's pages.
+	  //  Although it's not used in this sample code, PMGetGrafPtr can be called
+	  //  get the QD grafport.
+	  status = PMSessionBeginDocument(printSession, printSettings, pageFormat);
+	  if (status == noErr)
+	  { //  Print all the pages in the document.  Note that we spool all pages
+			//  and rely upon the Printing Manager to print the correct page range.
+			//  In this sample code we assume the total number of pages in the
+			//  document is equal to "lastPage".
+			pageNumber = 1;
+			while ((pageNumber <= lastPage) && (PMSessionError(printSession) == noErr))
+			{
+				Rect	r;
+				
+				r.top = pageRect.top;
+				r.bottom = pageRect.bottom;
+				r.left = pageRect.left;
+				r.right = pageRect.right;
+				//  NOTE:  We don't have to deal with the old Printing Manager's
+				//  128-page boundary limit anymore.
+
+				//  Set up a page for printing.
+				status = PMSessionBeginPage(printSession, pageFormat, &pageRect);
+				if (status != noErr)
+				  break;
+
+				//  Draw the page.
+				DrawHeader( dWin, &r );
+				r.top += ( HeaderHeight+TopMargin+LineHeight-DescendHeight );
+				r.bottom -= ( FooterHeight + DescendHeight + BotMargin );
+
+				DrawDump( dWin, &r, addr, endAddr );
+
+				r.top = r.bottom + DescendHeight + BotMargin;
+				r.bottom = r.top + FooterHeight;
+				DrawFooter( dWin, &r, pageNumber, realNumberOfPagesinDoc );
+
+				//  Close the page.
+				status = PMSessionEndPage(printSession);
+				if (status != noErr)
+				  break;
+
+				addr += linesPerPage*16;
+				addr -= ( addr % 16 );
+
+				//  And loop.
+				pageNumber++;
+			}
+
+			// Close the printing port
+			(void)PMSessionEndDocument(printSession);
+	  }
+	}
+
+	//  Only report a printing error once we have completed the print loop. This
+	//  ensures that every PMSessionBegin... call is followed by a matching
+	//  PMSessionEnd... call, so the Printing Manager can release all temporary
+	//  memory and close properly.
+	printError = PMSessionError(printSession);
+	if ( ( kPMCancel != printError) && (printError != noErr) )
+	  PostPrintingErrors(printError);
+}
+
+// NS: v1.6.6, event filters for navigation services
+
+/*** NAV SERVICES EVENT FILTER ***/
+static pascal void _navEventFilter( NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, NavCallBackUserData callBackUD )
+{
+	#pragma unused( callBackUD )
+//	WindowRef theWindow = (WindowRef) callBackParms->eventData.event->message;
+//	WindowRef theWindow = (WindowRef) callBackParms->eventData.eventDataParms.event->message;
+	switch( callBackSelector )
+	{
+		case kNavCBEvent:
+//			switch( callBackParms->eventData.event->what )
+			switch( callBackParms->eventData.eventDataParms.event->what )
+			{
+				case updateEvt:
+/*					RgnHandle updateRgn;
+					GetWindowRegion( theWindow, kWindowUpdateRgn, updateRgn );
+					updateWindow( theWindow, updateRgn );
+*/					break;
+			}
+			break;
+	}
+}
+
+/*** NAV SERVICES PREVIEW FILTER ***/
+/*
+static pascal Boolean _navPreviewFilter( NavCBRecPtr callBackParms, void *callBackUD )
+{
+	#pragma unused( callBackParms, callBackUD )
+	return false;
 }
 */
 
-/*** SAVE PREFERENCES ***/
-/* LR -- removed in 1.5
-void SavePreferences( void )
+/*** NAV SERVICES FILE FILTER ***/
+/*
+static pascal Boolean _navFileFilter( AEDesc* theItem, void* info, void *callBackUD, NavFilterModes filterMode )
 {
-	Handle prefHandle;
-	while( ( prefHandle = GetResource( PrefResType, PrefResID ) ) != NULL )
-	{
-		RemoveResource( prefHandle );
-		DisposeHandle( prefHandle );
-	}
-	prefHandle = NewHandle( sizeof( Preferences ) );
-	if( !prefHandle )
-		ErrorAlert( ES_Caution, errMemory );
-	else
-	{
-		BlockMove( &gPrefs, *prefHandle, sizeof( Preferences ) );
-		AddResource( prefHandle, PrefResType, PrefResID, "\pPreferences" );
-		WriteResource( prefHandle );
-		ReleaseResource( prefHandle );
-	}
+	#pragma unused( theItem, info, callBackUD, filterMode )
+	return true;
 }
 */
+
+#endif
+
+/* NS: v1.6.6, GWorld creation moved to where it is used */
+
+/*
+	Handle creation and use of offscreen bitmaps
+	=================================================
+	22-Sep-00 LR: GWorlds only now (courtesy of Nick Shanks)
+	21-Jun-94 LR: attach palette to offscreen pixmap
+	24-Apr-94 LR: Shit, it was working, color table was messed up!
+	22-Apr-94 LR: ok, no GWorlds, how about CGrafPtrs?
+	20-Apr-94 LR: creation ( w/GWorlds )
+*/
+
+// LR: used to force non-color offscreens ( 1/8 to 1/32 the size! )
+// NS: not used // short PIXELBITS = 1;	// 8, 16, 32
+
+/*** NEW OFFSCREEN GWORLD ***/
+static GWorldPtr _newCOffScreen( short width, short height )
+{
+	OSStatus	error = noErr;
+	GWorldPtr	theGWorld = NULL;
+	Rect		rect;
+	
+	SetRect( &rect, 0, 0, width, height );
+	error = NewGWorld( &theGWorld, prefs.useColor? 0:1, &rect, NULL, NULL, keepLocal );
+	if( error != noErr ) return NULL;
+	return theGWorld;
+}
+
 
 /*** INITIALIZE EDITOR ***/
 void InitializeEditor( void )
@@ -249,7 +487,7 @@ OSStatus SetupNewEditWindow( EditWindowPtr dWin, StringPtr title )
 	( *dWin->offscreen->portPixMap )->baseAddr = NewPtrClear( (long) ( *dWin->offscreen->portPixMap )->rowBytes * g.maxHeight );
 	if( !( *dWin->offscreen->portPixMap )->baseAddr )
 */
-	dWin->offscreen = NewCOffScreen( MaxWindowWidth, g.maxHeight );
+	dWin->offscreen = _newCOffScreen( MaxWindowWidth, g.maxHeight );
 	if( !dWin->offscreen )
 			ErrorAlert( ES_Stop, errMemory );
 
@@ -266,34 +504,6 @@ OSStatus SetupNewEditWindow( EditWindowPtr dWin, StringPtr title )
 	dWin->editMode = EM_Hex;
 
 	return noErr;
-}
-
-/* NS: v1.6.6, GWorld creation moved to where it is used */
-
-/*
-	Handle creation and use of offscreen bitmaps
-	=================================================
-	22-Sep-00 LR: GWorlds only now (courtesy of Nick Shanks)
-	21-Jun-94 LR: attach palette to offscreen pixmap
-	24-Apr-94 LR: Shit, it was working, color table was messed up!
-	22-Apr-94 LR: ok, no GWorlds, how about CGrafPtrs?
-	20-Apr-94 LR: creation ( w/GWorlds )
-*/
-
-// LR: used to force non-color offscreens ( 1/8 to 1/32 the size! )
-// NS: not used // short PIXELBITS = 1;	// 8, 16, 32
-
-/*** NEW OFFSCREEN GWORLD ***/
-GWorldPtr NewCOffScreen( short width, short height )
-{
-	OSStatus	error = noErr;
-	GWorldPtr	theGWorld = NULL;
-	Rect		rect;
-	
-	SetRect( &rect, 0, 0, width, height );
-	error = NewGWorld( &theGWorld, prefs.useColor? 0:1, &rect, NULL, NULL, keepLocal );
-	if( error != noErr ) return NULL;
-	return theGWorld;
 }
 
 /*** NEW EDIT WINDOW ***/
@@ -408,7 +618,7 @@ short AskEditWindow( void )
 	OSStatus error = noErr;
 	NavReplyRecord		reply;
 	NavDialogOptions	dialogOptions;
- 	NavEventUPP			eventProc = NewNavEventUPP( NavEventFilter );
+ 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
 	NavPreviewUPP		previewProc = NULL;
 	NavObjectFilterUPP	filterProc = NULL;
 	NavTypeListHandle	openTypeList = NULL;
@@ -820,35 +1030,32 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 
 	GetColorInfo( dWin );	// LR: v1.6.5 ensure that updates are valid!
 
+	TextFont( fontID );
+	TextSize( 9 );
+	TextFace( normal );	// LR: v1.6.5 LR - can't be bold 'cause then the new stuff doesn fit :0
+	TextMode( srcCopy );
+
 	// LR: if we have color table, fill in the address bar!
 	if( ctHdl )
 	{
 		RGBBackColor( &( *ctHdl )->header );
 		RGBForeColor( &( *ctHdl )->headerLine );
 	}
-
-	EraseRect( r );
-
-	if( ctHdl )	// LR: v1.6.5 LR -- top line darker, bottom lighter (by default)
+	else
 	{
-		MoveTo( r->left, r->bottom - 1 );
-		LineTo( r->right, r->bottom - 1 );
-
-		RGBForeColor( &( *ctHdl )->barLine );
+		RGBForeColor( &black );
+		RGBBackColor( &white );
 	}
+
+	EraseRect( r );	// uses back color
 
 	r->right -= SBarSize;	// LR: v1.6.5 don't overwrite scroll bar icon
 
-	MoveTo( r->left, r->bottom - 0 );
-	LineTo( r->right, r->bottom - 0 );
+	MoveTo( r->left, r->bottom - 0 );	// LR: 1.7 - only one line, darker above scroll bar looked bogus
+	LineTo( r->right, r->bottom - 0 );	// uses fore color
 
 	if( ctHdl )
 		RGBForeColor( &( *ctHdl )->headerText );
-
-	TextFont( fontID );
-	TextSize( 9 );
-	TextFace( normal );	// LR: v1.6.5 LR - can't be bold 'cause then the new stuff doesn fit :0
-	TextMode( srcCopy );
 
 	// LR: v1.6.5 LR - more stuff in the header now & strings are from an localizable resource :)
 
@@ -866,7 +1073,7 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 	MoveTo( 5, r->top + HeaderHeight - DescendHeight - 5 );
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 	
-	if( ctHdl )
+	if( ctHdl )	// reset colors to known state
 	{
 		RGBForeColor( &black );
 		RGBBackColor( &white );
@@ -874,39 +1081,41 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 }
 
 /*** DrawFooter ***/
+// only used when printing
+// LR: 1.7 - use TextUtils to get date/time strings in user preferred format!
 void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 {
-//	only used when printing
-	unsigned long	tim;
-	DateTimeRec		dat;
-	Str31			fileName, fmtStr;
+	unsigned long	dt;
+	Str63	s1, s2;
 
 	TextFont( fontID );
 	TextSize( 9 );
 	TextFace( normal );
 	TextMode( srcCopy );
 
-	GetDateTime( &tim );
-	SecondsToDate( tim, &dat );
-
+	// Draw seperator line (seperates footer from body)
 	MoveTo( r->left, r->top );
 	LineTo( r->right, r->top );
 
-	sprintf( (char *) g.buffer, "%02d/%02d/%02d %02d:%02d", dat.month, dat.day, dat.year-1900, dat.hour, dat.minute );
-
-	MoveTo( 20, r->top+FooterHeight-DescendHeight-2 );
+	// Draw Date & Time on left edge of footer
+	GetDateTime( &dt );
+	DateString( dt, abbrevDate, s1, NULL );	//LR: 1.7 - get date/time strings as users wants them
+	TimeString( dt, false, s2, NULL );
+	sprintf( (char *)g.buffer, "%.*s %.*s", (int)s1[0], (char *)&s1[1], (int)s2[0], (char *)&s2[1] );
+	MoveTo( 10, r->top+FooterHeight-DescendHeight-2 );
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 
-	GetWTitle( dWin->oWin.theWin, fileName );
-	GetIndString( fmtStr, strHeader, HD_Footer );
-	CopyPascalStringToC( fmtStr, (char *)fmtStr );
-	sprintf( (char *) g.buffer, "%s: %.*s", (char *)fmtStr, (int)fileName[0], (char *)&fileName[1] );
-	MoveTo( ( r->left+r->right )/2 - TextWidth( g.buffer, 0, strlen( (char *) g.buffer ) )/2, r->top+FooterHeight-DescendHeight-2 );
-	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
-	
-	sprintf( (char *) g.buffer, "%d of %d", pageNbr, nbrPages );
-	MoveTo( r->right - TextWidth( g.buffer, 0, strlen( (char *) g.buffer ) ) - 8, r->top+FooterHeight-DescendHeight-2 );
-	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
+	// Draw filename in middle of footer
+	GetIndString( s1, strHeader, HD_Footer );
+	GetWTitle( dWin->oWin.theWin, s2 );
+	sprintf( (char *)g.buffer, "%.s %.*s", (int)s1[0], (char *)&s1[1], (int)s2[0], (char *)&s2[1] );
+	MoveTo( ( r->left + r->right ) / 2 - TextWidth( g.buffer, 0, strlen((char *)g.buffer )) / 2, r->top + FooterHeight - DescendHeight - 2 );
+	DrawText( g.buffer, 0, strlen( (char *)g.buffer ) );
+
+	// Draw page # & count on right edge of footer
+	sprintf( (char *)g.buffer, "%d of %d", pageNbr, nbrPages );
+	MoveTo( r->right - TextWidth( g.buffer, 0, strlen((char *)g.buffer )) - 8, r->top + FooterHeight - DescendHeight - 2 );
+	DrawText( g.buffer, 0, strlen( (char *)g.buffer ) );
 }
 
 /*** DRAW DUMP ***/
@@ -924,7 +1133,6 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	TextSize( 9 );
 	TextFace( normal );
 	TextMode( srcCopy );
-// 	TextMode( srcOr );	// LR: don't overwrite our cool colors! // bug: could be improved for speed
 
 	x = StringWidth( "\p 000000: " );
 
@@ -1035,6 +1243,7 @@ void DrawPage( EditWindowPtr dWin )
 {
 	GrafPtr			savePort;
 	Rect			r;
+	PixMapHandle	thePixMapH; // sel, for (un)LockPixels
 // LR: 1.5 offscreen fix!	BitMap			realBits;
 
 #if PROFILE
@@ -1047,50 +1256,56 @@ void DrawPage( EditWindowPtr dWin )
 // LR: offscreen fix!	SetPortBits( ( BitMap * ) &dWin->pixMap );	// LR: -- pixmap change
 
 	GetPort( &savePort );
-	SetPort( ( GrafPtr )dWin->offscreen );
-
-	GetPortBounds( dWin->offscreen, &r );
-	r.right -= ( SBarSize - 1 );
-
-/* LR: 1.5 - no longer possible
-	// don't draw outside our offscreen pixMap!
-	if( r.right - r.left > ( *dWin->offscreen->portPixMap )->bounds.right - ( *dWin->offscreen->portPixMap )->bounds.left ||
-		r.bottom - r.top > ( *dWin->offscreen->portPixMap )->bounds.bottom - ( *dWin->offscreen->portPixMap )->bounds.top )
+	thePixMapH = GetGWorldPixMap( dWin->offscreen );
+	if ( LockPixels( thePixMapH ) )
 	{
-// 		DebugStr( "\pOy!" );
-		return;
+		SetPort( ( GrafPtr )dWin->offscreen );
+
+		GetPortBounds( dWin->offscreen, &r );
+		r.right -= ( SBarSize - 1 );
+
+	/* LR: 1.5 - no longer possible
+		// don't draw outside our offscreen pixMap!
+		if( r.right - r.left > ( *dWin->offscreen->portPixMap )->bounds.right - ( *dWin->offscreen->portPixMap )->bounds.left ||
+			r.bottom - r.top > ( *dWin->offscreen->portPixMap )->bounds.bottom - ( *dWin->offscreen->portPixMap )->bounds.top )
+		{
+	// 		DebugStr( "\pOy!" );
+			return;
+		}
+	*/
+
+	// LR: 1.5 now done in theWin update!	DrawHeader( dWin, &r );
+
+		r.top += HeaderHeight;		// NS: don't erase header
+	// LR: 1.5	r.bottom -= ( SBarSize - 1 );
+
+		if( ctHdl )
+			RGBBackColor( &( *ctHdl )->body );
+		else
+		{
+			ForeColor( blackColor );
+			BackColor( whiteColor );
+		}
+
+		EraseRect( &r );
+
+		r.top += ( TopMargin + LineHeight - DescendHeight );
+	// NS: no bottom bar anymore	r.bottom -= ( SBarSize + DescendHeight + BotMargin );
+	// 	r.bottom -= ( DescendHeight + BotMargin );
+
+		DrawDump( dWin, &r, dWin->editOffset, dWin->fileSize );
+
+		if( ctHdl )
+		{
+			RGBForeColor( &black );
+			RGBBackColor( &white );
+		}
+
+			UnlockPixels( thePixMapH ); // sel
+
+	// LR: offscreen fix!	SetPortBits( &realBits );
+		SetPort( savePort );
 	}
-*/
-
-// LR: 1.5 now done in theWin update!	DrawHeader( dWin, &r );
-
-	r.top += HeaderHeight;		// NS: don't erase header
-// LR: 1.5	r.bottom -= ( SBarSize - 1 );
-
-	if( ctHdl )
-		RGBBackColor( &( *ctHdl )->body );
-	else
-	{
-		ForeColor( blackColor );
-		BackColor( whiteColor );
-	}
-
-	EraseRect( &r );
-
-	r.top += ( TopMargin + LineHeight - DescendHeight );
-// NS: no bottom bar anymore	r.bottom -= ( SBarSize + DescendHeight + BotMargin );
-// 	r.bottom -= ( DescendHeight + BotMargin );
-
-	DrawDump( dWin, &r, dWin->editOffset, dWin->fileSize );
-
-	if( ctHdl )
-	{
-		RGBForeColor( &black );
-		RGBBackColor( &white );
-	}
-
-// LR: offscreen fix!	SetPortBits( &realBits );
-	SetPort( savePort );
 
 #if PROFILE
 	_profile = 0;
@@ -1119,36 +1334,40 @@ void UpdateOnscreen( WindowRef theWin )
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	PixMapHandle thePixMap = GetPortPixMap( dWin->offscreen );
 
-	GetPortBounds( dWin->offscreen, &r1 );
-	GetWindowPortBounds( theWin, &r2 );
+	if ( LockPixels( thePixMap ) )
+	{
+		GetPortBounds( dWin->offscreen, &r1 );
+		GetWindowPortBounds( theWin, &r2 );
 
-	GetPort( &oldPort );
-	SetPortWindowPort( theWin );
+		GetPort( &oldPort );
+		SetPortWindowPort( theWin );
 
-	g.cursorFlag = false;
+		g.cursorFlag = false;
 
-	// LR: Header drawn here due to overlapping vScrollBar
-	r2.bottom = r2.top + HeaderHeight - 1;
-	DrawHeader( dWin, &r2 );
+		// LR: Header drawn here due to overlapping vScrollBar
+		r2.bottom = r2.top + HeaderHeight - 1;
+		DrawHeader( dWin, &r2 );
 
-	// LR: adjust for scrollbar & header
-	GetWindowPortBounds( theWin, &r2 );
-	r2.right -= SBarSize - 1;
-	r2.top += (HeaderHeight);
+		// LR: adjust for scrollbar & header
+		GetWindowPortBounds( theWin, &r2 );
+		r2.right -= SBarSize - 1;
+		r2.top += (HeaderHeight);
 
-	SectRect( &r1, &r2, &r3 );
+		SectRect( &r1, &r2, &r3 );
 
-// LR: offscreen fix!	CopyBits( ( BitMap * ) &dWin->pixMap, &theWin->portBits, &r3, &r3, srcCopy, 0L );	// LR: -- PixMap change
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-	CopyBits( GetPortBitMapForCopyBits( dWin->offscreen ), GetPortBitMapForCopyBits( GetWindowPort( theWin ) ), &r3, &r3, srcCopy, 0L );
-#else
-	CopyBits( ( BitMap * ) &( dWin->offscreen )->portPixMap, &theWin->portBits, &r3, &r3, srcCopy, 0L );
-#endif
+	// LR: offscreen fix!	CopyBits( ( BitMap * ) &dWin->pixMap, &theWin->portBits, &r3, &r3, srcCopy, 0L );	// LR: -- PixMap change
+	#if TARGET_API_MAC_CARBON	// LR: v1.6
+		CopyBits( GetPortBitMapForCopyBits( dWin->offscreen ), GetPortBitMapForCopyBits( GetWindowPort( theWin ) ), &r3, &r3, srcCopy, 0L );
+	#else
+		CopyBits( ( BitMap * ) &( dWin->offscreen )->portPixMap, &theWin->portBits, &r3, &r3, srcCopy, 0L );
+	#endif
 
-	if( dWin->endSel > dWin->startSel &&	dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset+( dWin->linesPerPage<<4 ) ) 
-		InvertSelection( dWin );
+		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage << 4) ) 
+			InvertSelection( dWin );
 
-	SetPort( oldPort );
+		UnlockPixels( thePixMap );
+		SetPort( oldPort );
+	}
 }
 
 /*** MY IDLE ***/
@@ -1609,13 +1828,17 @@ void InvertSelection( EditWindowPtr	dWin )
 /*** PRINT WINDOW ***/
 void PrintWindow( EditWindowPtr dWin )
 {
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-	#pragma unused( dWin )
+#if TARGET_API_MAC_CARBON	// SEL: 1.7 - carbon printing
+	// Carbon session based printing variables 
+	OSStatus    		status;
+	PMPrintSession	printSession;
+	PMPrintSettings	printSettings;
+	PMPageFormat		pageFormat;
 #else
-	TPPrPort	printPort;
-	TPrStatus	prStatus;
-	Boolean		ok;
-	Rect		r;
+	Boolean			ok;
+	Rect				r;
+	TPPrPort		printPort;
+	TPrStatus		prStatus;
 	short		pageNbr, startPage, endPage, nbrPages;
 	long		startAddr, endAddr, addr;
 	short		linesPerPage;
@@ -1625,13 +1848,93 @@ void PrintWindow( EditWindowPtr dWin )
 
 	GetPort( &savePort );
 
-#if TARGET_API_MAC_CARBON	// LR: v1.6
-// bug: Printing!
-#else
+#if TARGET_API_MAC_CARBON	// SEL: 1.7 - implemented Carbon printing
+
+	// make a new printing session
+	status = PMCreateSession(&printSession);
+	if ( noErr != status )
+	{
+		PostPrintingErrors(status);
+		return;
+	}
+	if ( kPMNoPageFormat == g.pageFormat )
+	{
+		status = PMCreatePageFormat(&pageFormat);
+		//  Note that PMPageFormat is not session-specific, but calling
+		//  PMSessionDefaultPageFormat assigns values specific to the printer
+		//  associated with the current printing session.
+		if ((status == noErr) && (pageFormat != kPMNoPageFormat))
+		{
+			status = PMSessionDefaultPageFormat(printSession, pageFormat);
+		}
+	}
+	else
+	{ // already have a pageFormat, prolly because the user selected Page Setup
+		status = PMCreatePageFormat(&pageFormat);
+		status = PMCopyPageFormat(g.pageFormat, pageFormat);
+		if ( noErr == status )
+		{
+			status = PMSessionValidatePageFormat(printSession, pageFormat, kPMDontWantBoolean);
+		}
+	}
+	if ( noErr != status )
+	{
+		PostPrintingErrors(status);
+		(void)PMRelease(printSession);
+		return;
+	}
+	if ( kPMNoPrintSettings != g.printSettings )
+	{
+		status = PMCreatePrintSettings(&printSettings);
+		status = PMCopyPrintSettings(g.printSettings, printSettings);
+	}
+	else
+	{
+		printSettings = kPMNoPrintSettings;
+	}
+	if ( noErr != status )
+	{
+		PostPrintingErrors(status);
+		(void)PMRelease(pageFormat);
+		(void)PMRelease(printSession);
+		return;
+	}
+  //  Display the Print dialog.
+	status = _doPrintDialog(printSession, pageFormat, &printSettings);
+	if  ( kPMCancel != status )
+	{ // user did not cancel the print dialog box
+		if ( ( noErr == status ) )
+		{ //  Execute the print loop.
+			_doPrintLoop(printSession, pageFormat, printSettings, dWin);
+		}
+		else
+		{
+			PostPrintingErrors(status);
+			return;
+		}
+	}
+
+	//  Release the PageFormat and PrintSettings objects.  PMRelease decrements the
+	//  ref count of the allocated objects.  We let the Printing Manager decide when
+	//  to release the allocated memory.
+	if (pageFormat != kPMNoPageFormat)
+	{
+		(void)PMRelease(pageFormat);
+	}
+	if (printSettings != kPMNoPrintSettings)
+	{
+		(void)PMRelease(printSettings);
+	}
+	//  Terminate the current printing session.
+	(void)PMRelease(printSession);
+
+#else	// non-Carbon printing
+
 	PrOpen();
 
 	ok = PrValidate( g.HPrint );
-	ok = PrJobDialog( g.HPrint );
+	if( ok )
+		ok = PrJobDialog( g.HPrint );
 	if( ok )
 	{
 		if( dWin->startSel == dWin->endSel )
@@ -1683,7 +1986,7 @@ void PrintWindow( EditWindowPtr dWin )
 	
 				r.top = r.bottom + DescendHeight + BotMargin;
 				r.bottom = r.top + FooterHeight;
-				DrawDump( dWin, &r, pageNbr, nbrPages );
+				DrawFooter( dWin, &r, pageNbr, nbrPages );	//SEL: 1.7 - fix Lane's DrawDump usage (what was I thinking? P)
 			}
 
 			addr += linesPerPage*16;
@@ -2256,7 +2559,7 @@ void SaveAsContents( WindowRef theWin )
 	OSStatus error = noErr;
 	NavReplyRecord		reply;
 	NavDialogOptions	dialogOptions;
- 	NavEventUPP			eventProc = NewNavEventUPP( NavEventFilter );
+ 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
@@ -2354,42 +2657,4 @@ void UpdateEditWindows( void )
 		}
 		theWin = GetNextWindow( theWin );
 	}
-}
-
-// NS: v1.6.6, event filters for navigation services
-
-/*** NAV SERVICES EVENT FILTER ***/
-pascal void NavEventFilter( NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, NavCallBackUserData callBackUD )
-{
-	#pragma unused( callBackUD )
-//	WindowRef theWindow = (WindowRef) callBackParms->eventData.event->message;
-	WindowRef theWindow = (WindowRef) callBackParms->eventData.eventDataParms.event->message;
-	switch( callBackSelector )
-	{
-		case kNavCBEvent:
-//			switch( callBackParms->eventData.event->what )
-			switch( callBackParms->eventData.eventDataParms.event->what )
-			{
-				case updateEvt:
-/*					RgnHandle updateRgn;
-					GetWindowRegion( theWindow, kWindowUpdateRgn, updateRgn );
-					updateWindow( theWindow, updateRgn );
-*/					break;
-			}
-			break;
-	}
-}
-
-/*** NAV SERVICES PREVIEW FILTER ***/
-pascal Boolean NavPreviewFilter( NavCBRecPtr callBackParms, void *callBackUD )
-{
-	#pragma unused( callBackParms, callBackUD )
-	return false;
-}
-
-/*** NAV SERVICES FILE FILTER ***/
-pascal Boolean NavFileFilter( AEDesc* theItem, void* info, void *callBackUD, NavFilterModes filterMode )
-{
-	#pragma unused( theItem, info, callBackUD, filterMode )
-	return true;
 }

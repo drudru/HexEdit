@@ -12,12 +12,12 @@
  * The Original Code is Copyright 1993 Jim Bumgardner.
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
- * Portions created by Lane Roathe are
+ * Portions created by Lane Roathe (LR) are
  * Copyright (C) Copyright © 1996-2000.
  * All Rights Reserved.
  * 
  * Contributor(s):
- *		Nick Shanks
+ *		Nick Shanks (NS)
  */
 
 #include "HexEdit.h"
@@ -30,5 +30,9 @@ OSStatus SmartEnableMenuItem( MenuRef menu, short item, short ok );
 OSStatus AdjustMenus( void );
 short GetColorMenuResID( short menuItem );
 OSStatus HandleMenu( long mSelect );
+
+#if TARGET_API_MAC_CARBON
+void PostPrintingErrors( OSStatus status );	// SEL: 1.7 - carbon printing
+#endif
 
 #endif
