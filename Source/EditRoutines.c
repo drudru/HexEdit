@@ -716,20 +716,23 @@ void PasteSelection( EditWindowPtr dWin )
 {
 	MyGetScrap( dWin );	// LR: v1.6.5 get scrap only as needed
 
-	// LR: v1.6.5 moved from PasteOperation to avoid bad Undo
-	// Hex Pasting Mode for Outside Pastes
-	if( EM_Hex == dWin->editMode && ( *gScrapChunk )->lastCtr == 1 )
+	if( gScrapChunk )	// LR: 1.7 due to bug (?) in Carbon, scrap may not be available!
 	{
+		// LR: v1.6.5 moved from PasteOperation to avoid bad Undo
+		// Hex Pasting Mode for Outside Pastes
+		if( EM_Hex == dWin->editMode && ( *gScrapChunk )->lastCtr == 1 )
+		{
 // LR: v1.6.5 failure not a problem!		if( !HexConvertScrap( dWin, gScrapChunk ) ) return;
-		HexConvertScrap( dWin, gScrapChunk );
+			HexConvertScrap( dWin, gScrapChunk );
+		}
+
+		// Do actual paste
+		RememberOperation( dWin, EO_Paste, &gUndo );
+
+		PasteOperation( dWin, gScrapChunk );
+		dWin->dirtyFlag = true;
+		ScrollToSelection( dWin, dWin->startSel, true, false );
 	}
-
-	// Do actual paste
-	RememberOperation( dWin, EO_Paste, &gUndo );
-
-	PasteOperation( dWin, gScrapChunk );
-	dWin->dirtyFlag = true;
-	ScrollToSelection( dWin, dWin->startSel, true, false );
 }
 
 /*** HEX CONVERT SCRAP ***/
