@@ -1,5 +1,12 @@
 HexEdit Revision History
 
+12/5/02 1.86
+Enhanced selection hilight code to work more like finder & w/all colors
+Cut/Copy/Paste/Clear menu items are now availabe in dialogs (ie, Find)
+Cut/Copy/Paste keys work again in dialogs under Mac OS X
+Fixed ability to cancel search/compare ops (broke by speed increase!)
+
+
 10/31/02 1.85
 re-wrote the search routine to get a 100x speedup! (650MB search in 1.25 minues vs 120+)
 	(now manages chunks directly, and chunks are now 128K instead of 30K each)
@@ -27,6 +34,7 @@ Only use AppearanceManager 1.1 (from Mac OS 8.5 on) which have functionality we 
 Color menu checkmark now shows color of current window (instead of global setting)
   (also fixes bug of double-selecting a color turning checkmark off)
 No more "default" color, that's now Ocean and "Aqua" is now the default (much nicer scheme!)
+
 
 04/29/02 1.80
 Removed per-window offscreen drawing surface
