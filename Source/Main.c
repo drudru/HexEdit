@@ -560,11 +560,12 @@ static pascal OSErr _compareEventHandler( const AppleEvent *theEvent, AppleEvent
 		error = OpenEditWindow( &oldSpec, kWindowCompareBtm, false );
 		if( !error )
 		{
-			if( gPrefs.searchType == CM_Match )
+			result = PerformTextCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
+/* 181			if( gPrefs.searchType == CM_Match )
 				result = PerformTextMatchCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
 			else
 				result = PerformTextDifferenceCompare( (EditWindowPtr) GetWRefCon( CompWind1 ), (EditWindowPtr) GetWRefCon( CompWind2 ) );
-
+*/
 			if( result )
 			{
 				error = AEPutParamPtr( reply, keyDirectObject, typeBoolean, &result, sizeof( result ) );

@@ -120,6 +120,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 {
 	short		ch, matchIdx;
 	long		addr, matchAddr, adjust;
+	register 	EditChunk **cc;
 
 	// LR: v1.6.5 if not passed a window, get first one
 	if( !dWin )
@@ -141,6 +142,15 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 	matchIdx = 0;
 	addr += adjust;
 
+	//LR 181 -- we handle the chucks ourself to speed up searching!
+	//			get the chunk for the current address & load it.
+
+	cc = GetChunkByAddr( dWin, addr );
+	if( !cc )
+		goto Failure;	// should never happen, but...
+
+	if( !(*cc)->loaded ) LoadChunk( dWin, cc );
+
 	// LR: 1.72 -- make sure we are searching in OK memory (ie, empty window bug fix)
 	while( addr >= 0 && addr < dWin->fileSize )
 	{
@@ -150,7 +160,8 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 				break;
 		}
 
-		ch = GetByte( dWin, addr );
+//LR 181		ch = GetByte( dWin, addr );
+		ch = (Byte) (*(*cc)->data)[addr - (*cc)->addr];
 		if( !gPrefs.searchCase && gPrefs.searchMode != EM_Hex )
 			ch = toupper( ch );
 		if( ch == g.searchBuffer[matchIdx+1] )
@@ -169,17 +180,33 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 			else
 				continue;
 		}
-		else
+		else if( matchIdx )	// if we were in a match, back it out!
 		{
-			if( matchIdx ) {
-				matchIdx = 0;
-				addr = matchAddr;
-			}
+			matchIdx = 0;
+			addr = matchAddr;
 		}
 		addr += adjust;
+
+		//LR 181 -- OK, here we must handle moving to a new chunk if outside current one
+		if( addr < (*cc)->addr )
+		{
+			UnloadChunk( dWin, cc, true );
+			cc = (*cc)->prev;
+			goto newchunk;
+		}
+		else if( addr >= (*cc)->addr + (*cc)->size )
+		{
+			UnloadChunk( dWin, cc, true );
+			cc = (*cc)->next;
+newchunk:
+			if( !cc )
+				goto Failure;
+
+			LoadChunk( dWin, cc );	// no check, most likely not loaded, and checked in routine anyway
+		}
 	}
 
-//LR 175 Failure:
+Failure:
 	SysBeep( 1 );
 	MySetCursor( C_Arrow );
 	return( false );
