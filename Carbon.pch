@@ -22,8 +22,6 @@
 
 #pragma precompile_target "HexEditCarbon.mch"
 
-/* Now just include the "MacHeaders.c" source file ... */
-
 #pragma once on
 
 #define TARGET_API_MAC_CARBON 			1
@@ -33,4 +31,4 @@
 	#define DEBUG 1
 #endif
 
-#include "MacHeaders.c"
+#include "MacHeadersCarbon"		//LR 1.72 -- include precompiled headers, much faster :)
