@@ -122,9 +122,27 @@ static void _setWindowTitle( EditWindowPtr dWin )
 
 	// LR: 1.66 make sure the name is good (for instance "icon/r" is bad!)
 	l = (int)dWin->fsSpec.name[0];
+
+	//LR 181 -- change first char if bad for menus
+	if( '(' == dWin->fsSpec.name[0] )
+		dWin->fsSpec.name[0] = '{';		// don't disable item
+
+	if( '<' == dWin->fsSpec.name[0] )
+		dWin->fsSpec.name[0] = '²';		// don't disable menu
+
+	if( '/' == dWin->fsSpec.name[0] )
+		dWin->fsSpec.name[0] = '|';		// don't create shortcut
+
+	if( '-' == dWin->fsSpec.name[0] )
+		dWin->fsSpec.name[0] = 'Ñ';		// don't create seperator line
+
+	if( ';' == dWin->fsSpec.name[0] )
+		dWin->fsSpec.name[0] = ':';		// not sure what it does, but ; is bad!
+
+	//LR 1.72 -- don't copy bad chars (can cause menu to mess up!)
 	for( i = 1, j= 1; i <= l; i++ )
 	{
-		if( dWin->fsSpec.name[i] >= ' ' && '!' != dWin->fsSpec.name[i] && '^' != dWin->fsSpec.name[i] )	//LR 1.72 -- don't copy bad chars (can cause menu to mess up!)
+		if( dWin->fsSpec.name[i] >= ' ' && '!' != dWin->fsSpec.name[i] && '^' != dWin->fsSpec.name[i] )
 			wintitle[j++] = dWin->fsSpec.name[i];
 	}
 
