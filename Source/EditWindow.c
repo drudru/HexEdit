@@ -323,6 +323,161 @@ static GWorldPtr _newCOffScreen( short width, short height )
 	return theGWorld;
 }
 
+/*** ENSURE NAME IS UNIQUE ***/	
+// LR: complete re-write as this function used to create bogus names and overwrite memory
+// LR: 1.66 -- another rewrite, to create more "readable" names
+static void _ensureNameIsUnique( FSSpec *tSpec )
+{
+	OSStatus err;
+	FInfo fInfo;
+	int i = tSpec->name[0], num = 1;
+
+	// Weird compiler bug, having the OS call in the while loop can caues it to fail w/o error
+	do
+	{
+		err = HGetFInfo( tSpec->vRefNum, tSpec->parID, tSpec->name, &fInfo );
+		if( err != fnfErr )
+		{
+			Str31 numstr;
+
+			NumToString( num++, numstr );	// get string equiv
+
+			if( i > 30 - numstr[0] )
+				i = 30 - numstr[0];		// don't make too long of a name
+
+			tSpec->name[i + 1] = ' ';
+			BlockMoveData( numstr + 1, &tSpec->name[i + 2], numstr[0] );
+
+			tSpec->name[0] = i + 1 + numstr[0];
+		}
+	}while( err != fnfErr && i );
+}
+
+/*** Set the window title (making sure it's good ***/	
+static void _setWindowTitle( EditWindowPtr dWin )
+{
+	Str255 wintitle;		// NOTE: static so we can pass back pointer (ie, it's not on stack!)
+
+	int i,l;
+
+	// LR: 1.66 make sure the name is good (for instance "icon/r" is bad!)
+	l = (int)dWin->fsSpec.name[0];
+	for( i = 1; i <= l; i++ )
+	{
+		if( dWin->fsSpec.name[i] < ' ' )	// truncate name at fist bad char
+			break;
+		else
+			wintitle[i] = dWin->fsSpec.name[i];
+	}
+
+	// LR: 1.7 Append fork in use to title
+	if( i < 255 - 8 )
+	{
+		if( FT_Data == dWin->fork )
+			BlockMoveData( " - Data", &wintitle[i], 7 );
+		else
+			BlockMoveData( " - Rrsc", &wintitle[i], 7 );
+
+		wintitle[0] = i + 6;
+	}
+
+	SetWTitle( dWin->oWin.theWin, wintitle );
+
+	// NS: 1.6.6 add window to window menu
+	MacAppendMenu( GetMenuHandle(kWindowMenu), wintitle );
+}
+
+/*** SETUP NEW EDIT WINDOW ***/
+// LR: 1.7 - static, and remove title (always fsSpec->name)
+
+static OSStatus _setupNewEditWindow( EditWindowPtr dWin )
+{
+	WindowRef theWin;
+	ObjectWindowPtr objectWindow;
+	Rect r;
+
+	theWin = InitObjectWindow( kMainWIND, (ObjectWindowPtr) dWin, false );
+	if( !theWin )
+		ErrorAlert( ES_Stop, errMemory );
+
+	// LR:	Hack for comparing two files
+	if( CompareFlag == 1 )
+	{
+		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight / 2 - 64 );
+		CompWind1 = theWin;
+	}
+	else if( CompareFlag == 2 )
+	{
+		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight / 2 - 64 );
+		MoveWindow( theWin, 14, g.maxHeight/2, true );
+		CompWind2 = theWin;
+	}
+	else
+		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight - 64 );
+
+	// Check for best window size
+	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
+		r.bottom = (((dWin->fileSize / kBytesPerLine) + 1) * kLineHeight) + kHeaderHeight;
+//LR 1.7		r.bottom = (kLineHeight * (((dWin->linesPerPage - 1) * kBytesPerLine) - dWin->fileSize)) / kLineHeight;
+
+	if( r.bottom < (kHeaderHeight + (kLineHeight * 5)) )
+		r.bottom = (kHeaderHeight + (kLineHeight * 5));
+
+	SizeWindow( theWin, r.right, r.bottom, true );
+
+	// LR: 1.7 set window title & get text for window menu
+	_setWindowTitle( dWin );
+
+	objectWindow = (ObjectWindowPtr)dWin;
+	
+	objectWindow->Draw			= MyDraw;
+	objectWindow->Idle			= MyIdle;
+	objectWindow->HandleClick	= MyHandleClick;
+	objectWindow->Dispose		= DisposeEditWindow;
+	objectWindow->ProcessKey	= MyProcessKey;
+	objectWindow->Save			= SaveContents;
+	objectWindow->SaveAs		= SaveAsContents;
+	objectWindow->Revert		= RevertContents;
+	objectWindow->Activate		= MyActivate;
+	
+// LR: 1.5	SetRect( &offRect, 0, 0, kHexWindowWidth, g.maxHeight );
+
+	if( prefs.useColor )
+		dWin->csResID = prefs.csResID;	// LR: 1.5 - color selection
+	else
+		dWin->csResID = -1;	// LR: if created w/o color then offscreen is 1 bit, NO COLOR possible!
+
+	// Make it the current grafport
+	SetPortWindowPort( theWin );
+	
+	dWin->offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
+	if( !dWin->offscreen )
+			ErrorAlert( ES_Stop, errMemory );
+
+	// Show the theWin
+	ShowWindow( theWin );
+
+	SetupScrollBars( dWin );
+
+	GetWindowPortBounds( theWin, &r );
+
+//LR: 1.7 -fix lpp calculation!	dWin->linesPerPage = ( r.bottom - TopMargin - BotMargin - ( kHeaderHeight-1 ) ) / kLineHeight + 1;
+	dWin->linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - kHeaderHeight) / kLineHeight;
+	dWin->startSel = dWin->endSel = 0L;
+	dWin->editMode = EM_Hex;
+
+	//LR: 1.7 - what was this??? ((WStateData *) *((WindowPeek)theWin)->dataHandle)->stdState.left + kHexWindowWidth;
+
+	LocalToGlobal( (Point *)&r.top );
+	LocalToGlobal( (Point *)&r.bottom );
+
+	r.bottom /= 2;		// zoom'd state is 1/2 of normal (actually the reverse of standard zoom!)
+
+	SetWindowStandardState( theWin, &r );
+
+	return noErr;
+}
+
 
 /*** INITIALIZE EDITOR ***/
 void InitializeEditor( void )
@@ -395,106 +550,6 @@ void CleanupEditor( void )
 	}
 }
 
-/*** SETUP NEW EDIT WINDOW ***/
-OSStatus SetupNewEditWindow( EditWindowPtr dWin, StringPtr title )
-{
-	WindowRef theWin;
-	ObjectWindowPtr objectWindow;
-	Rect r;
-	int l;
-
-	theWin = InitObjectWindow( kMainWIND, (ObjectWindowPtr) dWin, false );
-	if( !theWin )
-		ErrorAlert( ES_Stop, errMemory );
-
-	// LR:	Hack for comparing two files
-	if( CompareFlag == 1 )
-	{
-		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight / 2 - 64 );
-		CompWind1 = theWin;
-	}
-	else if( CompareFlag == 2 )
-	{
-		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight / 2 - 64 );
-		MoveWindow( theWin, 14, g.maxHeight/2, true );
-		CompWind2 = theWin;
-	}
-	else
-		SetRect( &r, 0, 0, kHexWindowWidth, g.maxHeight - 64 );
-
-	// Check for best window size
-	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
-		r.bottom = (((dWin->fileSize / kBytesPerLine) + 1) * kLineHeight) + kHeaderHeight;
-//LR 1.7		r.bottom = (kLineHeight * (((dWin->linesPerPage - 1) * kBytesPerLine) - dWin->fileSize)) / kLineHeight;
-
-	if( r.bottom < (kHeaderHeight + (kLineHeight * 5)) )
-		r.bottom = (kHeaderHeight + (kLineHeight * 5));
-
-	SizeWindow( theWin, r.right, r.bottom, true );
-
-	// LR: 1.66 make sure the name is good (for instance "icon/r" is bad!)
-	l = (int)title[0];
-	while( l )
-	{
-		if( title[l--] < ' ' )	// truncate name at fist bad char
-			title[0] = l;
-	}
-
-	SetWTitle( theWin, title );
-	
-	// NS: 1.6.6 add window to window menu
-	AppendMenu( GetMenuHandle(kWindowMenu), title );
-	
-	objectWindow = (ObjectWindowPtr)dWin;
-	
-	objectWindow->Draw			= MyDraw;
-	objectWindow->Idle			= MyIdle;
-	objectWindow->HandleClick	= MyHandleClick;
-	objectWindow->Dispose		= DisposeEditWindow;
-	objectWindow->ProcessKey	= MyProcessKey;
-	objectWindow->Save			= SaveContents;
-	objectWindow->SaveAs		= SaveAsContents;
-	objectWindow->Revert		= RevertContents;
-	objectWindow->Activate		= MyActivate;
-	
-// LR: 1.5	SetRect( &offRect, 0, 0, kHexWindowWidth, g.maxHeight );
-
-	if( prefs.useColor )
-		dWin->csResID = prefs.csResID;	// LR: 1.5 - color selection
-	else
-		dWin->csResID = -1;	// LR: if created w/o color then offscreen is 1 bit, NO COLOR possible!
-
-	// Make it the current grafport
-	SetPortWindowPort( theWin );
-	
-	dWin->offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
-	if( !dWin->offscreen )
-			ErrorAlert( ES_Stop, errMemory );
-
-	// Show the theWin
-	ShowWindow( theWin );
-
-	SetupScrollBars( dWin );
-
-	GetWindowPortBounds( theWin, &r );
-
-//LR: 1.7 -fix lpp calculation!	dWin->linesPerPage = ( r.bottom - TopMargin - BotMargin - ( kHeaderHeight-1 ) ) / kLineHeight + 1;
-	dWin->linesPerPage = ((r.bottom - r.top) + (kLineHeight / 3) - kHeaderHeight) / kLineHeight;
-	dWin->startSel = dWin->endSel = 0L;
-	dWin->editMode = EM_Hex;
-
-	//LR: 1.7 - what was this??? ((WStateData *) *((WindowPeek)theWin)->dataHandle)->stdState.left + kHexWindowWidth;
-
-	LocalToGlobal( (Point *)&r.top );
-	LocalToGlobal( (Point *)&r.bottom );
-
-	r.bottom /= 2;		// zoom'd state is 1/2 of normal (actually the reverse of standard zoom!)
-
-	SetWindowStandardState( theWin, &r );
-
-	return noErr;
-}
-
 /*** NEW EDIT WINDOW ***/
 void NewEditWindow( void )
 {
@@ -529,14 +584,14 @@ void NewEditWindow( void )
 	}
 	GetIndString( workSpec.name, strFiles, FN_Untitled );
 //LR: 1.66	BlockMove( "\pUntitledw", workSpec.name, 10 );
-	EnsureNameIsUnique( &workSpec );
+	_ensureNameIsUnique( &workSpec );
 	HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
 	if( error != noErr )
 	{
 		ErrorAlert( ES_Caution, errCreate, error );
 		return;
 	}
-	error = HOpen( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
+	error = HOpenDF( workSpec.vRefNum, workSpec.parID, workSpec.name, fsRdWrPerm, &refNum );
 	if( error != noErr )
 	{
 		ErrorAlert( ES_Caution, errOpen, error );
@@ -551,7 +606,7 @@ void NewEditWindow( void )
 	dWin->creator = kAppCreator;
 	dWin->creationDate = 0L;
 
-	SetupNewEditWindow( dWin, workSpec.name );	//LR 1.66 "\pUntitled" );	// LR: 1.5 -make mashortenence easier!
+	_setupNewEditWindow( dWin );	//LR 1.66 "\pUntitled" );	// LR: 1.5 -make mashortenence easier!
 
 	dWin->firstChunk = NewChunk( 0L, 0L, 0L, CT_Unwritten );
 	dWin->curChunk = dWin->firstChunk;
@@ -736,7 +791,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 				ErrorAlert( ES_Caution, errCreate, error );
 				return error;
 			}
-			error = HOpen( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
+			error = HOpenDF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
 		}
 		if( error != noErr )
 		{
@@ -796,7 +851,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	else
 		workSpec.name[31] ^= 0x10;
 
-	EnsureNameIsUnique( &workSpec );
+	_ensureNameIsUnique( &workSpec );
 	error = HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
 	if( error != noErr )
 	{
@@ -825,7 +880,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, Boolean showerr )
 	dWin->fsSpec =
 	dWin->destSpec = *fsSpec;
 
-	error = SetupNewEditWindow( dWin, fsSpec->name );	// LR: 1.5 -make maintenence easier!
+	error = _setupNewEditWindow( dWin );	// LR: 1.5 -make maintenence easier!
 	if( !error )
 		LoadFile( dWin );
 
@@ -2299,36 +2354,6 @@ ErrorExit:
 	return error;
 }
 
-/*** ENSURE NAME IS UNIQUE ***/	
-// LR: complete re-write as this function used to create bogus names and overwrite memory
-// LR: 1.66 -- another rewrite, to create more "readable" names
-void EnsureNameIsUnique( FSSpec *tSpec )
-{
-	OSStatus err;
-	FInfo fInfo;
-	int i = tSpec->name[0], num = 1;
-
-	// Weird compiler bug, having the OS call in the while loop can caues it to fail w/o error
-	do
-	{
-		err = HGetFInfo( tSpec->vRefNum, tSpec->parID, tSpec->name, &fInfo );
-		if( err != fnfErr )
-		{
-			Str31 numstr;
-
-			NumToString( num++, numstr );	// get string equiv
-
-			if( i > 30 - numstr[0] )
-				i = 30 - numstr[0];		// don't make too long of a name
-
-			tSpec->name[i + 1] = ' ';
-			BlockMoveData( numstr + 1, &tSpec->name[i + 2], numstr[0] );
-
-			tSpec->name[0] = i + 1 + numstr[0];
-		}
-	}while( err != fnfErr && i );
-}
-
 /*** SAVE CONTENTS ***/
 void SaveContents( WindowRef theWin )
 {
@@ -2347,17 +2372,17 @@ void SaveContents( WindowRef theWin )
 		// Create temp file
 		tSpec = dWin->destSpec;
 
-		// If original file exists, write to temp folder
+		// If original file exists, write to temp file
 		if( dWin->refNum )
 		{
 			if( tSpec.name[0] < 31 )
 			{
 				tSpec.name[0]++;
-				tSpec.name[tSpec.name[0]] = 't';
+				tSpec.name[tSpec.name[0]] = '~';
 			}
 			else	tSpec.name[31] ^= 0x10;
 		}
-		EnsureNameIsUnique( &tSpec );
+		_ensureNameIsUnique( &tSpec );
 
 		HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
 		error = HCreate( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->creator, dWin->fileType );
@@ -2407,7 +2432,7 @@ void SaveContents( WindowRef theWin )
 		}
 		else
 		{
-			error = HOpen( tSpec.vRefNum, tSpec.parID, tSpec.name, fsWrPerm, &tRefNum );
+			error = HOpenDF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsWrPerm, &tRefNum );
 			if( error != noErr )
 			{
 				ErrorAlert( ES_Caution, errOpen, error );
@@ -2493,14 +2518,14 @@ void SaveContents( WindowRef theWin )
 		}
 		else
 		{
-			error = HOpen( tSpec.vRefNum, tSpec.parID, tSpec.name, fsRdPerm, &dWin->refNum );
+			error = HOpenDF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsRdPerm, &dWin->refNum );
 			if( error != noErr )
 				ErrorAlert( ES_Stop, errOpen, error );
 		}
 
 		// Reset Work File
 		dWin->fsSpec = dWin->destSpec;
-		SetWTitle( dWin->oWin.theWin, dWin->fsSpec.name );
+//LR: 1.7		SetWTitle( dWin->oWin.theWin, dWin->fsSpec.name );
 
 		dWin->workBytesWritten = 0L;
 		SetEOF( dWin->workRefNum, 0L );
@@ -2529,15 +2554,26 @@ DiskFull:
 /*** SAVE AS CONTENTS ***/
 void SaveAsContents( WindowRef theWin )
 {
+	short id;
+	Str255 title;
+	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+
+	// LR: 1.7 - must remove item so that if name changes we can add it back w/new name :)
+	GetWTitle( theWin, title );
+	id = GetWindowMenuItemID( title );
+	if( id )
+		DeleteMenuItem( GetMenuHandle(kWindowMenu), id );
+
 #if TARGET_API_MAC_CARBON	// LR: v1.6
+{
 	OSStatus error = noErr;
 	NavReplyRecord		reply;
 	NavDialogOptions	dialogOptions;
 //LR 1.7 unused 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
-	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-	
+
 	NavGetDefaultDialogOptions( &dialogOptions );
-	GetWTitle( theWin, dialogOptions.savedFileName );
+//LR: 1.7 not w/modified window titles!	GetWTitle( theWin, dialogOptions.savedFileName );
+	BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0] );
 	error = NavPutFile( NULL, &reply, &dialogOptions, NULL/*eventProc*/, kDefaultFileType, kAppCreator, NULL );
 	if( reply.validRecord || !error )
 	{
@@ -2557,22 +2593,27 @@ void SaveAsContents( WindowRef theWin )
 		NavDisposeReply( &reply );
 	}
 //LR 1.7	DisposeNavEventUPP( eventProc );
+}
 #else
+{
 	StandardFileReply	reply;
 	EditWindowPtr		dWin = (EditWindowPtr) GetWRefCon( theWin );
-	Str63				fileName, prompt;
+	Str63				/*fileName,*/ prompt;
 
-	GetWTitle( theWin, fileName );
+//LR: 1.7 not w/modified window titles!	GetWTitle( theWin, fileName );
 	GetIndString( prompt, strPrompt, 1 );
 	
-	StandardPutFile( prompt, fileName, &reply );
+	StandardPutFile( prompt, dWin->fsSpec.name, &reply );
 	if( reply.sfGood )
 	{
 		dWin->destSpec = reply.sfFile;
 		dWin->creationDate = 0;
 		SaveContents( theWin );
 	}
+}
 #endif
+
+	_setWindowTitle( dWin );	// LR: 1.7 - set window title, append window to menu
 }
 
 /*** REVERT CONTENTS ***/

@@ -75,7 +75,6 @@ typedef struct
 
 void InitializeEditor( void );
 void CleanupEditor( void );
-OSStatus SetupNewEditWindow( EditWindowPtr dWin, StringPtr title );
 GWorldPtr NewCOffScreen( short width, short height );
 void NewEditWindow( void );
 pascal short SourceDLOGHook( short item, DialogPtr theDialog );
@@ -104,7 +103,6 @@ void MyProcessKey( WindowRef theWin, EventRecord *er );
 void CursorOff( WindowRef theWin );
 void CursorOn( WindowRef theWin );
 OSStatus CopyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType );
-void EnsureNameIsUnique( FSSpec *tSpec );
 void SaveContents( WindowRef theWin );
 void SaveAsContents( WindowRef theWin );
 void RevertContents( WindowRef theWin );
