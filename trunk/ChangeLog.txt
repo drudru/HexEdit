@@ -7,6 +7,24 @@ This file will be culled to update the version history file for official release
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
 1.7
 
+2001-04-18 Lane Roathe <lane@roathe.com>
+Fixed printing
+Fixed menus not being set after AppleEvent opens, closes
+Navigation (open/save) dialogs no longer system modal
+Reset the cursor on entry to About dialog
+Renamed HiOrder ASCII to Show Extended Chars
+Fixed cursor selection
+Fixed printing (actually non-printing) of 0x7F chars
+Window menu updated after any open/close of editing window
+Fixed searches to look at EOF before starting, and >= instead of ==
+Pasting to Carbon build no longer crashes, but on entry can't paste (can w/switch)
+Added routine to set window name
+window names now include fork info (fixes window menu confusion bug as well)
+Removed fork info from header, replaced with selection length
+Check for cmd-. in file comparison
+Window proc is now 1031, not 8 (might not work for non-appearance systems)
+Removed DrawGrowIcon call in update, fixes very minor flash in updates
+
 2001-04-10 Lane Roathe <lane@roathe.com>
 Fixed window menu selection code to avoid crashing w/null access if window not found
 Created new routine to set window name
