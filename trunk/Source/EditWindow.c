@@ -1410,7 +1410,8 @@ void MyDraw( WindowRef theWin )
 {
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	DrawControls( theWin );
-//	DrawGrowIcon( theWin );
+	if( !g.useAppearance )	//LR 1.72 -- must call when not using Appearance
+		DrawGrowIcon( theWin );
 
 	// EraseRect( &theWin->portRect );
 	DrawPage( dWin );
