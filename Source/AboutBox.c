@@ -9,14 +9,16 @@
  * implied. See the License for the specific language governing
  * rights and limitations under the License.
  * 
- * The Original Code is Copyright 1993 Jim Bumgardner.
- * 
  * The Initial Developer of the Original Code is Lane Roathe
  * Portions created by Lane Roathe are
- * Copyright (C) Copyright © 1996-2001.
+ * Copyright (C) Copyright © 1996-2002.
  * All Rights Reserved.
- * 
+ *
+ * Modified: $Date$
+ * Revision: $Id$
+ *
  * Contributor(s):
+ *		Lane Roathe
  *		Greg Branche
  */
 
@@ -31,16 +33,10 @@
 
 static TEHandle	hTE;
 static short endText;
-static unsigned long prevTicks;
+static long long prevTime;
 
-//LR 1.75 -- only bad on MacOS X, and the PPC version is default in OS 8/9
-#define SCROLLDELAY 3
-
-#if TARGET_API_MAC_CARBON	//LR 1.76 :slow enough in OS X!
-	#define SCROLLSPEED -3
-#else
-	#define SCROLLSPEED -1
-#endif
+//LR 1.76 -- rewrite entire text scroll routine to do speed based on pixels per second!
+#define SCROLLPIXELSPERSECOND 5.0
 
 //LR 1.73 -- make code more readable
 #ifdef __MC68K__
@@ -63,25 +59,36 @@ pascal void DrawTEText( DialogPtr whichDialog, short itemNr )
 //	dialog filter for about box (used to scroll TE contents)
 pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
 {
-#if !TARGET_API_MAC_CARBON	//LR 1.76 :slow enough in OS X!
-	if( TickCount() - prevTicks >= SCROLLDELAY )		// don't scroll too fast!
-#endif
+	long long curTime;
+	double elapsed;
+	int pixels;
+
+	// Get elapsed time in seconds. (makes the constant definition easier to set)
+	Microseconds( (UnsignedWide *)&curTime );
+	elapsed = (double)(prevTime - curTime);		// get's us a negative, which is what we want!
+	elapsed /= 10000.0;
+
+	// how many pixels should we scroll?
+	// In Classic this will usually be 0 or 1, in X is normally 5 or more!
+	pixels = (int)(elapsed / (60.0 / SCROLLPIXELSPERSECOND));
+	if( pixels )
 	{
-		prevTicks = TickCount();
+		Microseconds( (UnsignedWide *)&prevTime );	// reset time check
 
 		if( (*hTE)->destRect.bottom >= endText )
-			TEScroll( 0, SCROLLSPEED, hTE );	// show text slowly
-		else
+		{
+			TEScroll( 0, pixels, hTE );	// show text slowly (causes update event)
+		}
+		else	// end of credits, start from the top!
 		{
 			register short startOffset = (*hTE)->viewRect.bottom - (*hTE)->viewRect.top;
 	
-			(*hTE)->destRect.top = (*hTE)->viewRect.top + startOffset;	// start over
+			(*hTE)->destRect.top = (*hTE)->viewRect.top + startOffset;
 			(*hTE)->destRect.bottom = (*hTE)->viewRect.bottom + startOffset;
-#if TARGET_API_MAC_CARBON	//LR 1.76 :try to speed things up in OS X...doesn't have any effect?
-			InvalWindowRect( GetDialogWindow( whichDialog ), &(*hTE)->viewRect );
-#endif
 		}
 	}
+
+	// let the standard dialog filter handle events
 	return StdFilterProc( whichDialog, event, itemHit );
 }
 
@@ -139,7 +146,7 @@ void HexEditAboutBox( void )
 
 	SetDraw( theDialog, TEITEM, (Handle) userItemUPP );
 
-	prevTicks = 0;
+	Microseconds( (UnsignedWide *)&prevTime );
 	done = false;
 
 	SetDialogDefaultItem( theDialog, ok );
