@@ -251,10 +251,10 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 // NS: v1.6.6, event filters for navigation services
 
 /*** NAV SERVICES EVENT FILTER ***/
-/*
 static pascal void _navEventFilter( NavEventCallbackMessage callBackSelector, NavCBRecPtr callBackParms, NavCallBackUserData callBackUD )
 {
-	#pragma unused( callBackUD )
+	#pragma unused( callBackSelector, callBackParms, callBackUD )
+/*
 //	WindowRef theWindow = (WindowRef) callBackParms->eventData.event->message;
 //	WindowRef theWindow = (WindowRef) callBackParms->eventData.eventDataParms.event->message;
 	switch( callBackSelector )
@@ -271,8 +271,8 @@ static pascal void _navEventFilter( NavEventCallbackMessage callBackSelector, Na
 			}
 			break;
 	}
-}
 */
+}
 
 /*** NAV SERVICES PREVIEW FILTER ***/
 /*
@@ -291,7 +291,6 @@ static pascal Boolean _navFileFilter( AEDesc* theItem, void* info, void *callBac
 	return true;
 }
 */
-
 #endif
 
 /* NS: v1.6.6, GWorld creation moved to where it is used */
@@ -663,14 +662,14 @@ short AskEditWindow( void )
 	OSStatus error = noErr;
 	NavReplyRecord		reply;
 	NavDialogOptions	dialogOptions;
-//LR 1.7 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
+ 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
 	NavPreviewUPP		previewProc = NULL;
 	NavObjectFilterUPP	filterProc = NULL;
 	NavTypeListHandle	openTypeList = NULL;
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
 	dialogOptions.dialogOptionFlags += kNavNoTypePopup;
-	error = NavGetFile( NULL, &reply, &dialogOptions, NULL/*eventProc*/, previewProc, filterProc, openTypeList, NULL);
+	error = NavGetFile( NULL, &reply, &dialogOptions, eventProc, previewProc, filterProc, openTypeList, NULL);
 	if( reply.validRecord || !error )
 	{
 		AEKeyword 	keyword;
@@ -683,7 +682,7 @@ short AskEditWindow( void )
 		NavDisposeReply( &reply );
 	}
 	else error = ioErr;		// user cancelled
-//LR 1.7	DisposeNavEventUPP( eventProc );
+	DisposeNavEventUPP( eventProc );
 	AdjustMenus();
 	return error == noErr? 0 : -1;
 #else
@@ -709,7 +708,6 @@ short AskEditWindow( void )
 		SFPGetFile( where, "\pSecond File to Compare:", NULL, -1, NULL, myGetFileUPP, &macSFReply, dlgGetFile, NULL );
 	else
 */
-
 
 	SFPGetFile( where, NULL, NULL, -1, NULL, myGetFileUPP, &macSFReply, dlgGetFile, myFilterUPP );
 
@@ -2570,12 +2568,12 @@ void SaveAsContents( WindowRef theWin )
 	OSStatus error = noErr;
 	NavReplyRecord		reply;
 	NavDialogOptions	dialogOptions;
-//LR 1.7 unused 	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
+	NavEventUPP			eventProc = NewNavEventUPP( _navEventFilter );
 
 	NavGetDefaultDialogOptions( &dialogOptions );
 //LR: 1.7 not w/modified window titles!	GetWTitle( theWin, dialogOptions.savedFileName );
 	BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0] );
-	error = NavPutFile( NULL, &reply, &dialogOptions, NULL/*eventProc*/, kDefaultFileType, kAppCreator, NULL );
+	error = NavPutFile( NULL, &reply, &dialogOptions, eventProc, kDefaultFileType, kAppCreator, NULL );
 	if( reply.validRecord || !error )
 	{
 		AEKeyword 	keyword;
@@ -2593,7 +2591,7 @@ void SaveAsContents( WindowRef theWin )
 		}
 		NavDisposeReply( &reply );
 	}
-//LR 1.7	DisposeNavEventUPP( eventProc );
+	DisposeNavEventUPP( eventProc );
 }
 #else
 {
