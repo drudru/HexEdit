@@ -31,4 +31,4 @@
 	#define DEBUG 1
 #endif
 
-#include "MacHeadersCarbon"		//LR 1.72 -- include precompiled headers, much faster :)
+#include "MacHeadersCarbon.h"		//LR 1.72 -- include precompiled headers, much faster :)
