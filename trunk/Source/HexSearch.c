@@ -154,7 +154,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 	// LR: 1.72 -- make sure we are searching in OK memory (ie, empty window bug fix)
 	while( addr >= 0 && addr < dWin->fileSize )
 	{
-		if( !(addr % 4096) )		//LR 1.72 -- don't slow our searches down unnecessarily!
+		if( !(addr % 0xFFFF) )		//LR 1.72 -- don't slow our searches down unnecessarily!
 		{
 			if( CheckForAbort() )	//LR: 1.66 - allow user to abort the search
 				break;
@@ -200,7 +200,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin )	//LR 175 -- now return if search
 			cc = (*cc)->next;
 newchunk:
 			if( !cc )
-				goto Failure;
+				break;;
 
 			LoadChunk( dWin, cc );	// no check, most likely not loaded, and checked in routine anyway
 		}
