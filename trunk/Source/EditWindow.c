@@ -759,6 +759,11 @@ short AskEditWindowNav( void )
 	NavPreviewUPP		previewProc = NULL;
 	NavObjectFilterUPP	filterProc = NULL;
 	NavTypeListHandle	openTypeList = NULL;
+
+#if TARGET_API_MAC_CARBON	//LR 175 -- just to require v1.1 (we crash under v1.0x!)
+	NavDialogCreationOptions opt;
+	NavGetDefaultDialogCreationOptions( &opt );
+#endif
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
 	dialogOptions.dialogOptionFlags |= kNavNoTypePopup+kNavAllowInvisibleFiles; // BB: allow invisible files - fixes bug #425256
@@ -771,7 +776,8 @@ short AskEditWindowNav( void )
 		Size 		actualSize;
 		
 		error = AEGetNthPtr( &(reply.selection), 1, typeFSS, &keyword, &descType, &openedSpec, sizeof(FSSpec), &actualSize );
-		if( !error ) OpenEditWindow( &openedSpec, true );
+		if( !error )
+			OpenEditWindow( &openedSpec, true );
 		NavDisposeReply( &reply );
 	}
 	else error = ioErr;		// user cancelled
