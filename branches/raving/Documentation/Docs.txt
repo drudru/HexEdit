@@ -1,0 +1,118 @@
+HexEdit Documentation
+
+About this Document
+
+The main purpose of this file is to document the UI for HexEdit. It does not attempt to describe the source code, how to modify the program, or what to use HexEdit for. The best resource for information regarding HexEdit development is the SourceForge site: <http://hexedit.sourceforge.net>.
+
+In order to be brief, features which are similar to the ResEdit hex editor are not described. (If you aren't familiar with ResEdit, you probably shouldn't be using HexEdit).
+
+
+System Requirements
+
+HexEdit can edit very large files (they don't need to fit into memory).  At it's current memory setting of 600k-5000K, it can handle files of hundreds of megs in size.  If you need to edit a larger file, increase HexEdit's memory partition.  
+
+Note that when HexEdit saves a file, it will (temporarily or permanetaly, depending on the "Create Backup" setting) need twice the disc space of the original file, plus a little extra for storing the changes you have made.
+
+Memory usage and Color Schemes: when using color schemes (Use Color is checked, and windows are in color) memory usage is MUCH higher! For instance, on a 1600x1280 screen at 16bit color depth you can only have 4 HexEdit windows open in the prefered 5MB partition! On the same system, you can have over 40 black and white windows open!
+
+
+Program Menus
+
+Opening a File
+
+HexEdit supports drag and drop, automatically opening files in "Auto" mode.  You may find it useful to keep an alias to HexEdit on your desktop for this purpose.
+
+When you use the Open command, HexEdit presents a standard file dialog with three radio buttons, labeled "Data" "Resource" and "Auto".
+
+"Data" opens the data fork.
+
+"Resource" opens the resource fork.
+
+"Auto" opens the data fork, if there is any data in it, otherwise it opens the resource fork.
+
+
+Saving a File
+
+When you save a file with HexEdit, it automatically backs up the last version of the file, renaming it to OriginalName~  (the original name with a tilde (~) after it). You can turn this backup feature off in the Options menu.
+
+
+The File Menu
+
+New - Creates a new, untitled file. First save will be a "save as" on untitled files
+Open - Allows you to open an existing file
+Close - Closes the currently open file
+
+Edit Other Fork - Simply switches to the window containing the other fork for the file. If the window doesn't exist, HexEdit automatically opens the file's other fork in a new window and makes that window active.
+
+Compare Files - Brings up two open dialogs, one after the other. For each, select one of the two files you wish to compare. Canceling either dialog cancels the entire compare. Once both files are selected, both file's windows will open (one on below the other) with a dialog bar beneath. This bar has compare commands; find next, find previous, edit them, and done. The finds do just that, edit them closes the dialog bar and allows you to edit both files, and done closes all three windows. Note: the find is a VERY simple find, and only compares bytes. It is not a "diff" type find. If anyone wants to add that to HexEdit it would be greatly appriciated :)
+
+Save - Saves the frontmost edit window to it's opened file
+Save As - Allows you to save the edit window to a different file
+Revert - Reverts the current edit window to it's file state (ie, undoing all editing done since the file was loaded or saved)
+
+Page Setup - Setup how you want to print documents
+Print/Print Selection - Print the entire window (or just the selection, if there is one)
+
+Quit - Quit the program
+
+
+The Edit Menu
+
+Undo - Most actions are undoable
+Cut - Cut current selection
+Copy - Copy current selection
+Paste - Paste clipboard (replacing selection or inserting at cursor)
+Clear - Clears (deletes) current selection
+Select All - Selects the entire document
+
+Note: Copies are made depending on which side of the editing window you have "current". The left (or ASCII representation of the Hex values of the data) will copy that ASCII representation of the data to the clipboard. The right column (showing the raw data as best printable to the screen) will copy the raw binary data. You can paste either format, but the binary column will paste the RAW data, even if it is an ASCII hex representation!
+
+
+The Find Menu
+
+Find - This brings up a dialog box allowing you to search for a sequence of hex bytes, or asciitext. The dialog is movable and modeless, meaning it will stay open after you do a find.
+
+Search Forward - This searches for  the last search string, forward until the end of the file.
+
+Search Backward - This searches for the last search string, backward until the beginning of the file.
+
+Goto Address - This brings up a dialog which allows you to specify an address, either in hex or in decimal, and scroll the current editing window to that address. The dialog is movable and modeless, meaning it will stay open after you do a goto.
+
+
+The Options Menu
+
+Hi Order Ascii - This displays ascii values in the ascii part of the dump which are higher than 80h - you will see the accents, diacriticals and symbols that are in the monaco font that HexEdit uses.  This also makes it a little harder to pick out English text if you are searching for it in a large binary.
+
+Decimal Addresses - This causes the addresses to be displayed in decimal, rather than hex.
+
+Overwrite - This toggles between insert mode (the default) and overwrite mode.  Overwrite mode allows you to replace a sequence of bytes without affecting the offset of the subsequent bytes.
+
+Make Backups - If checked, when saving a file ("filename"), rename the original file to "filename~" before saving the new data using the original filename. If not checked, the original file is overwritten and can not be restored.
+
+Vertical Bars - If checked, vertical bars are drawn between four (4) byte boundries in the hex editing pane of the window. This makes it easier to reference where you are in each line. The bar is drawn in the header bar color.
+
+Compare Options - This dialog lets you choose how file compares are performed. You can choose the data size as well as if you want to display where files are similiar or where they differ.
+
+
+The Color Schemes Menu
+
+Use Color Schemes - If selected, then all of the schemes below this item will be selectable as well. In that case, windows will be created in color and you can change the color scheme used to draw windows. All windows are effected by a scheme change. Note: if a window is created with color, it takes 8-32 times as much memory! So, on a large screen this can be Megabytes! Therefore, if a window is created with color schemes off it is created in black and white mode, and can not be turned into color! You will need to close the window and re-open it to change a black and white window to color.
+
+
+Program Notes
+
+To help you in your perusal, I have (tried to) marked all of my changes by //LR (usually followed by a descriptive comment, but not if it's "obvious", ha ha) Recently I've changed to adding just the version # for my changes
+
+The original idea and implementation of file comparison was made by Jeff Smith.
+
+Please, feel free to distribute this version of HexEdit as you please, I'd just ask for appropriate credit. I happen to use this program quite a bit, so if you make any changes please let me know, and I will try to get them into a new version.
+
+Thanks to Jim for releasing such a fine program, and even more so for the source; it's helped to make this program much more useful for myself and others! You may wish to check out my web sites, my download pages have several utilities w/source.
+
+<http://www.roathe.com/mac.html>		// mac site
+<http://www.roathe.com/lane.html>	// my site (interlinks abound)
+<http://www.mbyte.com> 											// we're working on cool stuff!
+
+<lane@roathe.com>
+
+Lane Roathe

@@ -1,0 +1,223 @@
+HexEdit Revision History
+
+01/01/25 Version 1.66
+	Nick Shanks added a Window menu
+	Option menu was re-arranged a little
+	Moved mac_Offscreen code to EditWindow.c
+	Nav services dialogs are now movable modal
+	Pressing TAB switches the edit cursor between the Hex and ASCII panes
+	Added the ability to click on the URL's in the about box to launch a web browser
+	Added Fat Carbon post-linker to the FAT build, so that it builds an intelligent FAT app
+		(note: I licensed Fat Carbon for HexEdit, so it's legal to ship with this :)
+	Nick Shanks seperated the headers out into more relavent files
+	Added the licensing text to each source file for SourceForge distribution
+	Re-arranged the directory structure to help with CVS distribution
+	Re-arranged some of the support text files for CVS distribution
+	Icons are now a seperate resource file so that you can create/choose what you like
+	Some very  minor bugs and code cleanup went on as well
+
+01/01/01 Version 1.65
+	Re-arranged menus, thanks to Stephane Moureau for the suggestion!
+	Comparing a file against itself is no longer allowed! (Stephane Moureau)
+	Lines per page count was one short, fixed (found via bug where select all didn't select last line, per Stephane Moureau)
+	Find dialog disables Match Case option for hex cause you can't match case in hex (per Stephane Moureau)
+	File Compare no longer retries selections if canceled at second selection. (per Stephane Moureau)
+	Pasting bad information no longer creates an undo event (per Stephane Moureau)
+	The "debug" button was removed from the main error dialog.
+		(But, you can now press "OPTION" when clicking the dismiss button to drop into the debugger.)
+		(Of course, if you don't have a debugger you will crash!)
+	All alerts and dialogs were cleaned up to conform to UI guidelines and not be so ugly :)
+	Edit other Fork & Compare files options are now in the File menu, where they make sense
+	Renamed some other menu items to make things a bit more logical
+	Fixed a weird problem with files being disposed of during editing. How'd that happen?!?
+	Spelled Avocado correctly (per Stephane Moureau)
+	Goto Address was messing with the "Address:" text as a user item, for reasons unkown to me. Removed.
+	Goto dialog is now modeless :)
+	Find dialog now ALWAYS has find buttons disabled if no text entered :) (dang global vars!)
+	Cleaned up references to and use of dialog and alert ID's
+	Hi Order ASCII option was not being set on load (per Toru Yoshizawa)
+	Print menu text now now in a resource (STR# 129) to enable localization (per Jean-Jacques Cortes)
+	Pretty new icons provided (including 32 bit) by Jean-Jacques Cortes!
+	'dlgx' resources now included to make HexEdit appearance manager friendly (per Jean-Jacques Cortes)
+	Labeled string resources to make localization task easier
+	Display selected area (start and stop, both same for position with no selection). Suggested by Adrian Walti
+	Added 'Home' and 'End' keys to go to beginning and end of file respectively
+	Changed selection update method to always update header
+	Updated the readme file to be accurate with all the changes
+	Changed version and readme files to times and added some styling for readability
+	Totally re-wrote the copy/paste functionality for better system performance and Carbon compatability
+	Changed the manner in which copies operate:
+			Hex side copies ASCII hex, binary side copies binary (raw) data
+			Hex side always pastes binary, binary side pastes raw clipboard (ie, hex copy pastes ascii rep in binary colum)
+			(the downside to this is that a "bad" ASCII hex representation will paste as binary data instead of erroring out)
+	Removed the "shift-copy" feature, since we now have this automated method of selecting which copy to do
+	Color selection is only enabled for valid windows. (ie, a B&W window can't be changed to a color window!)
+	Header strings now in STR# resource for localization
+	Error strings now in STR# resource for localization. Also contain more information (like the error code :)
+	Fixed window proc id (not sure how it got messed up)
+	Goto Address menu option is how Cmd-J (to conform to CodeWarrior and other "standards")
+	Find and Goto dialogs now remember position within a single run (positions NOT saved between runs)
+	Adjusted window size to always show complete lines by default (David Emme)
+	Fixed "Edit Other Fork" where it would open a new window instead of selecting the open window (Stephane Moureau)
+	Fixed headers drawing in incorrect color during background updates
+	Fixed minor menu enabling glitch when no windows were open
+	Disabled the printing options under Carbon until I get Carbon/OS X printing working
+	Added really cool new about box! Now contributors can get their names listed where everyone sees them :)
+
+
+09/23/00 Version 1.6 (never released publicly)
+	First pass at Carbonization! Scrap & Printing needs finishing, and I'd like make it superfat.
+		Thanks to Nick Shanks and George Warner for their efforts in Carbonizing HexEdit!
+	Carbon version uses Navigation Services.
+	Many intrnal modifications to the code for Carbon compatibility
+	Fixed (for good?) the bad case of opening files (-34). For some reason, having the check
+		for locating a unique filename withing the "while" statement caused the error
+		to be ignored at times, and then a bogus random name would be created.
+	Fixed lock up when the find window or compare dialog was open.
+	Added optional vertical bars (based on mod sent by David Emme)
+	Find dialog is not visable during setup
+	Find dialog buttons no longer flicker (thanks to Max Horn)
+	Find dialog accepts return or enter as acceptance
+	Updated to CWPro 6 (for ease of Carbon support)
+	Optimization level now set to max and smaller code size.
+
+05/10/00 Version 1.5
+	Made promise to self to update HexEdit web site so people know I actually work on HexEdit :)
+	Moved all preferences to prefences structure.
+	Made preferences actually work. (can't believe this bug was never reported!)
+	Fixed bug w/appending ~ to max length filenames (temp files, reported by Ritchie)
+	Fixed memory leak in DisposeChunk (reported by Nick Shanks)
+	Finally found where the bogus errors were being generated on file opens & fixed it!
+		(historical note; the routine to ensure unique temp filenames was very buggy)
+		(darn: still a bug w/opening new windows returning an error -34 on occassion)
+	Integrated modifications by Nick Shanks (appearing in Nick's 1.3 release):
+		Made search buttons disable when there's nothing entered for which to search
+		Shifted scroll bar, removed footer and tidied up code
+	Added Color Schemes, based on idea by Nick Shanks. Off by default due to memory usage
+		(historical note: it's a bad idea to use "SetPortBits" on color windows!)
+
+You can create/edit color schemes by editing the 'HEct' resources in HexEdit. If you create a cool scheme and want it included in the next HexEdit release, just send me the scheme's 'HEct' resource.
+
+Note: Using color windows takes 8Ñ32 times as much memory! So, if you are short on memory, have a large desktop (1024x768 or higher) or want lots of open windows, turn "Use Color" off (ie, it's not checked) before opening windows. HexEdit will remember your color usage preference the next time it is launched.
+
+11/30/99 Version 1.4.3
+	Fixed system hilight color support reported by Tim Herzog.
+	Added Tim's ASCII cut/copy mod. From Tim:
+
+ÒBasically if you hold down the shift key when you cut/copy, it copies the selection to the system scrap in ASCII not in binary, so the TEXT scrap resembles the display in HexEdit.  It's handy when you want to copy the asii representation, not the pure binary.Ó
+
+8/19/99 Version 1.4.2
+	Fixed bug reported by Jean-Pierre Melkonian (don't test for case in hex searches!)
+
+6/5/99 Version 1.4.1
+	Fixed bug reported by Jonathan Write, where deleting text could corrupt a file
+	Improved menu operation, as reported by Aaron D. (ie, open works w/find dlg active)
+	Updated to CWPro 5 and turned on optimizations for PPC build
+
+8/31/98 Version 1.4
+	Preferences are now saved in the active system preferences folder
+	Changed "ignore case" to be the default search method
+	Some interface cleanup
+	A few VOODOO integration adjustments
+	Fix "Edit Other Fork" option
+
+7/16/98 Version 1.3.1
+	Added "ignore case" option to Find dialog.
+	Fixed HexEdit's use of CPU time (was always 99%), now it's 5% foreground, <1% background)
+	If activated w/file compare windows open, display file compare dialog.
+  		(ie, if VOODOO activates us to show differences, then replicate Compare Files operation.)
+	Open Dialog is back at startup, but only if not started up to do a file compare.
+	Removed a few DebugStr's that could confuse users
+
+6/24/98 Version 1.3
+	Added support for VOODOO AE compare suite.
+	HexEdit no longer starts up with the open file dialog (required by above change)
+
+4/19/98 Version 1.22
+	CWPro r3 project
+	Fixed a few bugs related to empty data/resource forks
+		(still a few hard-to-fix ones remaining, but should no longer crash.)
+
+8/2/97 Version 1.21
+	CWPro r1 multi-target & MSL re-compile (added 15K too, sigh)
+	Fixed a crash bug when trying to insert data into an empty fork
+	Added warning to potential future crash bugs (should never occure)
+	Sources no longer require OLDROUTINENAMES to compile
+
+6/6/96 Version 1.2
+	Now a "fat" application, sources Universal Headers happy
+	Add better file compare, allow setting compare options
+	Add ability to switch between both forks of a file
+	Remove all warnings from the compile
+	Fixed a few bugs relating to Power PC usage
+
+11/9/95 Version 1.1  (unreleased)  
+	(note: Dave Polaschek also released a "fat" v1.1!)
+	Compiles with CodeWarrior
+	First pass at "file compares"
+
+--- These are Jim Bumgardner's original revision comments ---
+
+9/25/94 Version 1.0.7
+	Fixed bug: scroll bars weren't deactivating on deactivate event
+	Allows Quit and Close while Search Dialog is open.
+	Added 'BINA' file type to bundle.
+
+9/22/94 Version 1.0.6
+	Fixed cosmetic bug that caused multiple window refreshes to get mixed up (if
+   		you had more than one window open, the wrong contents would be dislayed
+   		when you switched from one window to another and clicked in the window).
+
+12/14/93 Version 1.0.5
+	Fixed editing bug that occured when you typed in some chars, then positioned
+    	the insertion point to the beginning or the middle of those chars and deleted a char.
+
+12/13/93 Version 1.0.4
+    Fixed bug that caused HexEdit to crash on SEs, Portables, and other B&W macs.
+    Fixed scrolling bug that occurred on very large files.
+    Improved redrawing speed on very large files.
+    Eliminated cursor flashing when HexEdit is in background.
+    Greys out menus when windows are closed.
+    Added Freeware message to about box.
+
+9/10/93 Version 1.0.3
+	Fixed a couple nasty bugs that caused HexEdit to behave erratically on files 
+    	that couldn't fit in memory.  The bug caused HexEdit to crash and not save
+    	these files properly.
+
+8/30/93
+    Cmd-W Closes Find Window
+    Removed ellipses from New menu item
+    Edit+Find menus dim appropriately
+
+8/23/93
+	Changed ok button to say "Goto" instead of "Search" on goto dialog.
+	Changed Cmd-Key shortcuts to be more MPW compatible
+	Fixed some menu items to disable when windows are closed
+	Added Select All
+	Added better About Box
+	Fixed Cursor I-Beam problem.
+
+7/8/93 Version 1.0.2
+	Changed length display to decimal when appropriate
+	Fixed resizing window bug
+	Removed "preferences" from edit menu
+	Made checkmark preferences permanent
+	Added Backup File toggle
+	Added support for Zoom Box.
+	Windows can be resized up to max size.
+
+7/6/93 Version 1.0.1
+	Removed dependence on system 7, 32-bit quickdraw.
+	Fixed bug with radio buttons on open file dialog.
+	Sped up display for selecting.
+
+7/4/93
+	Added Overwrite toggle switch
+	Added Goto Address
+
+7/2/93
+	Added Ascii/Hex Search
+
+7/23/93
+	Version 1.0 Released
