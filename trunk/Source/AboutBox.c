@@ -25,6 +25,7 @@
 #include "MPWIncludes.h"
 #endif
 
+#include "main.h"
 #include "AboutBox.h"
 #include "Utility.h"
 
@@ -34,18 +35,27 @@ static unsigned long prevTicks;
 
 #define SCROLLDELAY 3
 
+//LR 1.73 -- make code more readable
+#ifdef __MC68K__
+	#define PLATFORM_STRING "\p68K"
+#elif TARGET_API_MAC_CARBON
+	#define PLATFORM_STRING	"\pCarbon"
+#else
+	#define PLATFORM_STRING	"\pPPC"
+#endif
+
 /*** DRAW TE TEXT ***/
+//	draw the TE text in our user item
 pascal void DrawTEText( DialogPtr whichDialog, short itemNr )
 {
-//	draw the TE text in our user item
 	#pragma unused( whichDialog, itemNr )
 	TEUpdate( &(*hTE)->viewRect, hTE );
 }
 
 /*** DIALOG FILTER ***/
+//	dialog filter for about box (used to scroll TE contents)
 pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *itemHit )
 {
-//	dialog filter for about box (used to scroll TE contents)
 	if( TickCount() - prevTicks >= SCROLLDELAY )		// don't scroll too fast!
 	{
 		prevTicks = TickCount();
@@ -64,9 +74,9 @@ pascal Boolean DialogFilter( DialogPtr whichDialog, EventRecord *event, short *i
 }
 
 /*** HEX EDIT ABOUT BOX ***/
+//	code stolen from ResCon sources
 void HexEditAboutBox( void )
 {
-//	code stolen from ResCon sources
 	#define TEITEM		2
 
 	DialogPtr	theDialog;
@@ -83,29 +93,21 @@ void HexEditAboutBox( void )
 
 	GetPort( &savePort );
 
-	if( ( vr = ( VersRecHndl ) GetResource( 'vers', 1 ) ) != NULL )
+	if( ( vr = (VersRecHndl)GetResource( 'vers', 1 )) != NULL )
 	{
-		HLock( (Handle) vr );
-		verStr = (StringPtr) ( ( ( unsigned long ) &( ** vr ).shortVersion[0] ) );
+		HLock( (Handle)vr );
+		verStr = (StringPtr)(((unsigned long)&(** vr).shortVersion[0]));
 	}
-	else verStr = "\p(unknown version)";
+	else
+		verStr = "\p(unknown version)";
 
-	ParamText( verStr,
-#ifdef __MC68K__
-				"\p68K"
-#elif TARGET_API_MAC_CARBON
-				"\pCarbon"
-#else
-				"\pPPC"
-#endif
-, NULL, NULL );
+	ParamText( verStr, PLATFORM_STRING, NULL, NULL );
+
+	if( vr )
+		ReleaseResource( (Handle)vr );	//LR 1.73 -- just to be safe
 
 	theDialog = GetNewDialog( dlgAbout, NULL, kFirstWindowOfClass );
-#if TARGET_API_MAC_CARBON
 	SetPortDialogPort( theDialog );
-#else
-	SetPort( theDialog );
-#endif
 
 	GetRect( theDialog, TEITEM, &bounds );
 	hTE = TEStyleNew( &bounds, &bounds );
@@ -128,16 +130,11 @@ void HexEditAboutBox( void )
 	prevTicks = 0;
 	done = false;
 
-	InitCursor();
 	SetDialogDefaultItem( theDialog, ok );
-
-#if TARGET_API_MAC_CARBON
-	if( SetDialogTimeout )
-		SetDialogTimeout( theDialog, ok, 60 );
-#endif
-
 	ShowWindow( GetDialogWindow( theDialog ) );
-	
+
+	InitCursor();
+
 	ModalDialog( dlgFilterUPP, &item );
 
 	// LR: 1.66 check for a URL item and launch if so
