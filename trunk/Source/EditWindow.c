@@ -2161,6 +2161,7 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 	short			charCode, keyCode;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	short			moveOnly = gPrefs.moveOnlyPaging;
+	short			revClearDir = false;
 
 	keyCode = (er->message & keyCodeMask) >> 8;
 	charCode = (er->message & charCodeMask);
@@ -2233,22 +2234,46 @@ doend:
 		}
 
 		case kClearCharCode:		//LR 180 -- clearing an area is now a seperate command
+clear:
+			if( dWin->endSel == dWin->startSel )	//LR 190 -- if no selection, clear char in front of cursor
 			{
-				if( dWin->endSel == dWin->startSel )	//LR 190 -- if no selection, clear char in front of cursor
+				if( dWin->endSel < dWin->fileSize )
 				{
-					if( dWin->endSel < dWin->fileSize )
-					{
-						ObscureCursor();
-						dWin->endSel++;
-					}
+					ObscureCursor();
+					dWin->endSel++;
 				}
-doclear:
-				ClearSelection( dWin );
-				dWin->startSel = dWin->endSel;
-				ScrollToSelection( dWin, dWin->startSel, false );
 			}
+doclear:
+			ClearSelection( dWin );
+			if( revClearDir )
+			{
+				dWin->startSel--; dWin->endSel = dWin->startSel;
+			}
+			else
+				dWin->startSel = dWin->endSel;
+			ScrollToSelection( dWin, dWin->startSel, false );
 			break;
 
+		case kDeleteCharCode:	// forward delete
+			if( er->modifiers & optionKey )				//LR 90 -- option key clears
+				goto clear;
+
+			if( gPrefs.overwrite && gPrefs.nonDestructive )	//LR 190 -- bad form to use goto, but ...
+				goto ndbad;
+
+			if( !dWin->endSel > dWin->startSel )
+				DeleteSelection( dWin );
+			else if( dWin->startSel > 0L )
+			{
+				ObscureCursor();
+				++dWin->endSel;
+				DeleteSelection( dWin );
+			}
+			else
+ndbad:
+				SysBeep(0);
+			break;
+		
 		// delete characters
 		//LR 1.74 -- non-destructive deletes in overwrite mode (paste appr. lenght zero buffer)
 		case kBackspaceCharCode:	// normal delete
@@ -2263,6 +2288,7 @@ doclear:
 						--dWin->startSel;
 					}
 				}
+				revClearDir = true;
 				goto doclear;
 			}
 
@@ -2296,29 +2322,20 @@ doclear:
 				SysBeep(0);
 			break;
 
-		case kDeleteCharCode:	// forward delete
-			if( gPrefs.overwrite && gPrefs.nonDestructive )	//LR 190 -- bad form to use goto, but ...
-				goto ndbad;
-
-			if( !dWin->endSel > dWin->startSel )
-				DeleteSelection( dWin );
-			else if( dWin->startSel > 0L )
-			{
-				ObscureCursor();
-				++dWin->endSel;
-				DeleteSelection( dWin );
-			}
-			else
-ndbad:
-				SysBeep(0);
-			break;
-		
 		// insert/overwrite characters
 		default:
 			// Insert Ascii Text into Area indicated by dWin->startSel - dWin->endSel
 			// Delete Current Selection if > 0
 			ObscureCursor();
 
+			//LR 190 -- fix overwrite stopping 1 char short and inserting chars past eof
+			if( gPrefs.overwrite && !dWin->loByteFlag && dWin->startSel >= dWin->fileSize )
+			{
+				SysBeep( 1 );		// overwrite can't insert chars!
+				break;
+			}
+
+			// Edit in ASCII frame
 			if( dWin->editMode == EM_Ascii )
 			{
 				if( (dWin->endSel != dWin->lastTypePos ||
@@ -2334,7 +2351,7 @@ ndbad:
 				InsertCharacter( dWin, charCode );
 				dWin->lastTypePos = dWin->startSel;
 			}
-			else
+			else  // Edit in Hex frame
 			{
 				short	hexVal;
 
@@ -2359,33 +2376,24 @@ ndbad:
 				if( dWin->endSel > dWin->startSel )
 					RemoveSelection( dWin );
 
-				if( dWin->loByteFlag )
+				if( dWin->loByteFlag )  // Is this the lo-byte of a previous high byte?
 				{
 					--dWin->startSel;
 					RemoveSelection( dWin );
-					hexVal = hexVal | ( dWin->lastNybble * kBytesPerLine );
+					hexVal = hexVal | ( dWin->lastNybble << 4 );
 					InsertCharacter( dWin, hexVal );
 					dWin->loByteFlag = false;
 				}
 				else
 				{
-					//LR 190 -- fix overwrite stopping 1 char short and inserting chars past eof
-					if( gPrefs.overwrite && dWin->startSel >= dWin->fileSize )
+					if( gPrefs.overwrite )	// we know it's before eof due to previous check
 					{
-						SysBeep( 1 );		// overwrite can't insert chars!
-						break;
+						++dWin->endSel;
+						RemoveSelection( dWin );	// for overwrite, we delete current char and then insert new one ;)
 					}
-					else
-					{
-						if( gPrefs.overwrite )	// we know it's before eof due to previous check
-						{
-							++dWin->endSel;
-							RemoveSelection( dWin );	// for overwrite, we delete current char and then insert new one ;)
-						}
-						InsertCharacter( dWin, hexVal );
-						dWin->lastNybble = hexVal;
-						dWin->loByteFlag = true;
-					}
+					InsertCharacter( dWin, hexVal );
+					dWin->lastNybble = hexVal;
+					dWin->loByteFlag = true;
 				}
 				dWin->lastTypePos = dWin->startSel;
 			}
@@ -3247,7 +3255,7 @@ void RevertContents( WindowRef theWin )
 	LoadFile( dWin );
 
 	// Reset scroll offset, if necessary
-	if( dWin->editOffset > dWin->fileSize - kBytesPerLine * dWin->linesPerPage )
+	if( dWin->editOffset > dWin->fileSize - (kBytesPerLine * dWin->linesPerPage) )
 		dWin->editOffset = 0;
 
 	dWin->dirtyFlag = false;	//LR 1.72 -- no longer dirty :)

@@ -319,8 +319,9 @@ OSStatus AdjustMenus( void )
 	_enableMenuItem( findMenu, SM_Find, isObjectWin );
 	_enableMenuItem( findMenu, SM_GotoAddress, isObjectWin );
 */
-	_enableMenuItem( findMenu, SM_FindForward, isObjectWin && dWin->fileSize && g.searchBuffer[0] );	//LR 1.72 -- only enable w/something to search :)
-	_enableMenuItem( findMenu, SM_FindBackward, isObjectWin && dWin->fileSize && g.searchBuffer[0] );
+	_enableMenuItem( findMenu, SM_FindForward, selection || (isObjectWin && dWin->fileSize && g.searchBuffer[0]) );	//LR 1.72 -- only enable w/something to search :)
+	_enableMenuItem( findMenu, SM_FindBackward, selection || (isObjectWin && dWin->fileSize && g.searchBuffer[0]) );
+	_enableMenuItem( findMenu, SM_Replace, selection || (isObjectWin && dWin->fileSize && g.searchBuffer[0]) );
 
 	_enableMenuItem( optionsMenu, OM_NonDestructive, gPrefs.overwrite );	//LR 1.74 -- only available in overwrite mode
 
@@ -432,6 +433,7 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 		switch( menuItem )
 		{
 		case FM_New:
+			gPrefs.overwrite = false;  //LR 190 -- overwrite mode makes no sense in a new document
 			NewEditWindow();
 			break;
 
@@ -592,28 +594,19 @@ openfind:
 				break;
 
 			case SM_FindForward:
-				if( dWin )
-				{
-					if( !g.searchBuffer[0] )	//LR 190 -- if nothing to find open dialog
-						goto openfind;
-
-					gPrefs.searchForward = true;
-					PerformTextSearch( dWin, kSearchUpdateUI );
-				}
+				gPrefs.searchForward = true;
+				PerformTextSearch( dWin, kSearchUpdateUI );  //LR 190 -- if dWin is NULL will operate on first edit window, if any (allows search in find dialog)
 				break;
 
 			case SM_FindBackward:
-				if( dWin )
-				{
-					if( !g.searchBuffer[0] )	//LR 190 -- if nothing to find open dialog
-						goto openfind;
-
-					gPrefs.searchForward = false;
-					PerformTextSearch( dWin, kSearchUpdateUI );
-				}
+				gPrefs.searchForward = false;
+				PerformTextSearch( dWin, kSearchUpdateUI );  //LR 190 -- if dWin is NULL will operate on first edit window
 				break;
 
 			case SM_Replace:	//LR 190 -- add replace & find next (must have a window with selection to start!)
+				if( !dWin )
+					dWin = FindFirstEditWindow(); // allow this to work in find dialog, etc.
+
 				if( dWin  && dWin->startSel != dWin->endSel )
 				{
 					EditChunk	**replaceChunk;

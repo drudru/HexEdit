@@ -249,8 +249,8 @@ OSStatus DoEvent( EventRecord *theEvent )
 						if( gPrefs.constrainSize )
 						{
 							r.bottom = r.top + (short)((((r.bottom - r.top) / kLineHeight) - 1) * kLineHeight) + kHeaderHeight;	// force to full line heights
-							SizeWindow( theWin, (r.right - r.left - 1), (r.bottom - r.top), true );
 						}
+						SizeWindow( theWin, (r.right - r.left - 1), (r.bottom - r.top), true ); //LR 190 -- don't grow window by 1 pixel
 
 						AdjustScrollBars( theWin, true );
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
