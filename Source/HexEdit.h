@@ -223,8 +223,11 @@ typedef struct
 	UInt16		maxHeight;
 	UInt8		searchBuffer[256];
 	UInt8		searchText[256];
+	UInt8		replaceText[256];
 	UInt8		gotoText[256];
 	Boolean		searchDisabled;
+	Boolean		replaceDisabled;
+	Boolean		replaceAll;
 
 	short		fontFaceID;
 	short		fontSize;

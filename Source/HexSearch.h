@@ -29,16 +29,22 @@
 enum	// search dialog items
 {
 	SearchForwardItem		= 1,
-	SearchBackwardItem		= 2,
-	HexModeItem				= 3,
-	AsciiModeItem			= 4,
-	SearchTextItem			= 5,
-	MatchCaseItem 			= 7
+	SearchBackwardItem,
+	HexModeItem,
+	AsciiModeItem,
+	SearchTextItem,
+	textFind,
+	MatchCaseItem,
+	textMatch,
+	textReplace,
+	ReplaceTextItem,
+	ReplaceItem,
+	ReplaceAllItem
 };
 
 void SetSearchButtons( void );
 void OpenSearchDialog( void );
-void PerformTextSearch( EditWindowPtr dWin );
+Boolean PerformTextSearch( EditWindowPtr dWin );
 OSStatus OpenGotoAddress( void );
 void DoModelessDialogEvent( EventRecord *theEvent );
 Boolean StringToSearchBuffer( Boolean matchCase );
