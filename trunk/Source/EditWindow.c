@@ -199,10 +199,6 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 			{
 				Rect	r;
 				
-				r.top = pageRect.top;
-				r.bottom = pageRect.bottom;
-				r.left = pageRect.left;
-				r.right = pageRect.right;
 				//  NOTE:  We don't have to deal with the old Printing Manager's
 				//  128-page boundary limit anymore.
 
@@ -212,14 +208,18 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 				  break;
 
 				//  Draw the page.
+				r.top = (short)(pageRect.top);
+				r.left = (short)(pageRect.left);
+				r.bottom = r.top + kHeaderHeight - 1;
+				r.right = (short)(pageRect.right);
 				DrawHeader( dWin, &r );
-				r.top += kHeaderHeight;
-				r.bottom -= kFooterHeight;
 
+				r.top += kHeaderHeight;
+				r.bottom = pageRect.bottom - kFooterHeight;
 				DrawDump( dWin, &r, addr, endAddr );
 
 				r.top = r.bottom;
-				r.bottom = r.top + kFooterHeight;
+				r.bottom += kFooterHeight;
 				DrawFooter( dWin, &r, pageNumber, realNumberOfPagesinDoc );
 
 				//  Close the page.
@@ -1144,9 +1144,24 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 	TextFace( normal );
 	TextMode( srcCopy );
 
+	// LR: 1.7 - if we have color table, fill in the address bar!
+	if( ctHdl )
+	{
+		RGBBackColor( &( *ctHdl )->header );
+		RGBForeColor( &( *ctHdl )->headerLine );
+	}
+	else
+	{
+		RGBForeColor( &black );
+		RGBBackColor( &white );
+	}
+
 	// Draw seperator line (seperates footer from body)
 	MoveTo( r->left, r->top );
 	LineTo( r->right, r->top );
+
+	if( ctHdl )
+		RGBForeColor( &( *ctHdl )->headerText );
 
 	// Draw Date & Time on left edge of footer
 	GetDateTime( &dt );
@@ -1159,7 +1174,7 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 	// Draw filename in middle of footer
 	GetIndString( s1, strHeader, HD_Footer );
 	GetWTitle( dWin->oWin.theWin, s2 );
-	sprintf( (char *)g.buffer, "%.s %.*s", (int)s1[0], (char *)&s1[1], (int)s2[0], (char *)&s2[1] );
+	sprintf( (char *)g.buffer, "%.*s %.*s", (int)s1[0], (char *)&s1[1], (int)s2[0], (char *)&s2[1] );
 	MoveTo( ( r->left + r->right ) / 2 - TextWidth( g.buffer, 0, strlen((char *)g.buffer )) / 2, r->top + kLineHeight );
 	DrawText( g.buffer, 0, strlen( (char *)g.buffer ) );
 
@@ -1167,6 +1182,12 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 	sprintf( (char *)g.buffer, "%d of %d", pageNbr, nbrPages );
 	MoveTo( r->right - TextWidth( g.buffer, 0, strlen((char *)g.buffer )) - 8, r->top + kLineHeight );
 	DrawText( g.buffer, 0, strlen( (char *)g.buffer ) );
+
+	if( ctHdl )	// reset colors to known state
+	{
+		RGBForeColor( &black );
+		RGBBackColor( &white );
+	}
 }
 
 /*** DRAW DUMP ***/
@@ -1195,6 +1216,10 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	addrRect.right = r->left + kBodyDrawPos + StringWidth( "\p 0000000:" );
 	addrRect.bottom = r->bottom;
 
+	if( ctHdl )
+		RGBBackColor( &( *ctHdl )->bar );
+	EraseRect( &addrRect );
+
 	addr = sAddr - (sAddr % kBytesPerLine);
 
 	g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kStringHexPos + kBodyStrLen] = ' ';
@@ -1218,10 +1243,22 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		DrawText( g.buffer, 0, kStringHexPos - 1 );
 
 		// draw the data (hex and ascii)
-		if( ctHdl && !(j & 1) )
+		if( ctHdl )
 		{
-			RGBBackColor( &( *ctHdl )->body );
-			RGBForeColor( &( *ctHdl )->text );
+			Rect r2;
+
+			if( !(j & 1) )
+			{
+				RGBBackColor( &( *ctHdl )->body );
+				RGBForeColor( &( *ctHdl )->text );
+			}
+
+			// LR: 1.7 -- must erase for this to show up on printouts!
+			r2.top = y - (kLineHeight - 3);
+			r2.left = addrRect.right + 1;
+			r2.bottom = y + 3;
+			r2.right = r->right;
+			EraseRect( &r2 );
 		}
 
 		hexPos = kStringHexPos;
@@ -1255,13 +1292,13 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		DrawText( g.buffer, kStringHexPos - 1, kBodyStrLen + 3 );
 	}
 
-	// Draw left edging?
+	// Draw left edging? (line only, background erases, but line is erased by text!)
 	if( ctHdl )
 	{
 //LR 1.7		RGBBackColor( &( *ctHdl )->bar );
 		RGBForeColor( &( *ctHdl )->barLine );
 
-//LR 1.7 - not needed		EraseRect( &addrRect );
+//LR 1.7 - moved above		EraseRect( &addrRect );
 
 		MoveTo( addrRect.right, addrRect.top );
 		LineTo( addrRect.right, addrRect.bottom );
@@ -1277,11 +1314,11 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		MoveTo( CHARPOS(22) - (kCharWidth / 2), addrRect.top );
 		LineTo( CHARPOS(22) - (kCharWidth / 2), addrRect.bottom );
 
-		MoveTo( CHARPOS(34) - (kCharWidth / 2), addrRect.top );
-		LineTo( CHARPOS(34) - (kCharWidth / 2), addrRect.bottom );
+		MoveTo( CHARPOS(34) - (kCharWidth / 2) - 1, addrRect.top );
+		LineTo( CHARPOS(34) - (kCharWidth / 2) - 1, addrRect.bottom );
 
-		MoveTo( CHARPOS(46) - (kCharWidth / 2), addrRect.top );
-		LineTo( CHARPOS(46) - (kCharWidth / 2), addrRect.bottom );
+		MoveTo( CHARPOS(46) - (kCharWidth / 2) - 2, addrRect.top );
+		LineTo( CHARPOS(46) - (kCharWidth / 2) - 2, addrRect.bottom );
 	}
 
 	// LR: restore color
@@ -1328,9 +1365,8 @@ void DrawPage( EditWindowPtr dWin )
 			Rect er = r;
 
 			er.top = (dWin->fileSize / kBytesPerLine) + kHeaderHeight;
-			EraseRect( &r );
+			EraseRect( &er );
 		}
-//		EraseRect( &r );
 
 		DrawDump( dWin, &r, dWin->editOffset, dWin->fileSize );
 
@@ -1340,7 +1376,7 @@ void DrawPage( EditWindowPtr dWin )
 			RGBBackColor( &white );
 		}
 
-			UnlockPixels( thePixMapH ); // sel
+		UnlockPixels( thePixMapH ); // sel
 
 	// LR: offscreen fix!	SetPortBits( &realBits );
 		SetPort( savePort );
@@ -1371,9 +1407,11 @@ void UpdateOnscreen( WindowRef theWin )
 	Rect			r1, r2;//, r3;
 	GrafPtr			oldPort;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-	PixMapHandle thePixMap = GetPortPixMap( dWin->offscreen );
+	PixMapHandle thePixMapH;
 
-	if ( LockPixels( thePixMap ) )
+	// Now, draw header to main window & blit offscreen
+	thePixMapH = GetPortPixMap( GetWindowPort( theWin ) );
+	if ( LockPixels( thePixMapH ) )
 	{
 		GetPortBounds( dWin->offscreen, &r1 );
 		GetWindowPortBounds( theWin, &r2 );
@@ -1405,10 +1443,11 @@ void UpdateOnscreen( WindowRef theWin )
 		CopyBits( ( BitMap * ) &( dWin->offscreen )->portPixMap, &theWin->portBits, &r1, &r2, srcCopy, 0L );
 	#endif
 
-		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) ) 
+		//%% LR: 1.7 -- needs to be done offscreen, but then it's  not erased -- this is a new shell todo item :)
+		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) )
 			InvertSelection( dWin );
 
-		UnlockPixels( thePixMap );
+		UnlockPixels( thePixMapH );
 		SetPort( oldPort );
 	}
 }
@@ -2007,15 +2046,15 @@ void PrintWindow( EditWindowPtr dWin )
 			if( pageNbr >= startPage && pageNbr <= endPage )
 			{
 				r = printPort->gPort.portRect;
+				r.bottom = r.top + kHeaderHeight - 1;		//LR: 1.7 - don't erase entire page!
 				DrawHeader( dWin, &r );
 		
 				r.top += kHeaderHeight;
-				r.bottom -= kFooterHeight;
-		
+				r.bottom = printPort->gPort.portRect.bottom - kFooterHeight;
 				DrawDump( dWin, &r, addr, endAddr );
 	
 				r.top = r.bottom;
-				r.bottom = r.top + kFooterHeight;
+				r.bottom += kFooterHeight;
 				DrawFooter( dWin, &r, pageNbr, nbrPages );	//SEL: 1.7 - fix Lane's DrawDump usage (what was I thinking? P)
 			}
 
@@ -2640,6 +2679,7 @@ void RevertContents( WindowRef theWin )
 	// Reset scroll offset, if necessary
 	if( dWin->editOffset > dWin->fileSize - kBytesPerLine * dWin->linesPerPage )
 		dWin->editOffset = 0;
+
 	DrawPage( dWin );
 	UpdateOnscreen( theWin );
 }
