@@ -2147,10 +2147,14 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 {
 	short			charCode, keyCode;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-	
+	short			moveOnly = gPrefs.moveOnlyPaging;
+
 	keyCode = (er->message & keyCodeMask) >> 8;
 	charCode = (er->message & charCodeMask);
 	if( er->modifiers & cmdKey ) return;
+
+	if( er->modifiers & optionKey )		//LR 190 -- movement type switches w/option key held down
+		moveOnly = !moveOnly;
 	
 	switch( charCode )	// NS: safer on multi-lingual keyboards
 	{
@@ -2188,13 +2192,13 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 		
 		// scroll document
 		case kPageUpCharCode:
-			if( gPrefs.moveOnlyPaging )			//LR 180 -- option to only move display, not selection point
+			if( moveOnly )			//LR 180 -- option to only move display, not selection point
 				ScrollToPosition( dWin, dWin->editOffset - (kBytesPerLine * (dWin->linesPerPage - 1)) );
 			else
 				_offsetSelection( dWin, -kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
 			break;
 		case kPageDownCharCode:
-			if( gPrefs.moveOnlyPaging )			//LR 180 -- option to only move display, not selection point
+			if( moveOnly )			//LR 180 -- option to only move display, not selection point
 				ScrollToPosition( dWin, dWin->editOffset + (kBytesPerLine * (dWin->linesPerPage - 1)) );
 			else
 				_offsetSelection( dWin, kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
