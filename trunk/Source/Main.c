@@ -611,7 +611,7 @@ static pascal OSErr CoreEventHandler( const AppleEvent *theEvent, AppleEvent *re
 			break;
 			
 		case kAEQuitApplication:
-			if( GotRequiredParams( theEvent ) )
+			if( GotRequiredParams( theEvent ) && CloseAllEditWindows())
 				g.quitFlag = true;
 			break;
 	}
