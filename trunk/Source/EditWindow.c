@@ -371,12 +371,13 @@ static void _setWindowTitle( EditWindowPtr dWin )
 	// LR: 1.7 Append fork in use to title
 	if( i < 255 - 8 )
 	{
-		if( FT_Data == dWin->fork )
-			BlockMoveData( " - Data", &wintitle[i], 7 );
-		else
-			BlockMoveData( " - Rrsc", &wintitle[i], 7 );
+		Str31 str2;
 
-		wintitle[0] = i + 6;
+		GetIndString( (StringPtr) str2, strHeader, dWin->fork );
+
+		BlockMoveData( &str2[1], &wintitle[i], str2[0] );
+
+		wintitle[0] = i + str2[0] - 1;
 	}
 
 	SetWTitle( dWin->oWin.theWin, wintitle );
@@ -1076,7 +1077,7 @@ OSStatus GetColorInfo( EditWindowPtr dWin )
 /*** DRAW HEADER ***/
 void DrawHeader( EditWindowPtr dWin, Rect *r )
 {
-	char str[256], str2[31];
+	char str[256];	//LR 1.7 -- no need for fork, replaced with selection length, str2[31];
 
 	GetColorInfo( dWin );	// LR: v1.6.5 ensure that updates are valid!
 
@@ -1117,9 +1118,9 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 	
 	GetIndString( (StringPtr) str, strHeader, prefs.decimalAddr? HD_Decimal : HD_Hex );
 	CopyPascalStringToC( (StringPtr) str, str );
-	GetIndString( (StringPtr) str2, strHeader, dWin->fork );
-	CopyPascalStringToC( (StringPtr) str2, str2 );
-	sprintf( (char *) g.buffer, str, dWin->fileSize, &dWin->fileType, &dWin->creator, str2, dWin->startSel, dWin->endSel );
+//1.7	GetIndString( (StringPtr) str2, strHeader, dWin->fork );
+//1.7	CopyPascalStringToC( (StringPtr) str2, str2 );
+	sprintf( (char *) g.buffer, str, dWin->fileSize, &dWin->fileType, &dWin->creator, /*str2,*/ dWin->startSel, dWin->endSel, dWin->endSel - dWin->startSel );
 	MoveTo( 5, r->top + kLineHeight );
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 	
