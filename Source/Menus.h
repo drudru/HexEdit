@@ -27,6 +27,7 @@
 
 // Menu Resource IDs
 #define kMenuBaseID		128
+#define kMenuXBaseID	129
 
 enum	{kAppleMenu = kMenuBaseID, kFileMenu, kEditMenu, kFindMenu, kOptionsMenu, kColorMenu, kWindowMenu};
 
