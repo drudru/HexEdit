@@ -61,7 +61,7 @@ OSStatus SmartEnableMenuItem( MenuRef menu, short item, short ok );
 OSStatus AdjustMenus( void );
 short GetColorMenuResID( short menuItem );
 short GetWindowMenuItemID( StringPtr title );
-OSStatus HandleMenu( long mSelect );
+OSStatus HandleMenu( long mSelect, short modifiers );
 
 #if TARGET_API_MAC_CARBON
 void PostPrintingErrors( OSStatus status );	// SEL: 1.7 - carbon printing

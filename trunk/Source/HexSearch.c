@@ -287,7 +287,7 @@ void DoModelessDialogEvent( EventRecord *theEvent )
 			}
 */
 			AdjustMenus();
-			HandleMenu( MenuKey( (char) (theEvent->message & charCodeMask) ) );
+			HandleMenu( MenuKey( (char) (theEvent->message & charCodeMask) ), theEvent->modifiers );
 			return;
 		}
 	}

@@ -150,7 +150,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 				
 			case inMenuBar:
 				AdjustMenus();
-				HandleMenu( MenuSelect( theEvent->where ) );
+				HandleMenu( MenuSelect( theEvent->where ), theEvent->modifiers );
 				break;
 
 			default:			// Cursor was inside our theWin
@@ -284,7 +284,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 		if( ( theEvent->modifiers & cmdKey ) != 0 )
 		{
 			AdjustMenus();
-			HandleMenu( MenuKey( (char) (theEvent->message & charCodeMask) ) );
+			HandleMenu( MenuKey( (char) (theEvent->message & charCodeMask) ), theEvent->modifiers );
 		}
 		else
 		{

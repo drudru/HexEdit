@@ -36,7 +36,7 @@ extern WindowRef CompWind1, CompWind2;
 Boolean PerformTextDifferenceCompare( EditWindowPtr dWin, EditWindowPtr dWin2 );
 Boolean PerformTextMatchCompare( EditWindowPtr dWin, EditWindowPtr dWin2 );
 void DoComparison( void );
-Boolean GetCompareFiles( void );
+Boolean GetCompareFiles( short modifiers );
 void ComparisonPreferences( void );
 
 #endif

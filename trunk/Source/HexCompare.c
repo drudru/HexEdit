@@ -38,7 +38,7 @@
 #include "Utility.h"
 
 // variables
-//LR 177 extern short CompareFlag;
+//LR 180 extern short CompareFlag;
 extern unsigned char	gSearchBuffer[256];
 
 WindowRef		CompWind1 = NULL,
@@ -355,24 +355,20 @@ void DoComparison( void )
 }
 
 /**** GET COMPARE FILES ***/
-Boolean GetCompareFiles( void )
+//LR 180 -- pass in modifiers so we can see if we want to force file selection dialogs
+
+Boolean GetCompareFiles( short modifiers )
 {
 //	main handler for the compare of the contents of two windows
-//LR 177	short 		iType;
+//LR 180	short 		iType;
 	EditWindowPtr ew1, ew2;
-	KeyMap keys;
-	Boolean newWindows;
-
-	// LR 177 -- find out if we want to use existing or new windows (ie, read option key)
-	GetKeys( keys );
-	newWindows = ( keys[1] & (1<<2) );
 
 	// close previous file compare windows if open
 
 	// NP 177 -- if windows are open use them instead of asking.
-	// LR 177 -- if 'Option' pressed then we do it the old-fashion way :)
+	// LR 180 -- if 'Option' pressed then we do it the old-fashion way :)
 
-	if( newWindows )
+	if( modifiers & optionKey )
 	{	
 		if( CompWind1 )	DisposeEditWindow( CompWind1 );
 		if( CompWind2 )	DisposeEditWindow( CompWind2 );
@@ -403,17 +399,17 @@ Boolean GetCompareFiles( void )
 	
 	if( ! CompWind1 )
 	{
-//LR 177		CompareFlag=1;
+//LR 180		CompareFlag=1;
 		if( -1 == AskEditWindow( kWindowCompareTop ) )
 		{
-//LR 177			CompareFlag = 0;
+//LR 180			CompareFlag = 0;
 			return false;		// if Cancel, exit
 		}
 	}
 	
 	if( ! CompWind2 )
 	{
-//LR 177		CompareFlag=2;
+//LR 180		CompareFlag=2;
 		if( -1 == AskEditWindow( kWindowCompareBtm ) )
 		{
 			if( CompWind1 )
@@ -438,12 +434,12 @@ Boolean GetCompareFiles( void )
 		
 		CompWind1 = CompWind2 = NULL;
 		WeFoundWind1 = WeFoundWind2 = false;
-//LR 177		CompareFlag = 0;
+//LR 180		CompareFlag = 0;
 
 		return false;
 	}
 
-//LR 177	CompareFlag = 0;
+//LR 180	CompareFlag = 0;
 	return true;
 }
 
