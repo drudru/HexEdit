@@ -491,7 +491,7 @@ static void _sizeWindow( WindowRef theWin )
 	// LR: v1.6.5 round this to a size showing only full lines
 	maxheight = ((maxheight / kLineHeight) * kLineHeight) + kHeaderHeight;
 
-	SizeWindow( theWin, kHexWindowWidth - 1, maxheight, true );
+	SizeWindow( theWin, kHexWindowWidth, maxheight, true );
 
 	// Show the theWin
 	SelectWindow( theWin );
@@ -1473,24 +1473,49 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 				ch1 = ch2 = ch;
 				ch1 >>= 4;
 				ch2 &= 0x0F;
+
+#define SINGLE_DRAW 1
+
+#if SINGLE_DRAW
 				g.buffer[hexPos++] = ch1 + (( ch1 < 10 )? '0' : ( 'A'-10 ));
 				g.buffer[hexPos++] = ch2 + (( ch2 < 10 )? '0' : ( 'A'-10 ));
 				g.buffer[hexPos++] = ' ';
 				g.buffer[asciiPos++] = (ch >= 0x20 && ch <= g.highChar && 0x7F != ch) ? ch : '.';	// LR: 1.7 - 0x7F doesn't draw ANYTHING! Ouch!
+#else
+				g.buffer[0] = ch1 + (( ch1 < 10 )? '0' : ( 'A'-10 ));
+				g.buffer[1] = ch2 + (( ch2 < 10 )? '0' : ( 'A'-10 ));
+				g.buffer[2] = ' ';
+				g.buffer[4] = (ch >= 0x20 && ch <= g.highChar && 0x7F != ch) ? ch : '.';	// LR: 1.7 - 0x7F doesn't draw ANYTHING! Ouch!
+#endif
 			}
 			else
 			{
+#if SINGLE_DRAW
 				g.buffer[hexPos++] = ' ';
 				g.buffer[hexPos++] = ' ';
 				g.buffer[hexPos++] = ' ';
 				g.buffer[asciiPos++] = ' ';
+#else
+				g.buffer[0] = ' ';
+				g.buffer[1] = ' ';
+				g.buffer[2] = ' ';
+				g.buffer[4] = ' ';
+#endif
 			}
+#if !SINGLE_DRAW
+			MoveTo( kDataDrawPos - kHexWidth + (kHexWidth * i), y );
+			DrawText( g.buffer, 0, 3 );
+			MoveTo( kTextDrawPos + (kCharWidth * i), y );
+			DrawText( g.buffer, 4, 1 );
+#endif
 		}
 
 		// %% NOTE: Carsten says to move this into for loop (ie, draw each byte's data) to
 		//			prevent font smoothing from messing up the spacing
+#if SINGLE_DRAW
 		MoveTo( kDataDrawPos - kCharWidth, y );
 		DrawText( g.buffer, kStringHexPos - 1, kBodyStrLen + 3 );
+#endif
 	}
 
 	// Draw left edging? (line only, background erases, but line is erased by text!)
