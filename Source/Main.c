@@ -20,10 +20,11 @@
  * Revision: $Id$
  *
  * Contributor(s):
- *		Lane Roathe
+ *		Lane Roathe (LR)
  *		Nick Shanks (NS)
  *		Scott E. Lasley (SEL) 
  *		Brian Bergstrand (BB) 
+ *		Eric Froemling (EF)
  */
 
 // 05/10/01 - GAB: MPW environment support
@@ -154,24 +155,26 @@ OSStatus DoEvent( EventRecord *theEvent )
 				break;
 
 			default:			// Cursor was inside our theWin
-				// If the theWin isn't in the front
-				if( theWin != FrontNonFloatingWindow() )
-				{
-					// Make it so...
-					SelectWindow( theWin );
-					AdjustMenus();
-				}
-				else
-				{
-					// Window is already in the front, handle the click
+			{
 				switch ( windowCode )
 				{
-					case inContent:
+					case inContent:	//EF 180 -- correctly handle selecting windows
 					{
-						windowKind = GetWindowKind( theWin );
-						objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
-						if( windowKind == kHexEditWindowTag && objectWindow->HandleClick )
-							objectWindow->HandleClick( theWin, theEvent->where, theEvent );
+						// If the theWin isn't in the front
+						if( theWin != FrontNonFloatingWindow() )
+						{
+							// Make it so...
+							SelectWindow( theWin );
+							AdjustMenus();
+						}
+						else	// Window is already in the front, handle the click
+						{
+							windowKind = GetWindowKind( theWin );
+							objectWindow = (ObjectWindowPtr) GetWRefCon( theWin );
+
+							if( windowKind == kHexEditWindowTag && objectWindow->HandleClick )
+								objectWindow->HandleClick( theWin, theEvent->where, theEvent );
+						}
 						break;
 					}
 
@@ -188,10 +191,6 @@ OSStatus DoEvent( EventRecord *theEvent )
 #endif
 						// Handle the dragging of the theWin
 						DragWindow( theWin, theEvent->where, &dragRect );
-
-						objectWindow = (ObjectWindowPtr)GetWRefCon( theWin );
-						if( GetWindowKind( theWin ) == kHexEditWindowTag && !objectWindow->floating )	//LR: 1.66 don't deref non-edit windows!
-							SelectWindow( theWin );
 
 						break;
 					}
@@ -480,6 +479,51 @@ static pascal OSErr _coreEventHandler( const AppleEvent *theEvent, AppleEvent *r
 	return noErr;
 }
 
+#if (TARGET_API_MAC_CARBON)
+//EF 180 -- When we geta mouse wheel event move the croll position
+static pascal OSStatus _handleCarbonEvent(EventHandlerCallRef myHandler,EventRef theEvent, void* userData)
+{	
+	#pragma unused (myHandler,userData)
+	
+	switch (GetEventClass(theEvent))
+	{
+		case kEventClassMouse:
+		{
+			switch (GetEventKind(theEvent))
+			{
+				case kEventMouseWheelMoved:
+				{
+					WindowPtr theWindow;
+					long curPos,newPos;
+					short windowCode;
+					EditWindowPtr dWin;
+					Point theMousePoint;
+					long delta;
+					GetEventParameter(theEvent,kEventParamMouseLocation,typeQDPoint,NULL,sizeof(theMousePoint),NULL,&theMousePoint);
+					GetEventParameter(theEvent,kEventParamMouseWheelDelta,typeLongInteger,NULL,sizeof(delta),NULL,&delta);
+					windowCode = FindWindow ( theMousePoint, &theWindow );
+					if (windowCode == inContent)
+					{
+						if (GetWindowKind(theWindow) == kHexEditWindowTag)
+						{
+							dWin = (EditWindowPtr)GetWRefCon(theWindow);
+							curPos = dWin->editOffset;
+							newPos = curPos;
+							newPos -= (kBytesPerLine * delta);
+							ScrollToPosition( dWin, newPos );	
+							return noErr;
+						}
+					}
+					break;
+				}
+				
+			}
+		}
+	}
+	return eventNotHandledErr;
+}
+#endif //TARGET_API_MAC_CARBON
+
 // LR --- handles only the VOODOO compare files AE
 
 /*** COMPARE EVENT HANDLER ***/
@@ -561,6 +605,26 @@ static OSStatus _initAppleEvents( void )
 	}
 	return noErr;
 }
+
+#if TARGET_API_MAC_CARBON
+
+/*** INIT CARBON EVENTS ***/
+//EF 180 -- handle mouse wheen events via carbon
+static OSStatus _initCarbonEvents( void )
+{
+	long numTypes = 0;
+	OSErr err;
+	EventTypeSpec  eventType[15];
+	EventHandlerUPP theEventHandler = NewEventHandlerUPP(_handleCarbonEvent);
+	
+	/* specify which events we want to receive */
+	eventType[numTypes].eventClass = kEventClassMouse;
+	eventType[numTypes].eventKind = kEventMouseWheelMoved;
+	numTypes++;
+	err = InstallApplicationEventHandler(theEventHandler,numTypes,&eventType[0],NULL,NULL);
+	return err;
+}
+#endif
 
 /*** CHECK ENVIRONMENT ***/
 static OSStatus _checkEnvironment( void )
@@ -700,7 +764,9 @@ int main(int argc, char *argv[])	//LR 175
 	InitializeEditor();
 	AdjustMenus();
 
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
+#if TARGET_API_MAC_CARBON
+	_initCarbonEvents();	//EF 180 -- handle carbon events
+#else
 	if( !g.sys7Flag )
 		AskEditWindow( kWindowNormal );
 #endif
