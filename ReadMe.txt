@@ -28,11 +28,16 @@ Other development environments may be supported, just not "officially" :)
 * File Mappings *
 Several people have noticed that .dmg and other OS X files are being mapped to HexEdit when downloaded. This is a major pain, hopefully this section will be able to tell you why it is happening and impart enough information that you will be able to correct it on your system.
 
-Apple has decided that Microsoft has the correct idea, and all file should be typed by their 3 letter extension, and that the old reliable file types are a bad idea. The result is that all Apple programs now do NOT assign the file types and so if your web browser, ftp client or the system settings do know know the 3 letter extension then it will (in most cases) get mapped to the HexEdit file type. The system settings are changed in File Exchange in OS 9, you can't set these in OS X...yes, that's correct; in OS X only 3 letter file extensions control file types, but you are not allowed to edit those assignments!
+Apple has decided that Microsoft has the correct idea, and all file should be typed by their 3 letter extension, and that the old reliable file types are a bad idea. The result is that all Apple programs now do NOT assign the file types and so if your web browser, ftp client or the system settings do know know the 3 letter extension then it will (in most cases) get mapped to the HexEdit file type. The system settings are changed in File Exchange in OS 9, but you can't set these in OS X...yes, that's correct; in OS X only 3 letter file extensions control file types, but you are not allowed to edit those assignments!
 
 In Internet Explorer, you can set these by going to "Preferences" and the "File Helpers" pane. You will notice that "Untyped binary data" is set to "HexEdit", and that there is not a listing for ".dmg" extensions (you can click on the Extension word to sort by extensions). To fix this, simply create a new entry, describe it as "Disk Image", the the extension to ".dmg" and make sure you set it be a Macintosh file of binary (not text) persuasion.
 
-Anyway, no one is more annoyed with this entire problem than me (Lane), because I get the blame and yet I have no control over the situation!
+Anyway, no one is more annoyed with this entire problem than me (Lane), because I get the blame and yet I have no control over the situation! However, there is a program that gives you back some of the control over this situation:
+
+	http://www.rubicode.com/Software/RCDefaultApp/
+
+
+It's FREE and it works for me :) Thanks to hardboiled for sending me the link!
 
 
 * Translations *

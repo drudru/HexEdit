@@ -137,7 +137,7 @@ Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag )	//LR 17
 	else
 		adjust = -1;
 
-	if( !uiSkipFlag && addr )
+	if( !uiSkipFlag && dWin->startSel != dWin->endSel )	//LR 191 -- adjust only if there is a selection
 	{
 		MySetCursor( C_Watch );
 		addr += adjust;			//LR 189 -- bug fix, find needs this, just not replace all!

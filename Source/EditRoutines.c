@@ -960,12 +960,16 @@ void ClearSelection( EditWindowPtr dWin )
 			ErrorAlert( ES_Caution, errMemory );
 		else
 		{
+			int hold = dWin->startSel;		//LR 191 -- paste moves insertion point
+
 			(*tc)->lastCtr = 1;	// external chunk
 
 			// now, remember for undo and past this chunk over existing space, then free the memory used
 			RememberOperation( dWin, EO_Paste, &gUndo );
 			PasteOperation( dWin, tc );
 			DisposeChunk( dWin, tc );
+
+			dWin->startSel = hold;
 		}
 		ScrollToSelection( dWin, dWin->startSel, false );
 	}
