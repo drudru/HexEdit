@@ -309,12 +309,12 @@ void RewriteAddressChain( EditChunk **fc )
 	}
 }
 
-/*** DELETE SELECTION ***/
-void DeleteSelection( EditWindowPtr dWin )
+/*** REMOVE SELECTION ***/
+void RemoveSelection( EditWindowPtr dWin )
 {
 	EditChunk **fc, **ec, **nc, **tc;
 
-	//LR 180 -- first, this is useless on read-only files!
+	//LR 	//LR 190 -- renamed from DeleteSelection, more appropriate name
 	if( dWin->readOnlyFlag )
 	{
 		ErrorAlert( ES_Stop, errReadOnly );
@@ -688,7 +688,7 @@ void CutSelection( EditWindowPtr dWin )
 
 	RememberOperation( dWin, EO_Cut, &gUndo );
 	CopySelection( dWin );		// Copy into paste buffer (180 -- copy selection, not just operation!)
-	DeleteSelection( dWin );
+	RemoveSelection( dWin );
 	ScrollToSelection( dWin, dWin->startSel, false );
 }
 
@@ -866,7 +866,7 @@ void PasteOperation( EditWindowPtr dWin, EditChunk **scrapChunk )
 
 	BlockMove( *( *scrapChunk )->data, *( *nc )->data, ( *nc )->size );
 
-	DeleteSelection( dWin );
+	RemoveSelection( dWin );
 
 	// Insert paste buffer into selStart
 
@@ -927,10 +927,10 @@ void PasteOperation( EditWindowPtr dWin, EditChunk **scrapChunk )
 	dWin->dirtyFlag = true;
 }
 
-/*** CLEAR SELECTION ***/
-void ClearSelection( EditWindowPtr dWin )
+/*** DELETE SELECTION ***/
+void DeleteSelection( EditWindowPtr dWin )
 {
-	//LR 180 -- first, this is useless on read-only files!
+	//LR 190 -- renamed from ClearSelection, more appropriate name
 	if( dWin->readOnlyFlag )
 	{
 		ErrorAlert( ES_Stop, errReadOnly );
@@ -938,8 +938,39 @@ void ClearSelection( EditWindowPtr dWin )
 	}
 
 	RememberOperation( dWin, EO_Clear, &gUndo );
-	DeleteSelection( dWin );
+	RemoveSelection( dWin );
 	ScrollToSelection( dWin, dWin->startSel, false );
+}
+
+/*** CLEAR SELECTION ***/
+void ClearSelection( EditWindowPtr dWin )
+{
+	//LR 190 -- clear selection should "clear" bytes, not delete them.
+	if( dWin->readOnlyFlag )
+	{
+		ErrorAlert( ES_Stop, errReadOnly );
+		return;
+	}
+
+	if( dWin->endSel > dWin->startSel )	// can only clear something if it's selected
+	{
+		// Create a new chunk which will be all zero by default
+		EditChunk **tc = NewChunk( dWin->endSel - dWin->startSel, 0, 0, CT_Unwritten );
+		if( !tc )
+			ErrorAlert( ES_Caution, errMemory );
+		else
+		{
+			(*tc)->lastCtr = 1;	// external chunk
+
+			// now, remember for undo and past this chunk over existing space, then free the memory used
+			RememberOperation( dWin, EO_Paste, &gUndo );
+			PasteOperation( dWin, tc );
+			DisposeChunk( dWin, tc );
+		}
+		ScrollToSelection( dWin, dWin->startSel, false );
+	}
+	else
+		SysBeep(0);		// nothing to clear, signal it!
 }
 
 // Remember current state for Undo of following operation
@@ -1015,7 +1046,7 @@ void UndoOperation( void )
 			dWin->startSel = gUndo.startSel;
 			dWin->endSel = dWin->fileSize - ( gUndo.fileSize - gUndo.endSel );
 			RememberOperation( dWin, EO_Delete, &gRedo );
-			DeleteSelection( dWin );
+			RemoveSelection( dWin );
 			PasteOperation( dWin, gUndo.undoScrap );
 			break;
 		case EO_Cut:
