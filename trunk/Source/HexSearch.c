@@ -128,8 +128,11 @@ void PerformTextSearch( EditWindowPtr dWin )
 	// LR: 1.72 -- make sure we are searching in OK memory (ie, empty window bug fix)
 	while( addr >= 0 && addr < dWin->fileSize )
 	{
-		if( !(addr % kBytesPerLine) && CheckForAbort())	//LR: 1.66 - allow user to abort the search
-			break;
+		if( !(addr % 4096) )		//LR 1.72 -- don't slow our searches down unnecessarily!
+		{
+			if( CheckForAbort() )	//LR: 1.66 - allow user to abort the search
+				break;
+		}
 
 		ch = GetByte( dWin, addr );
 		if( !prefs.searchCase && prefs.searchMode != EM_Hex )
