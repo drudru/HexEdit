@@ -929,7 +929,15 @@ void DisposeEditWindow( WindowRef theWin )
 
 	//LR 1.72 -- release undo if associated with this window
 	if( dWin == gUndo.theWin )
+	{
 		ReleaseEditScrap( dWin, &gUndo.undoScrap );
+		gUndo.type = 0;
+	}
+	if( dWin == gRedo.theWin )
+	{
+		ReleaseEditScrap( dWin, &gRedo.undoScrap );
+		gRedo.type = 0;
+	}
 
 	DisposeGWorld( dWin->offscreen );
 	DefaultDispose( theWin );
@@ -2729,7 +2737,15 @@ void RevertContents( WindowRef theWin )
 
 	//LR 1.72 -- release undo if associated with this window
 	if( dWin == gUndo.theWin )
+	{
 		ReleaseEditScrap( dWin, &gUndo.undoScrap );
+		gUndo.type = 0;
+	}
+	if( dWin == gRedo.theWin )
+	{
+		ReleaseEditScrap( dWin, &gRedo.undoScrap );
+		gRedo.type = 0;
+	}
 
 	DrawPage( dWin );
 	UpdateOnscreen( theWin );
