@@ -65,8 +65,9 @@
 	#if !defined(GetDialogPort)
 		#define GetDialogPort( d ) d // BB: added (LR -- may already be defined, check!)
 	#endif
-	#define GetPortBounds( p, rp ) *rp = (p)->portRect
-	#define GetWindowPortBounds( w, rp ) *rp = (w)->portRect
+	#define GetWindowBounds(w,t,rp) *rp = (*((CWindowPeek)w)->port.portPixMap)->bounds
+	#define GetPortBounds(p,rp) *rp = (p)->portRect
+	#define GetWindowPortBounds(w,rp) *rp = (w)->portRect
 	#define GetPortPixMap(p) p->portPixMap
 	#define InvalWindowRect(w,r) InvalRect(r)
 	#define EnableMenuItem EnableItem
@@ -99,7 +100,7 @@
 //LR: 1.7 #define AsciiSpacing	6
 //LR: 1.7 #define DescendHeight	0
 
-#define kStringHexPos	11
+#define kStringHexPos	12
 #define kStringTextPos	(kStringHexPos+(kBytesPerLine*3)+1)
 #define kBodyStrLen		(kStringTextPos+kBytesPerLine-kStringHexPos)	// LR: 1.7 was 75 - (kStringHexPos -  2) in EditWindow.c
 
@@ -115,7 +116,7 @@
 
 #define LINENUM(a)		((a) >> 4)
 #define COLUMN(a)		((a) & 0x0F)
-#define CHARPOS(a)		(a * kCharWidth)	//1.72 (((a) << 2) + ((a) << 1))	// Multiply by 6
+#define CHARPOS(a)		((a) * kCharWidth)	//1.72 (((a) << 2) + ((a) << 1))	// Multiply by 6
 #define HEXPOS(a)		(CHARPOS(a) * 3)	//1.72 ((a) << 4) + ((a) << 1))	// Multiply by 18
 
 #define kHexWindowWidth	(((kStringHexPos + kBodyStrLen) * kCharWidth) + kSBarSize)	//LR 1.7 - renamed to show windows are not sizable horizontally! Must be multiple of 2
@@ -139,7 +140,8 @@ enum StringIDs		{ strUndo = 128, strPrint, strHeader, strError, strColor, strPro
 
 enum ErrorIDs		{ errMemory = 1, errSeek, errRead, errSetFPos, errWrite, errPaste, errFindFolder,
 						errCreate, errOpen, errFileInfo, errPrintRange, errSetFileInfo, errBackup,
-						errRename, errDiskFull, errHexValues, errDefaultPrinter, errGenericPrinting
+						errRename, errDiskFull, errHexValues, errDefaultPrinter, errGenericPrinting,
+						errSave, errReadOnly
 					};
 
 enum ChunkTypes		{ CT_Original, CT_Work, CT_Unwritten };
@@ -150,7 +152,7 @@ enum Filenames		{ FN_PrefsFolder = 1, FN_PrefsFile, FN_Untitled, FN_DATA, FN_RSR
 enum AsciiModes		{ AM_Lo, AM_Hi };
 enum EditMode 		{ EM_Hex, EM_Decimal, EM_Ascii };
 enum EditOperation	{ EO_Undo = 1, EO_Redo, EO_Typing, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete };
-enum ErrorSeverity	{ ES_Note, ES_Caution, ES_Stop };
+enum ErrorSeverity	{ ES_Note, ES_Caution, ES_Stop, ES_Fatal };
 enum CursorNumbers	{ C_Arrow, C_Watch, C_IBeam };
 enum CompModeSize 	{ CM_Byte, CM_Word, CM_Long };
 enum CompModeType 	{ CM_Different, CM_Match };
@@ -251,7 +253,10 @@ typedef struct
 	// dialogs
 	DialogPtr	searchDlg;
 	DialogPtr	gotoDlg;
-	
+
+	// Offscreen drawing surface
+	GWorldPtr	offscreen;
+
 	// printing
 #if TARGET_API_MAC_OS8
 	THPrint		HPrint;

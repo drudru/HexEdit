@@ -66,30 +66,19 @@ enum
 	kNavDITLNumControls = 4//3 radio buttons + radio group control
 };
 
-/* NS: v1.6.6, GWorld creation moved to where it is used */
-
-/*
-	Handle creation and use of offscreen bitmaps
-	=================================================
-	22-Sep-00 LR: GWorlds only now (courtesy of Nick Shanks)
-	21-Jun-94 LR: attach palette to offscreen pixmap
-	24-Apr-94 LR: Shit, it was working, color table was messed up!
-	22-Apr-94 LR: ok, no GWorlds, how about CGrafPtrs?
-	20-Apr-94 LR: creation ( w/GWorlds )
-*/
-
-// LR: used to force non-color offscreens ( 1/8 to 1/32 the size! )
-// NS: not used // short PIXELBITS = 1;	// 8, 16, 32
-
 /*** NEW OFFSCREEN GWORLD ***/
+// LR: create offscreen drawing surface (so drawing to screen is not flickery)
+//LR 180 -- removed old comments, now always creates offscreen at current color depth
+
 static GWorldPtr _newCOffScreen( short width, short height )
 {
-	OSStatus	error = noErr;
-	GWorldPtr	theGWorld = NULL;
+	OSStatus	error;
+	GWorldPtr	theGWorld;
 	Rect		rect;
 	
 	SetRect( &rect, 0, 0, width, height );
-	error = NewGWorld( &theGWorld, gPrefs.useColor? 0:1, &rect, NULL, NULL, keepLocal );
+	error = NewGWorld( &theGWorld, /*LR 177gPrefs.useColor? 0:1*/ 0, &rect, NULL, NULL, keepLocal );
+
 	if( error != noErr ) return NULL;
 	return theGWorld;
 }
@@ -170,7 +159,7 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin, tWindowType type )
 	// NS 1.7.1; check for appearance and create appropriate window
 	theWin = InitObjectWindow( (g.useAppearance && g.systemVersion >= kMacOSEight) ? kAppearanceWindow : kSystem7Window, (ObjectWindowPtr) dWin, false );
 	if( !theWin )
-		ErrorAlert( ES_Stop, errMemory );
+		ErrorAlert( ES_Fatal, errMemory );
 
 	// LR: 1.7 set window title & get text for window menu
 	_setWindowTitle( dWin );
@@ -187,17 +176,17 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin, tWindowType type )
 	objectWindow->Revert		= RevertContents;
 	objectWindow->Activate		= MyActivate;
 
-	if( gPrefs.useColor )
+//LR 180	if( gPrefs.useColor )
 		dWin->csResID = gPrefs.csResID;	// LR: 1.5 - color selection
-	else
-		dWin->csResID = -1;	// LR: if created w/o color then offscreen is 1 bit, NO COLOR possible!
+//LR 180	else
+//LR 180		dWin->csResID = -1;	// LR: if created w/o color then offscreen is 1 bit, NO COLOR possible!
 
 	// Make it the current grafport
 	SetPortWindowPort( theWin );
 	
-	dWin->offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
-	if( !dWin->offscreen )
-			ErrorAlert( ES_Stop, errMemory );
+//LR 180	dWin->offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
+//LR 180	if( !dWin->offscreen )
+//LR 180			ErrorAlert( ES_Fatal, errMemory );
 
 	SizeEditWindow( theWin, type );
 
@@ -216,7 +205,8 @@ static OSStatus _setupNewEditWindow( EditWindowPtr dWin, tWindowType type )
 	LocalToGlobal( (Point *)&r.top );
 	LocalToGlobal( (Point *)&r.bottom );
 
-	r.bottom /= 2;		// zoom'd state is 1/2 normal (assume we want as large a window as possible!)
+	//LR 180 -- restrict zoomed (1/2 size) state to full lines
+	r.bottom = (r.top + (((r.bottom - r.top) - kHeaderHeight) / (kLineHeight * 2)) * kLineHeight) + kHeaderHeight;
 
 	SetWindowStandardState( theWin, &r );
 
@@ -351,18 +341,20 @@ static pascal short _sourceDLOGHook( short item, DialogPtr theDialog )
 }
 
 /*** SOURCE DLOG FILTER ***/
+/*LR 180 -- removed, now set prompt string at launch
 static pascal Boolean _sourceDLOGFilter( DialogPtr dlg, EventRecord *event, short *item )
 {
-/*	Str63		prompt;
+	Str63		prompt;
 
 	if( activateEvt == event->what )
 	{
 		GetIndString( prompt, strPrompt, CompareFlag+2 );	// LR: v1.6.5 localizable way!
 		SetText( dlg, 14, prompt );
 	}
-*/
+
 	return StdFilterProc( dlg, event, item );
 }
+*/
 
 #endif
 
@@ -386,7 +378,7 @@ short AskEditWindowNav( tWindowType type )
 	
 	NavGetDefaultDialogOptions( &dialogOptions );
 	dialogOptions.dialogOptionFlags |= kNavNoTypePopup+kNavAllowInvisibleFiles; // BB: allow invisible files - fixes bug #425256
-	GetIndString( dialogOptions.message, strPrompt, type + 2 );	//LR 177 -- modify prompt
+	GetIndString( dialogOptions.message, strPrompt, type + 2 );	//LR 180 -- modify prompt
 
 	error = NavGetFile( NULL, &reply, &dialogOptions, eventProc, previewProc, filterProc, openTypeList, kNavOpenDialogType);
 	if( reply.validRecord || !error )
@@ -419,10 +411,10 @@ short AskEditWindowSF( tWindowType type )
 	Str255		prompt;
 
 	DlgHookUPP myGetFileUPP;		// LR: v1.6.5 limited to this routine
-	ModalFilterUPP myFilterUPP;
+//LR 180	ModalFilterUPP myFilterUPP;
 
 	myGetFileUPP = NewDlgHookProc( _sourceDLOGHook );
-	myFilterUPP = NewModalFilterProc( _sourceDLOGFilter );
+//LR 180	myFilterUPP = NewModalFilterProc( _sourceDLOGFilter );
 
 	// LR: make less of a hack!
 // LR: v1.6.5 localization	= { "\pFile to Open:", "\pFirst File to Compare:", "\pSecond File to Compare:"};
@@ -437,10 +429,10 @@ short AskEditWindowSF( tWindowType type )
 */
 	GetIndString( prompt, strPrompt, type + 2 );	//LR 177 -- send now, instead of modifying dialog later
 
-	SFPGetFile( where, prompt, NULL, -1, NULL, myGetFileUPP, &macSFReply, dlgGetFile, myFilterUPP );
+	SFPGetFile( where, prompt, NULL, -1, NULL, myGetFileUPP, &macSFReply, dlgGetFile, /*LR 180 myFilterUPP*/ NULL );
 
 	DisposeDlgHookUPP( myGetFileUPP );
-	DisposeModalFilterUPP( myFilterUPP );
+//LR 180	DisposeModalFilterUPP( myFilterUPP );
 
 	if( macSFReply.good )
 	{
@@ -502,10 +494,16 @@ void InitializeEditor( void )
 
 #if TARGET_API_MAC_CARBON	// LR: v1.6
 {
+/*LR 180 -- system call takes into account doc!
 	BitMap qdScreenBits;
 
 	GetQDGlobalsScreenBits( &qdScreenBits );
 	g.maxHeight = qdScreenBits.bounds.bottom - qdScreenBits.bounds.top - 24;
+*/
+	Rect r;
+
+	GetAvailableWindowPositioningBounds( GetMainDevice(), &r );
+	g.maxHeight = r.bottom - r.top;
 }
 #else
 	g.maxHeight = qd.screenBits.bounds.bottom - qd.screenBits.bounds.top - 24;	// LR: add 'qd.'
@@ -530,11 +528,19 @@ void InitializeEditor( void )
 
 	DisposeWindow( newWin );	// done w/temp window, get rid of it
 
-#if !TARGET_API_MAC_CARBON	// LR: v1.6
+	//LR 177 -- create global offscreen drawing surface
+
+	g.offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
+	if( !g.offscreen )
+			ErrorAlert( ES_Fatal, errMemory );
+
+	//LR 160 -- start up printing in classic mode
+
+#if !TARGET_API_MAC_CARBON
 	PrOpen();
 	g.HPrint = (THPrint) NewHandle( sizeof(TPrint) );
 	if( !g.HPrint )
-		ErrorAlert( ES_Stop, errMemory );
+		ErrorAlert( ES_Fatal, errMemory );
 
 	PrintDefault( g.HPrint );
 	PrClose();
@@ -550,6 +556,7 @@ void SizeEditWindow( WindowRef theWin, tWindowType type )
 {
 	EditWindowPtr dWin = (EditWindowPtr)GetWRefCon( theWin );
 	short maxheight = g.maxHeight / 2 - 96;
+	Rect r;
 
 	// LR:	Hack for comparing two files
 	if( kWindowCompareTop == type )
@@ -564,15 +571,27 @@ void SizeEditWindow( WindowRef theWin, tWindowType type )
 	}
 	else	// kWindowNormal
 	{
-		maxheight = g.maxHeight - 64;
+		maxheight = g.maxHeight;
 	}
 
+	//LR 180 -- make sure bottom of window doesn't go off end of screen
+	//	NOTE:	Carbon top is positive, classic is negative!
+	GetWindowBounds( theWin, kWindowStructureRgn, &r );
+#if TARGET_API_MAC_CARBON
+		maxheight -= (r.top + 24);	// need menu bar
+#else
+		maxheight += r.top;
+#endif
+
 	// Check for best window size
-	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < g.maxHeight )
+	if( (dWin->fileSize / kBytesPerLine) * kLineHeight < maxheight )
+	{
 		maxheight = (((dWin->fileSize + (kBytesPerLine - 1)) / kBytesPerLine) * kLineHeight);
 
-	if( maxheight < (kLineHeight * 5) )
-		maxheight = (kLineHeight * 5);
+		// Make sure window is at least of some usable size!
+		if( maxheight < (kLineHeight * 10) )
+			maxheight = (kLineHeight * 10);
+	}
 
 	// LR: v1.6.5 round this to a size showing only full lines
 	maxheight = ((maxheight / kLineHeight) * kLineHeight) + kHeaderHeight;
@@ -728,7 +747,8 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 	//LR 175 -- try to find the file in an open window first, and use it if found
 	if( NULL != (dWin = LocateEditWindow( fsSpec, g.forkMode == FM_Smart ? -1 : g.forkMode )) )
 	{
-		SizeEditWindow( dWin->oWin.theWin, type );
+//LR 180		SizeEditWindow( dWin->oWin.theWin, type );
+		SelectWindow( dWin->oWin.theWin );
 		return( noErr );
 	}
 
@@ -745,42 +765,49 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 	{
 		if( showerr )
 			ErrorAlert( ES_Caution, errFileInfo, error );
-		return error;
+
+		return( error );
 	}
 
-	// fileSize = pb.fileParam.ioFlLgLen;	// Data Fork Length!!!!
-	// GetEOF( refNum, &fileSize );
-	
+	// Allocate our edit window storage
 	dWin = (EditWindowPtr) NewPtrClear( sizeof(EditWindowRecord) );
 	if( !dWin )
 	{
 		error = MemError();
-		FSClose( refNum );
 		if( showerr )
 			ErrorAlert( ES_Caution, errMemory );
-		return error;
+
+		return( error );
 	}
-	
+
+	// Handle the Opening of the Data Fork
+
 	if( g.forkMode == FM_Data || (pb.fileParam.ioFlLgLen > 0 && g.forkMode == FM_Smart) )
 	{
-		// Open Data Fork
 		dWin->fork = FT_Data;
 //LR 175		error = HOpenDF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
 		error = FSpOpenDF( fsSpec, fsRdWrPerm, &refNum );
+		if( error )
+		{
+			dWin->readOnlyFlag = true;
+			error = FSpOpenDF( fsSpec, fsRdPerm, &refNum );	//LR 180 -- on error try to open read-only
+		}
 		if( !error )
 			error = GetEOF( refNum, &fileEOF );		//LR 175
+
 		if( error == fnfErr || (!error && 0 == fileEOF) )
 		{
 			if( showerr )
-				return fnfErr;
-
-			GetIndString( tempStr, strFiles, FN_DATA );
-			ParamText( fsSpec->name, tempStr, NULL, NULL );
-			if( StopAlert( alertNoFork, NULL ) != 2 )
 			{
-				FSClose( refNum );		//LR 175
-				return( fnfErr );
+				GetIndString( tempStr, strFiles, FN_DATA );
+				ParamText( fsSpec->name, tempStr, NULL, NULL );
+
+				if( StopAlert( alertNoFork, NULL ) == 2 )
+					goto contData;
 			}
+
+			error = fnfErr;		//LR 180 -- save lots of dup'd code (and prevent future missed mods)
+			goto exitErr;
 
 /*LR 175 -- empty forks are always opened, so we just have to warn about them being empty!
 
@@ -795,34 +822,48 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 			error = FSpOpenDF( fsSpec, fsRdWrPerm, &refNum );
 */
 		}
-		if( error != noErr )
+		else if( error != noErr )
 		{
+contErr:
 			if( showerr )
 				ErrorAlert( ES_Caution, errOpen, error );
-			return error;
+exitErr:
+			if( dWin )
+				DisposePtr( (Ptr)dWin );		//LR 180 -- no memory leaks!
+
+			if( refNum )
+				FSClose( refNum );		//LR 175
+
+			return( error );
 		}
+contData:
 		dWin->fileSize = pb.fileParam.ioFlLgLen;
 	}
-	else
+	else		// otherwise, Open the Resource Fork
 	{
-		// Open Resource Fork
 		dWin->fork = FT_Resource;
 //LR 175		error = HOpenRF( fsSpec->vRefNum, fsSpec->parID, fsSpec->name, fsRdPerm, &refNum );
 		error = FSpOpenRF( fsSpec, fsRdWrPerm, &refNum );
+		if( error )
+		{
+			dWin->readOnlyFlag = true;
+			error = FSpOpenRF( fsSpec, fsRdPerm, &refNum );	//LR 180 -- on error try to open read-only
+		}
 		if( !error )
 			error = GetEOF( refNum, &fileEOF );		//LR 175
+
 		if( error == fnfErr || (!error && 0 == fileEOF) )
 		{
-			if( !showerr )
-				return fnfErr;
-
-			GetIndString( tempStr, strFiles, FN_RSRC );
-			ParamText( fsSpec->name, tempStr, NULL, NULL );
-			if( StopAlert( alertNoFork, NULL ) != 2 )
+			if( showerr )
 			{
-				FSClose( refNum );		//LR 175
-				return( fnfErr );
+				GetIndString( tempStr, strFiles, FN_RSRC );
+				ParamText( fsSpec->name, tempStr, NULL, NULL );
+				if( StopAlert( alertNoFork, NULL ) != 2 )
+					goto contRsrc;
 			}
+
+			error = fnfErr;		//LR 180 -- save lots of dup'd code (and prevent future missed mods)
+			goto exitErr;
 
 /*LR 175 -- empty forks are always opened, so we just have to warn about them being empty!
 
@@ -837,12 +878,9 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 			error = FSpOpenRF( fsSpec, fsRdWrPerm, &refNum );
 */
 		}
-		if( error != noErr )
-		{
-			if( showerr )
-				ErrorAlert( ES_Caution, errOpen, error );
-			return error;
-		}
+		else if( error != noErr )
+			goto contErr;
+contRsrc:
 		dWin->fileSize = pb.fileParam.ioFlRLgLen;
 	}
 
@@ -929,7 +967,7 @@ void DisposeEditWindow( WindowRef theWin )
 		gRedo.type = 0;
 	}
 
-	DisposeGWorld( dWin->offscreen );
+//LR 180	DisposeGWorld( dWin->offscreen );
 	DefaultDispose( theWin );
 	AdjustMenus();
 }
@@ -1063,16 +1101,6 @@ EditWindowPtr FindFirstEditWindow( void )
 	return FindNextEditWindow( NULL );
 }
 
-/*** MY ACTIVATE ***/
-void MyActivate( WindowRef theWin, Boolean active )
-{
-	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-
-	if( dWin->vScrollBar )
-		HiliteControl( dWin->vScrollBar, active? 0 : 255 );
-	DefaultActivate( theWin, active );
-}
-
 /*** UPDATE EDIT WINDOWS ***/
 //LR: 1.66 - avoid NULL window ref, DrawPage with CURRENT dWin (not first!)
 void UpdateEditWindows( void )
@@ -1086,15 +1114,422 @@ void UpdateEditWindows( void )
 		if( windowKind == kHexEditWindowTag )
 		{
 			dWin = (EditWindowPtr)GetWRefCon( theWin );
-			DrawPage( dWin );
+//LR 180			DrawPage( dWin );
 			UpdateOnscreen( theWin );
 		}
 		theWin = GetNextWindow( theWin );
 	}
 }
 
+/*** MY ACTIVATE ***/
+void MyActivate( WindowRef theWin, Boolean active )
+{
+	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+
+	if( dWin->vScrollBar )
+		HiliteControl( dWin->vScrollBar, active? 0 : 255 );
+	DefaultActivate( theWin, active );
+}
+
+#pragma mark -
+
+/*** OFFSET SELECTION ***/
+static void _offsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFlag )
+{
+	long	selWidth;
+//LR 180	Boolean	fullUpdate;
+
+	selWidth = dWin->endSel - dWin->startSel;
+//LR 180	fullUpdate = shiftFlag || selWidth > 1;
+
+	if( offset < 0 )
+	{
+		if( dWin->startSel > 0 )
+		{
+			if( (short) 0xFEED == offset )	// LR: v1.6.5 LR	-"special code"
+				dWin->startSel = 0;
+			else
+				dWin->startSel += offset;
+
+			if( dWin->startSel < 0 )
+				dWin->startSel = 0;
+			if( !shiftFlag )
+			{
+				dWin->endSel = dWin->startSel;
+				CursorOff( dWin->oWin.theWin );
+			}
+			if( !shiftFlag )
+				CursorOn( dWin->oWin.theWin );
+		}
+		else
+		{
+			SysBeep( 1 );
+			if( !shiftFlag )
+				dWin->endSel = dWin->startSel;		//LR 1.72 -- deselect anyway
+		}
+		ScrollToSelection( dWin, dWin->startSel, false );
+	}
+	else
+	{
+		if( dWin->endSel < dWin->fileSize )
+		{
+			if( 0xBED == offset )	// LR: v1.6.5 LR	-"special code"
+				dWin->endSel = dWin->fileSize;
+			else
+				dWin->endSel += offset;
+
+			if( dWin->endSel > dWin->fileSize )
+				dWin->endSel = dWin->fileSize;
+			if( !shiftFlag )
+			{
+				dWin->startSel = dWin->endSel;
+				CursorOff( dWin->oWin.theWin );
+			}
+			if( !shiftFlag )
+				CursorOn( dWin->oWin.theWin );
+		}
+		else
+		{
+			SysBeep( 1 );
+			if( !shiftFlag )
+				dWin->startSel = dWin->endSel;		//LR 1.72 -- deselect anyway
+		}
+		ScrollToSelection( dWin, dWin->endSel, false );
+	}
+}
+
+/*** INVERT SELECTION ***/
+//LR 180 -- changes to draw offscreen instead of directly to window
+static void _invertSelection( EditWindowPtr	dWin )
+{
+	Rect	r;
+	long	start, end;
+	short	startX, endX;
+	Boolean	frontFlag;
+	RGBColor invertColor;
+
+	frontFlag = (dWin->oWin.theWin == FrontNonFloatingWindow() && dWin->oWin.active);
+
+	if( dWin->endSel <= dWin->startSel )
+		return;
+
+	if( ctHdl )	invertColor = ( *ctHdl )->body;
+	else		invertColor = white;
+	
+	InvertColor( &invertColor );
+	
+	start = dWin->startSel - dWin->editOffset;
+	if( start < 0 )
+		start = 0;
+	end = ( dWin->endSel-1 ) - dWin->editOffset;
+	if( end > ( (dWin->linesPerPage + 1) * kBytesPerLine )-1 )
+		end = ( (dWin->linesPerPage + 1) * kBytesPerLine )-1;
+	
+	startX = COLUMN( start );
+	endX = COLUMN( end );
+	
+	if( !frontFlag )
+	{
+		if( LINENUM( start ) < LINENUM( end ) )
+		{
+			// Outline Hex
+			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
+			r.bottom = r.top + kLineHeight;
+			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+
+			MoveTo( kDataDrawPos - 3, r.bottom );
+
+			LineTo( r.left, r.bottom );
+			LineTo( r.left, r.top );
+			if( dWin->startSel >= dWin->editOffset )
+			{
+				LineTo( r.right, r.top );
+			}
+			else
+				MoveTo( r.right, r.top );
+			LineTo( r.right, r.bottom );
+
+			// Outline Box around Ascii
+			r.left = kTextDrawPos + CHARPOS( startX ) - 1;
+			r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
+			
+			MoveTo( kTextDrawPos, r.bottom );
+			LineTo( r.left, r.bottom );
+
+			LineTo( r.left, r.top );
+			if( dWin->startSel >= dWin->editOffset )
+			{
+				LineTo( r.right, r.top );
+			}
+			else
+				MoveTo( r.right, r.top );
+			LineTo( r.right, r.bottom );
+
+			if( LINENUM( start ) < LINENUM( end ) - 1 )
+			{
+				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
+				r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
+				r.left = kDataDrawPos - 3;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+				MoveTo( r.left, r.top );
+				LineTo( r.left, r.bottom );
+				MoveTo( r.right, r.top );
+				LineTo( r.right, r.bottom );
+
+				r.left = kTextDrawPos - 1;
+				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
+				MoveTo( r.left, r.top );
+				LineTo( r.left, r.bottom );
+				MoveTo( r.right, r.top );
+				LineTo( r.right, r.bottom );
+			}
+			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
+			r.bottom = r.top + kLineHeight;
+			r.left = kDataDrawPos - 3;
+			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+			MoveTo( r.left, r.top );
+			LineTo( r.left, r.bottom );
+			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+			{
+				LineTo( r.right, r.bottom );
+			}
+			else
+				MoveTo( r.right, r.bottom );
+			LineTo( r.right, r.top );
+			LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
+
+			r.left = kTextDrawPos - 1;
+			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
+			MoveTo( r.left, r.top );
+			LineTo( r.left, r.bottom-1 );
+			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+			{
+				LineTo( r.right, r.bottom-1 );
+			}
+			else
+				MoveTo( r.right, r.bottom-1 );
+			LineTo( r.right, r.top );
+			LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
+		}
+		else
+		{
+			r.top = (kHeaderHeight / 2)+LINENUM( start ) * kLineHeight;
+			r.bottom = r.top+kLineHeight;
+			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+			MoveTo( r.left, r.top );
+			LineTo( r.left, r.bottom );
+			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+			{
+				LineTo( r.right, r.bottom );
+			}
+			else
+				MoveTo( r.right, r.bottom );
+			LineTo( r.right, r.top );
+			if( dWin->startSel >= dWin->editOffset )
+			{
+				LineTo( r.left, r.top );
+			}
+
+			r.left = kTextDrawPos + CHARPOS( startX )-1;
+			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
+
+			MoveTo( r.left, r.top );
+			LineTo( r.left, r.bottom-1 );
+			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+			{
+				LineTo( r.right, r.bottom-1 );
+			}
+			else
+				MoveTo( r.right, r.bottom-1 );
+			LineTo( r.right, r.top );
+			if( dWin->startSel >= dWin->editOffset )
+			{
+					LineTo( r.left, r.top );
+			}
+		}
+	}
+	else
+	{
+		if( dWin->editMode == EM_Hex )
+		{
+			if( LINENUM( start ) < LINENUM( end ) )
+			{
+	
+				// Invert Hex
+				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
+				r.bottom = r.top + kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+				InvertRect( &r );
+
+				// Outline Box around Ascii
+				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
+				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
+				
+				MoveTo( kTextDrawPos, r.bottom );
+				LineTo( r.left, r.bottom );
+	
+				LineTo( r.left, r.top );
+				if( dWin->startSel >= dWin->editOffset )
+					LineTo( r.right, r.top );
+				else
+					MoveTo( r.right, r.top );
+				LineTo( r.right, r.bottom );
+	
+				// Invert Hex portion partials
+				if( LINENUM( start ) < LINENUM( end )-1 )
+				{
+					r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
+					r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
+					r.left = kDataDrawPos - 3;
+					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+					InvertRect( &r );
+	
+					r.left = kTextDrawPos - 1;
+					r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
+					MoveTo( r.left, r.top );
+					LineTo( r.left, r.bottom );
+					MoveTo( r.right, r.top );
+					LineTo( r.right, r.bottom );
+				}
+				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
+				r.bottom = r.top + kLineHeight;
+				r.left = kDataDrawPos - 3;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+				InvertRect( &r );
+	
+				r.left = kTextDrawPos - 1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
+				MoveTo( r.left, r.top );
+				LineTo( r.left, r.bottom-1 );
+				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+				{
+					LineTo( r.right, r.bottom-1 );
+				}
+				else
+					MoveTo( r.right, r.bottom-1 );
+				LineTo( r.right, r.top );
+				LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
+			}
+			else
+			{
+				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
+				r.bottom = r.top + kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+
+				InvertRect( &r );
+	
+				r.left = kTextDrawPos + CHARPOS( startX )-1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
+	
+				MoveTo( r.left, r.top );
+				LineTo( r.left, r.bottom-1 );
+				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+				{
+					LineTo( r.right, r.bottom-1 );
+				}
+				else
+					MoveTo( r.right, r.bottom-1 );
+				LineTo( r.right, r.top );
+				if( dWin->startSel >= dWin->editOffset )
+				{
+					LineTo( r.left, r.top );
+				}
+			}
+		}
+		else	// Ascii Mode!!
+		{
+			if( LINENUM( start ) < LINENUM( end ) )
+			{
+				// Outline Hex
+				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
+				r.bottom = r.top + kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+	
+				MoveTo( kDataDrawPos - 3, r.bottom );
+				LineTo( r.left, r.bottom );
+				LineTo( r.left, r.top );
+				if( dWin->startSel >= dWin->editOffset )
+				{
+					LineTo( r.right, r.top );
+				}
+				else
+					MoveTo( r.right, r.top );
+				LineTo( r.right, r.bottom );
+	
+				// Invert Ascii
+				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
+				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
+				InvertRect( &r );
+	
+				if( LINENUM( start ) < LINENUM( end )-1 )
+				{
+					r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
+					r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
+					r.left = kDataDrawPos - 3;
+					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+					MoveTo( r.left, r.top );
+					LineTo( r.left, r.bottom );
+					MoveTo( r.right, r.top );
+					LineTo( r.right, r.bottom );
+	
+					r.left = kTextDrawPos - 1;
+					r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
+					InvertRect( &r );
+				}
+				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
+				r.bottom = r.top + kLineHeight;
+				r.left = kDataDrawPos - 3;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+				MoveTo( r.left, r.top );
+				LineTo( r.left, r.bottom );
+				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+				{
+					LineTo( r.right, r.bottom );
+				}
+				else
+					MoveTo( r.right, r.bottom );
+				LineTo( r.right, r.top );
+				LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
+	
+				r.left = kTextDrawPos - 1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
+				InvertRect( &r );
+			}
+			else
+			{
+				r.top = (kHeaderHeight / 2)+LINENUM( start ) * kLineHeight;
+				r.bottom = r.top+kLineHeight;
+				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+				MoveTo( r.left, r.top );
+				LineTo( r.left, r.bottom );
+				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
+				{
+					LineTo( r.right, r.bottom );
+				}
+				else
+					MoveTo( r.right, r.bottom );
+				LineTo( r.right, r.top );
+				if( dWin->startSel >= dWin->editOffset )
+				{
+					LineTo( r.left, r.top );
+				}
+	
+				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
+				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;
+				InvertRect( &r );
+			}
+		}
+	}
+}
+
 /*** INIT COLOUR TABLE ***/
-OSStatus InitColorTable( HEColorTablePtr ct )
+static OSStatus _initColorTable( HEColorTablePtr ct )
 {
 	ct->header.red = ct->header.green = ct->header.blue =	// default light grey scheme
 	ct->bar.red = ct->bar.green = ct->bar.blue = 0xCFFF;
@@ -1106,7 +1541,7 @@ OSStatus InitColorTable( HEColorTablePtr ct )
 }
 
 /*** GET COLOUR INFO ***/
-OSStatus GetColorInfo( EditWindowPtr dWin )
+static OSStatus _getColorInfo( EditWindowPtr dWin )
 {
 	// NS: 1.3, set hilight colour
 /*	Handle vars = dWin->oWin.theWin.port.grafVars;
@@ -1120,7 +1555,7 @@ OSStatus GetColorInfo( EditWindowPtr dWin )
 		if( !ctHdl )
 		{
 			ctHdl = (HEColorTableHandle) NewHandle( sizeof(HEColorTable_t) );
-			if( ctHdl ) InitColorTable( *ctHdl );
+			if( ctHdl ) _initColorTable( *ctHdl );
 		}
 	}
 	else ctHdl = NULL;	// LR: all that's needed to be nonQD compatible?
@@ -1128,11 +1563,11 @@ OSStatus GetColorInfo( EditWindowPtr dWin )
 }
 
 /*** DRAW HEADER ***/
-void DrawHeader( EditWindowPtr dWin, Rect *r )
+static void _drawHeader( EditWindowPtr dWin, Rect *r )
 {
 	char str[256];	//LR 1.7 -- no need for fork, replaced with selection length, str2[31];
 
-	GetColorInfo( dWin );	// LR: v1.6.5 ensure that updates are valid!
+	_getColorInfo( dWin );	// LR: v1.6.5 ensure that updates are valid!
 
 	TextFont( g.fontFaceID );
 	TextSize( g.fontSize );
@@ -1187,7 +1622,7 @@ void DrawHeader( EditWindowPtr dWin, Rect *r )
 /*** DrawFooter ***/
 // only used when printing
 // LR: 1.7 - use TextUtils to get date/time strings in user preferred format!
-void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
+static void _drawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 {
 	unsigned long	dt;
 	Str63	s1, s2;
@@ -1249,7 +1684,7 @@ void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 // NOTE: the kStringTextPos stuff is a bit weird, but it's because I want to draw the leading space in the body
 //			color instead of the address color (and because we don't print the extra spaces every time).
 
-OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
+static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 {
 	short	i, j, y;
 	short	hexPos;
@@ -1263,10 +1698,10 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	TextFace( normal );
 	TextMode( srcCopy );
 
-	// create bounds rectangle
+	// create address border bounds rectangle
 	addrRect.top = r->top;	// we need to erase seperating space
 	addrRect.left = r->left;
-	addrRect.right = r->left + kBodyDrawPos + StringWidth( "\p 0000000:" );
+	addrRect.right = r->left + kBodyDrawPos + StringWidth( "\p 00000000:" );	//LR 180 -- use 8 chars, not 7!
 	addrRect.bottom = r->bottom;
 
 	if( ctHdl )
@@ -1281,9 +1716,9 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	for( y = r->top + (kLineHeight - 2), j = 0; y < r->bottom && addr < eAddr; y += kLineHeight, j++ )
 	{
 		if( gPrefs.decimalAddr )
-			sprintf( (char *)&g.buffer[0], "%8ld:", addr );
+			sprintf( (char *)&g.buffer[0], "%9ld:", addr );
 		else
-			sprintf( (char *)&g.buffer[0], " %07lX:", addr );
+			sprintf( (char *)&g.buffer[0], " %08lX:", addr );
 
 		// draw the address (not one big string due to different coloring!)
 		if( ctHdl )
@@ -1389,14 +1824,14 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		if( ctHdl )
 			RGBForeColor( &( *ctHdl )->headerLine );	// LR: v1.6.5 LR - was barText
 
-		MoveTo( CHARPOS(22) - (kCharWidth / 2) - 1, addrRect.top );
-		LineTo( CHARPOS(22) - (kCharWidth / 2) - 1, addrRect.bottom );
+		MoveTo( CHARPOS(kStringHexPos + 11) - (kCharWidth / 2) - 1, addrRect.top );
+		LineTo( CHARPOS(kStringHexPos + 11) - (kCharWidth / 2) - 1, addrRect.bottom );
 
-		MoveTo( CHARPOS(34) - (kCharWidth / 2) - 1, addrRect.top );
-		LineTo( CHARPOS(34) - (kCharWidth / 2) - 1, addrRect.bottom );
+		MoveTo( CHARPOS(kStringHexPos + 23) - (kCharWidth / 2) - 1, addrRect.top );
+		LineTo( CHARPOS(kStringHexPos + 23) - (kCharWidth / 2) - 1, addrRect.bottom );
 
-		MoveTo( CHARPOS(46) - (kCharWidth / 2) - 1, addrRect.top );
-		LineTo( CHARPOS(46) - (kCharWidth / 2) - 1, addrRect.bottom );
+		MoveTo( CHARPOS(kStringHexPos + 35) - (kCharWidth / 2) - 1, addrRect.top );
+		LineTo( CHARPOS(kStringHexPos + 35) - (kCharWidth / 2) - 1, addrRect.bottom );
 	}
 
 	// LR: restore color
@@ -1409,7 +1844,7 @@ OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 }
 
 /*** DRAW PAGE ***/
-void DrawPage( EditWindowPtr dWin )
+static void _drawPage( EditWindowPtr dWin )
 {
 	GrafPtr			savePort;
 	Rect			r;
@@ -1419,15 +1854,15 @@ void DrawPage( EditWindowPtr dWin )
 	_profile = 1;
 #endif
 
-	GetColorInfo( dWin );	// LR: v1.6.5 multiple routines need this
+	_getColorInfo( dWin );	// LR: v1.6.5 multiple routines need this
 
 	GetPort( &savePort );
-	thePixMapH = GetGWorldPixMap( dWin->offscreen );
+	thePixMapH = GetGWorldPixMap( /*LR 180 dWin->*/ g.offscreen );
 	if ( LockPixels( thePixMapH ) )
 	{
-		SetPort( ( GrafPtr )dWin->offscreen );
+		SetPort( ( GrafPtr )/*LR 180 dWin->*/ g.offscreen );
 
-		GetPortBounds( dWin->offscreen, &r );
+		GetPortBounds( /*LR 180 dWin->*/ g.offscreen, &r );
 
 		if( ctHdl )
 			RGBBackColor( &( *ctHdl )->body );
@@ -1448,7 +1883,7 @@ void DrawPage( EditWindowPtr dWin )
 			EraseRect( &er );
 		}
 
-		DrawDump( dWin, &r, dWin->editOffset, dWin->fileSize );
+		_drawDump( dWin, &r, dWin->editOffset, dWin->fileSize );
 
 		if( ctHdl )
 		{
@@ -1456,30 +1891,17 @@ void DrawPage( EditWindowPtr dWin )
 			RGBBackColor( &white );
 		}
 
-		UnlockPixels( thePixMapH ); // sel
+		//LR: 180 -- we can now draw the selection offscreen since we always do full updates
+		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) )
+			_invertSelection( dWin );
 
-	// LR: offscreen fix!	SetPortBits( &realBits );
+		UnlockPixels( thePixMapH ); // sel
 		SetPort( savePort );
 	}
 
 #if PROFILE
 	_profile = 0;
 #endif
-}
-
-// Respond to an update event - BeginUpdate has already been called.
-
-/*** MY DRAW ***/
-void MyDraw( WindowRef theWin )
-{
-	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-	DrawControls( theWin );
-	if( !g.useAppearance )	//LR 1.72 -- must call when not using Appearance
-		DrawGrowIcon( theWin );
-
-	// EraseRect( &theWin->portRect );
-	DrawPage( dWin );
-	UpdateOnscreen( theWin );
 }
 
 /*** UPDATE ONSCREEN ***/
@@ -1490,11 +1912,14 @@ void UpdateOnscreen( WindowRef theWin )
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	PixMapHandle thePixMapH;
 
-	// Now, draw header to main window & blit offscreen
+	//LR 180 -- all updates now must draw the entire screen!
+	_drawPage( dWin );
+
+	// Now, draw the header information
 	thePixMapH = GetPortPixMap( GetWindowPort( theWin ) );
 	if ( LockPixels( thePixMapH ) )
 	{
-		GetPortBounds( dWin->offscreen, &r1 );
+		GetPortBounds( /*LR 180 dWin->*/ g.offscreen, &r1 );
 		GetWindowPortBounds( theWin, &r2 );
 
 		GetPort( &oldPort );
@@ -1504,7 +1929,7 @@ void UpdateOnscreen( WindowRef theWin )
 
 		// LR: Header drawn here due to overlapping vScrollBar
 		r2.bottom = r2.top + kHeaderHeight - 1;
-		DrawHeader( dWin, &r2 );
+		_drawHeader( dWin, &r2 );
 
 		// LR: adjust for scrollbar & header
 		GetWindowPortBounds( theWin, &r2 );
@@ -1517,20 +1942,37 @@ void UpdateOnscreen( WindowRef theWin )
 		r2.right -= kSBarSize;
 		r1.bottom = r1.top + (r2.bottom - r2.top);
 
-	// LR: offscreen fix!	CopyBits( ( BitMap * ) &dWin->pixMap, &theWin->portBits, &r3, &r3, srcCopy, 0L );	// LR: -- PixMap change
-	#if TARGET_API_MAC_CARBON	// LR: v1.6
-		CopyBits( GetPortBitMapForCopyBits( dWin->offscreen ), GetPortBitMapForCopyBits( GetWindowPort( theWin ) ), &r1, &r2, srcCopy, 0L );
+	//LR 160 -- Must blit a bit differently when in Carbon
+
+	#if TARGET_API_MAC_CARBON
+		CopyBits( GetPortBitMapForCopyBits( /*LR 180 dWin->*/ g.offscreen ), GetPortBitMapForCopyBits( GetWindowPort( theWin ) ), &r1, &r2, srcCopy, 0L );
 	#else
-		CopyBits( ( BitMap * ) &( dWin->offscreen )->portPixMap, &theWin->portBits, &r1, &r2, srcCopy, 0L );
+		CopyBits( ( BitMap * ) &( /*LR 180 dWin->*/ g.offscreen )->portPixMap, &theWin->portBits, &r1, &r2, srcCopy, 0L );
 	#endif
 
 		//%% LR: 1.7 -- needs to be done offscreen, but then it's  not erased -- this is a new shell todo item :)
-		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) )
-			InvertSelection( dWin );
+//LR 180		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) )
+//LR 180			_invertSelection( dWin );
 
 		UnlockPixels( thePixMapH );
 		SetPort( oldPort );
 	}
+}
+
+// Respond to an update event - BeginUpdate has already been called.
+
+/*** MY DRAW ***/
+void MyDraw( WindowRef theWin )
+{
+	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
+	DrawControls( theWin );
+
+	if( !g.useAppearance )	//LR 1.72 -- must call when not using Appearance
+		DrawGrowIcon( theWin );
+
+	// EraseRect( &theWin->portRect );
+//LR 180	DrawPage( dWin );
+	UpdateOnscreen( theWin );
 }
 
 /*** MY IDLE ***/
@@ -1611,7 +2053,7 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 				dWin->editMode = EM_Ascii;
 			}
 			else
-				goto GetMouseLabel;
+				goto newmousepos;
 
 			pos += dWin->editOffset;
 			if( pos < dWin->editOffset )
@@ -1635,407 +2077,13 @@ void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 			{
 				dWin->startSel = sPos;
 				dWin->endSel = ePos;
+
 				UpdateOnscreen( theWin );
 			}
-	GetMouseLabel:
+newmousepos:
 			GetMouse( &w );
 
 		} while ( WaitMouseUp() );
-	}
-}
-
-/*** INVERT SELECTION ***/
-void InvertSelection( EditWindowPtr	dWin )
-{
-	Rect	r;
-	long	start, end;
-	short	startX, endX;
-	Boolean	frontFlag;
-	RGBColor invertColor;
-
-	frontFlag = (dWin->oWin.theWin == FrontNonFloatingWindow() && dWin->oWin.active);
-
-	if( dWin->endSel <= dWin->startSel )
-		return;
-
-	if( ctHdl )	invertColor = ( *ctHdl )->body;
-	else		invertColor = white;
-	
-	InvertColor( &invertColor );
-	
-	start = dWin->startSel - dWin->editOffset;
-	if( start < 0 )
-		start = 0;
-	end = ( dWin->endSel-1 ) - dWin->editOffset;
-	if( end > ( (dWin->linesPerPage + 1) * kBytesPerLine )-1 )
-		end = ( (dWin->linesPerPage + 1) * kBytesPerLine )-1;
-	
-	startX = COLUMN( start );
-	endX = COLUMN( end );
-	
-	if( !frontFlag )
-	{
-		if( LINENUM( start ) < LINENUM( end ) )
-		{
-			// Outline Hex
-			r.top = kHeaderHeight + LINENUM( start ) * kLineHeight;
-			r.bottom = r.top+kLineHeight;
-			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-
-			MoveTo( kDataDrawPos - 3, r.bottom );
-
-			LineTo( r.left, r.bottom );
-			LineTo( r.left, r.top );
-			if( dWin->startSel >= dWin->editOffset )
-			{
-				LineTo( r.right, r.top );
-			}
-			else
-				MoveTo( r.right, r.top );
-			LineTo( r.right, r.bottom );
-
-			// Outline Box around Ascii
-			r.left = kTextDrawPos + CHARPOS( startX ) - 1;
-			r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-			
-			MoveTo( kTextDrawPos, r.bottom );
-			LineTo( r.left, r.bottom );
-
-			LineTo( r.left, r.top );
-			if( dWin->startSel >= dWin->editOffset )
-			{
-				LineTo( r.right, r.top );
-			}
-			else
-				MoveTo( r.right, r.top );
-			LineTo( r.right, r.bottom );
-
-			if( LINENUM( start ) < LINENUM( end ) - 1 )
-			{
-				r.top = kHeaderHeight + LINENUM( start ) * kLineHeight + kLineHeight;
-				r.bottom = kHeaderHeight + LINENUM( end ) * kLineHeight;
-				r.left = kDataDrawPos - 3;
-				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-				MoveTo( r.left, r.top );
-				LineTo( r.left, r.bottom );
-				MoveTo( r.right, r.top );
-				LineTo( r.right, r.bottom );
-
-				r.left = kTextDrawPos - 1;
-				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-				MoveTo( r.left, r.top );
-				LineTo( r.left, r.bottom );
-				MoveTo( r.right, r.top );
-				LineTo( r.right, r.bottom );
-			}
-			r.top = kHeaderHeight + LINENUM( end ) * kLineHeight;
-			r.bottom = r.top + kLineHeight;
-			r.left = kDataDrawPos - 3;
-			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-			MoveTo( r.left, r.top );
-			LineTo( r.left, r.bottom );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
-			{
-				LineTo( r.right, r.bottom );
-			}
-			else
-				MoveTo( r.right, r.bottom );
-			LineTo( r.right, r.top );
-			LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
-
-			r.left = kTextDrawPos - 1;
-			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
-			MoveTo( r.left, r.top );
-			LineTo( r.left, r.bottom-1 );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
-			{
-				LineTo( r.right, r.bottom-1 );
-			}
-			else
-				MoveTo( r.right, r.bottom-1 );
-			LineTo( r.right, r.top );
-			LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
-		}
-		else
-		{
-			r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
-			r.bottom = r.top+kLineHeight;
-			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-			MoveTo( r.left, r.top );
-			LineTo( r.left, r.bottom );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
-			{
-				LineTo( r.right, r.bottom );
-			}
-			else
-				MoveTo( r.right, r.bottom );
-			LineTo( r.right, r.top );
-			if( dWin->startSel >= dWin->editOffset )
-			{
-				LineTo( r.left, r.top );
-			}
-
-			r.left = kTextDrawPos + CHARPOS( startX )-1;
-			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
-
-			MoveTo( r.left, r.top );
-			LineTo( r.left, r.bottom-1 );
-			if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
-			{
-				LineTo( r.right, r.bottom-1 );
-			}
-			else
-				MoveTo( r.right, r.bottom-1 );
-			LineTo( r.right, r.top );
-			if( dWin->startSel >= dWin->editOffset )
-			{
-					LineTo( r.left, r.top );
-			}
-		}
-	}
-	else
-	{
-		if( dWin->editMode == EM_Hex )
-		{
-			if( LINENUM( start ) < LINENUM( end ) )
-			{
-	
-				// Invert Hex
-				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
-				r.bottom = r.top + kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-				InvertRect( &r );
-
-				// Outline Box around Ascii
-				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
-				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-				
-				MoveTo( kTextDrawPos, r.bottom );
-				LineTo( r.left, r.bottom );
-	
-				LineTo( r.left, r.top );
-				if( dWin->startSel >= dWin->editOffset )
-				{
-					LineTo( r.right, r.top );
-				}
-				else
-					MoveTo( r.right, r.top );
-				LineTo( r.right, r.bottom );
-	
-				if( LINENUM( start ) < LINENUM( end )-1 )
-				{
-					r.top = kHeaderHeight+LINENUM( start ) * kLineHeight + kLineHeight;
-					r.bottom = kHeaderHeight+LINENUM( end ) * kLineHeight;
-					r.left = kDataDrawPos - 3;
-					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-					InvertRect( &r );
-	
-					r.left = kTextDrawPos - 1;
-					r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-					MoveTo( r.left, r.top );
-					LineTo( r.left, r.bottom );
-					MoveTo( r.right, r.top );
-					LineTo( r.right, r.bottom );
-				}
-				r.top = kHeaderHeight+LINENUM( end ) * kLineHeight;
-				r.bottom = r.top+kLineHeight;
-				r.left = kDataDrawPos - 3;
-				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-				InvertRect( &r );
-	
-				r.left = kTextDrawPos - 1;
-				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
-				MoveTo( r.left, r.top );
-				LineTo( r.left, r.bottom-1 );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
-				{
-					LineTo( r.right, r.bottom-1 );
-				}
-				else
-					MoveTo( r.right, r.bottom-1 );
-				LineTo( r.right, r.top );
-				LineTo( kTextDrawPos + CHARPOS( kBytesPerLine ), r.top );
-			}
-			else
-			{
-				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
-				r.bottom = r.top+kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-
-				InvertRect( &r );
-	
-				r.left = kTextDrawPos + CHARPOS( startX )-1;
-				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
-	
-				MoveTo( r.left, r.top );
-				LineTo( r.left, r.bottom-1 );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
-				{
-					LineTo( r.right, r.bottom-1 );
-				}
-				else
-					MoveTo( r.right, r.bottom-1 );
-				LineTo( r.right, r.top );
-				if( dWin->startSel >= dWin->editOffset )
-				{
-					LineTo( r.left, r.top );
-				}
-			}
-		}
-		else	// Ascii Mode!!
-		{
-			if( LINENUM( start ) < LINENUM( end ) )
-			{
-				// Outline Hex
-				r.top = kHeaderHeight + LINENUM( start ) * kLineHeight;
-				r.bottom = r.top + kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-	
-				MoveTo( kDataDrawPos - 3, r.bottom );
-				LineTo( r.left, r.bottom );
-				LineTo( r.left, r.top );
-				if( dWin->startSel >= dWin->editOffset )
-				{
-					LineTo( r.right, r.top );
-				}
-				else
-					MoveTo( r.right, r.top );
-				LineTo( r.right, r.bottom );
-	
-				// Invert Ascii
-				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
-				r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-				InvertRect( &r );
-	
-				if( LINENUM( start ) < LINENUM( end )-1 )
-				{
-					r.top = kHeaderHeight + LINENUM( start ) * kLineHeight + kLineHeight;
-					r.bottom = kHeaderHeight + LINENUM( end ) * kLineHeight;
-					r.left = kDataDrawPos - 3;
-					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
-					MoveTo( r.left, r.top );
-					LineTo( r.left, r.bottom );
-					MoveTo( r.right, r.top );
-					LineTo( r.right, r.bottom );
-	
-					r.left = kTextDrawPos - 1;
-					r.right = kTextDrawPos + CHARPOS( kBytesPerLine );
-					InvertRect( &r );
-				}
-				r.top = kHeaderHeight + LINENUM( end ) * kLineHeight;
-				r.bottom = r.top+kLineHeight;
-				r.left = kDataDrawPos - 3;
-				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-				MoveTo( r.left, r.top );
-				LineTo( r.left, r.bottom );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
-				{
-					LineTo( r.right, r.bottom );
-				}
-				else
-					MoveTo( r.right, r.bottom );
-				LineTo( r.right, r.top );
-				LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
-	
-				r.left = kTextDrawPos - 1;
-				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
-				InvertRect( &r );
-			}
-			else
-			{
-				r.top = kHeaderHeight+LINENUM( start ) * kLineHeight;
-				r.bottom = r.top+kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
-				MoveTo( r.left, r.top );
-				LineTo( r.left, r.bottom );
-				if( dWin->endSel < dWin->editOffset+dWin->linesPerPage * kBytesPerLine )
-				{
-					LineTo( r.right, r.bottom );
-				}
-				else
-					MoveTo( r.right, r.bottom );
-				LineTo( r.right, r.top );
-				if( dWin->startSel >= dWin->editOffset )
-				{
-					LineTo( r.left, r.top );
-				}
-	
-				r.left = kTextDrawPos + CHARPOS( startX ) - 1;
-				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;
-				InvertRect( &r );
-			}
-		}
-	}
-}
-
-/*** OFFSET SELECTION ***/
-void OffsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFlag )
-{
-	long	selWidth;
-	Boolean	fullUpdate;
-
-	selWidth = dWin->endSel - dWin->startSel;
-	fullUpdate = shiftFlag || selWidth > 1;
-
-	if( offset < 0 )
-	{
-		if( dWin->startSel > 0 )
-		{
-			if( (short) 0xFEED == offset )	// LR: v1.6.5 LR	-"special code"
-				dWin->startSel = 0;
-			else
-				dWin->startSel += offset;
-
-			if( dWin->startSel < 0 )
-				dWin->startSel = 0;
-			if( !shiftFlag )
-			{
-				dWin->endSel = dWin->startSel;
-				CursorOff( dWin->oWin.theWin );
-			}
-			if( !shiftFlag )
-				CursorOn( dWin->oWin.theWin );
-		}
-		else
-		{
-			SysBeep( 1 );
-			if( !shiftFlag )
-				dWin->endSel = dWin->startSel;		//LR 1.72 -- deselect anyway
-		}
-		ScrollToSelection( dWin, dWin->startSel, fullUpdate, false );
-	}
-	else
-	{
-		if( dWin->endSel < dWin->fileSize )
-		{
-			if( 0xBED == offset )	// LR: v1.6.5 LR	-"special code"
-				dWin->endSel = dWin->fileSize;
-			else
-				dWin->endSel += offset;
-
-			if( dWin->endSel > dWin->fileSize )
-				dWin->endSel = dWin->fileSize;
-			if( !shiftFlag )
-			{
-				dWin->startSel = dWin->endSel;
-				CursorOff( dWin->oWin.theWin );
-			}
-			if( !shiftFlag )
-				CursorOn( dWin->oWin.theWin );
-		}
-		else
-		{
-			SysBeep( 1 );
-			if( !shiftFlag )
-				dWin->startSel = dWin->endSel;		//LR 1.72 -- deselect anyway
-		}
-		ScrollToSelection( dWin, dWin->endSel, fullUpdate, false );
 	}
 }
 
@@ -2061,32 +2109,39 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 		
 		// move insertion point
 		case kLeftArrowCharCode:
-			OffsetSelection( dWin, -1, (er->modifiers & shiftKey) > 0 );
+			_offsetSelection( dWin, -1, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kRightArrowCharCode:
-			OffsetSelection( dWin, 1, (er->modifiers & shiftKey) > 0 );
+			_offsetSelection( dWin, 1, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kUpArrowCharCode:
-			OffsetSelection( dWin, -kBytesPerLine, (er->modifiers & shiftKey) > 0 );
+			_offsetSelection( dWin, -kBytesPerLine, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kDownArrowCharCode:
-			OffsetSelection( dWin, kBytesPerLine, (er->modifiers & shiftKey) > 0 );
+			_offsetSelection( dWin, kBytesPerLine, (er->modifiers & shiftKey) > 0 );
 			break;
 		
 		// scroll document
 		case kPageUpCharCode:
-			OffsetSelection( dWin, -kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
+			_offsetSelection( dWin, -kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
 			break;
 		case kPageDownCharCode:
-			OffsetSelection( dWin, kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
+			_offsetSelection( dWin, kBytesPerLine * (dWin->linesPerPage - 1), (er->modifiers & shiftKey) > 0 );
 			break;
 		case kHomeCharCode:
-			OffsetSelection( dWin, 0xFEED, (er->modifiers & shiftKey) > 0 );
+			_offsetSelection( dWin, 0xFEED, (er->modifiers & shiftKey) > 0 );
 			break;
 		case kEndCharCode:
-			OffsetSelection( dWin, 0xBED, (er->modifiers & shiftKey) > 0 );
+			_offsetSelection( dWin, 0xBED, (er->modifiers & shiftKey) > 0 );
 			break;
-		
+
+		//LR 180 -- first, this is useless on read-only files!
+		if( dWin->readOnlyFlag )
+		{
+			ErrorAlert( ES_Stop, errReadOnly );
+			return;
+		}
+
 		// delete characters
 		//LR 1.74 -- non-destructive deletes in overwrite mode (paste appr. lenght zero buffer)
 		case kBackspaceCharCode:	// normal delete
@@ -2114,7 +2169,7 @@ void MyProcessKey( WindowRef theWin, EventRecord *er )
 						PasteOperation( dWin, tc );
 						DisposeChunk( dWin, tc );
 						dWin->startSel = dWin->endSel = start;
-						ScrollToSelection( dWin, dWin->startSel, true, false );
+						ScrollToSelection( dWin, dWin->startSel, false );
 					}
 				}
 
@@ -2332,7 +2387,7 @@ static OSStatus _doPrintDialog( PMPrintSession printSession, PMPageFormat pageFo
 
     Description:
         Assumes the caller provides validated PageFormat and PrintSettings objects.
-        Calculates a valid page range and prints each page by calling DrawDump.
+        Calculates a valid page range and prints each page by calling _drawDump.
 
 ------------------------------------------------------------------------------*/
 static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, PMPrintSettings printSettings, EditWindowPtr dWin )
@@ -2433,15 +2488,15 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 				r.left = (short)(pageRect.left);
 				r.bottom = r.top + kHeaderHeight - 1;
 				r.right = (short)(pageRect.right);
-				DrawHeader( dWin, &r );
+				_drawHeader( dWin, &r );
 
 				r.top += kHeaderHeight;
 				r.bottom = pageRect.bottom - kFooterHeight;
-				DrawDump( dWin, &r, addr, endAddr );
+				_drawDump( dWin, &r, addr, endAddr );
 
 				r.top = r.bottom;
 				r.bottom += kFooterHeight;
-				DrawFooter( dWin, &r, pageNumber, realNumberOfPagesinDoc );
+				_drawFooter( dWin, &r, pageNumber, realNumberOfPagesinDoc );
 
 				//  Close the page.
 				status = PMSessionEndPage(printSession);
@@ -2626,15 +2681,15 @@ void PrintWindow( EditWindowPtr dWin )
 			{
 				r = printPort->gPort.portRect;
 				r.bottom = r.top + kHeaderHeight - 1;		//LR: 1.7 - don't erase entire page!
-				DrawHeader( dWin, &r );
+				_drawHeader( dWin, &r );
 		
 				r.top += kHeaderHeight;
 				r.bottom = printPort->gPort.portRect.bottom - kFooterHeight;
-				DrawDump( dWin, &r, addr, endAddr );
+				_drawDump( dWin, &r, addr, endAddr );
 	
 				r.top = r.bottom;
 				r.bottom += kFooterHeight;
-				DrawFooter( dWin, &r, pageNbr, nbrPages );	//SEL: 1.7 - fix Lane's DrawDump usage (what was I thinking? P)
+				_drawFooter( dWin, &r, pageNbr, nbrPages );	//SEL: 1.7 - fix Lane's DrawDump usage (what was I thinking? P)
 			}
 
 			addr += linesPerPage * kBytesPerLine;
@@ -2674,14 +2729,14 @@ static OSStatus _copyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
 		error = FSpOpenRF( srcSpec, fsRdPerm, &sRefNum );
 		if( error != noErr )
 		{
-			ErrorAlert( ES_Caution, errOpen, error );
+			ErrorAlert( ES_Caution, errSave, error );
 			return error;
 		}
 //LR 175		error = HOpenRF( dstSpec->vRefNum, dstSpec->parID, dstSpec->name, fsWrPerm, &dRefNum );
 		error = FSpOpenRF( dstSpec, fsWrPerm, &dRefNum );
 		if( error != noErr )
 		{
-			ErrorAlert( ES_Caution, errOpen, error );
+			ErrorAlert( ES_Caution, errSave, error );
 			return error;
 		}
 	}
@@ -2691,14 +2746,14 @@ static OSStatus _copyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
 		error = FSpOpenDF( srcSpec, fsRdPerm, &sRefNum );
 		if( error != noErr )
 		{
-			ErrorAlert( ES_Caution, errOpen, error );
+			ErrorAlert( ES_Caution, errSave, error );
 			return error;
 		}
 //LR 175		error = HOpen( dstSpec->vRefNum, dstSpec->parID, dstSpec->name, fsWrPerm, &dRefNum );
 		error = FSpOpenDF( dstSpec, fsWrPerm, &dRefNum );
 		if( error != noErr )
 		{
-			ErrorAlert( ES_Caution, errOpen, error );
+			ErrorAlert( ES_Caution, errSave, error );
 			return error;
 		}
 	}
@@ -2743,205 +2798,215 @@ void SaveContents( WindowRef theWin )
 	long			count;
 	OSStatus		error;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-	
-	if( dWin->destSpec.name[0] == 0 )
-		SaveAsContents( theWin );
-	else
-	{
-		// Create temp file
-		tSpec = dWin->destSpec;
 
-		// If original file exists, write to temp file
-		if( dWin->refNum )
+	//LR 180 -- first, this is useless on read-only files!
+	if( dWin->readOnlyFlag )
+	{
+		ErrorAlert( ES_Stop, errReadOnly );
+		return;
+	}
+
+	// if we don't have a file spec it's a new window, do a Save As...
+	if( dWin->destSpec.name[0] == 0 )
+	{
+		SaveAsContents( theWin );
+		return;
+	}
+
+	// OK, ready to save ... first create our temp work file
+	tSpec = dWin->destSpec;
+
+	// If original file exists, write to temp file
+	if( dWin->refNum )
+	{
+		if( tSpec.name[0] < 31 )
 		{
-			if( tSpec.name[0] < 31 )
-			{
-				tSpec.name[0]++;
-				tSpec.name[tSpec.name[0]] = '^';	//LR 1.72 -- temp files end with ^
-			}
-			else	tSpec.name[31] ^= 0x10;
+			tSpec.name[0]++;
+			tSpec.name[tSpec.name[0]] = '^';	//LR 1.72 -- temp files end with ^
 		}
+		else	tSpec.name[31] ^= 0x10;
+	}
 //LR 1.73 -- delete temp files!		_ensureNameIsUnique( &tSpec );
 
 //LR 175		HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
-		FSpDelete( &tSpec );
+	FSpDelete( &tSpec );
 //LR 175		error = HCreate( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->creator, dWin->fileType );
-		error = FSpCreate( &tSpec, dWin->creator, dWin->fileType, smSystemScript );
-		if( error != noErr )
+	error = FSpCreate( &tSpec, dWin->creator, dWin->fileType, smSystemScript );
+	if( error != noErr )
+	{
+		ErrorAlert( ES_Caution, errCreate, error );
+		return;
+	}
+
+	// Preserve creation date of orig file if it exists
+	if( dWin->creationDate )
+	{
+		pb.fileParam.ioCompletion = 0l;
+		pb.fileParam.ioNamePtr = tSpec.name;
+		pb.fileParam.ioVRefNum = tSpec.vRefNum;
+		pb.fileParam.ioDirID = tSpec.parID;
+		pb.fileParam.ioFDirIndex = 0;
+	
+		if( ( error = PBHGetFInfo( &pb, false ) ) != noErr )
 		{
-			ErrorAlert( ES_Caution, errCreate, error );
+			ErrorAlert( ES_Caution, errFileInfo, error );
 			return;
 		}
-
-		// Preserve creation date of orig file if it exists
-		if( dWin->creationDate )
+		// Reset dirID which PBHGeFInfo changes...
+		pb.fileParam.ioFlCrDat = dWin->creationDate;
+		pb.fileParam.ioDirID = tSpec.parID;
+		if( ( error = PBHSetFInfo( &pb, false ) ) != noErr )
 		{
-			pb.fileParam.ioCompletion = 0l;
-			pb.fileParam.ioNamePtr = tSpec.name;
-			pb.fileParam.ioVRefNum = tSpec.vRefNum;
-			pb.fileParam.ioDirID = tSpec.parID;
-			pb.fileParam.ioFDirIndex = 0;
-		
-			if( ( error = PBHGetFInfo( &pb, false ) ) != noErr )
-			{
-				ErrorAlert( ES_Caution, errFileInfo, error );
-				return;
-			}
-			// Reset dirID which PBHGeFInfo changes...
-			pb.fileParam.ioFlCrDat = dWin->creationDate;
-			pb.fileParam.ioDirID = tSpec.parID;
-			if( ( error = PBHSetFInfo( &pb, false ) ) != noErr )
-			{
-				ErrorAlert( ES_Caution, errSetFileInfo, error );
-				return;
-			}
+			ErrorAlert( ES_Caution, errSetFileInfo, error );
+			return;
 		}
-		// Preserve other fork if it exists (LR 1.73 can't do !fork because fork #s are now 1 & 2!)
-		if( dWin->refNum )
-			if( _copyFork( &dWin->fsSpec, &tSpec, (dWin->fork == FT_Data) ? FT_Resource : FT_Data ) != noErr )
-				return;
+	}
+	// Preserve other fork if it exists (LR 1.73 can't do !fork because fork #s are now 1 & 2!)
+	if( dWin->refNum )
+		if( _copyFork( &dWin->fsSpec, &tSpec, (dWin->fork == FT_Data) ? FT_Resource : FT_Data ) != noErr )
+			return;
 
-		// Open the temp file
-		if( dWin->fork == FT_Resource )
-		{
+	// Open the temp file
+	if( dWin->fork == FT_Resource )
+	{
 //LR 175			error = HOpenRF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsWrPerm, &tRefNum );
-			error = FSpOpenRF( &tSpec, fsWrPerm, &tRefNum );
-			if( error != noErr )
-			{
-				ErrorAlert( ES_Caution, errOpen, error );
-				return;
-			}
-		}
-		else
+		error = FSpOpenRF( &tSpec, fsWrPerm, &tRefNum );
+		if( error != noErr )
 		{
+			ErrorAlert( ES_Caution, errSave, error );
+			return;
+		}
+	}
+	else
+	{
 //LR 175			error = HOpenDF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsWrPerm, &tRefNum );
-			FSpOpenDF( &tSpec, fsWrPerm, &tRefNum );
-			if( error != noErr )
-			{
-				ErrorAlert( ES_Caution, errOpen, error );
-				return;
-			}
-		}
-		
-		// Save out to temp file
-		cc = dWin->firstChunk;
-		while( cc )
+		FSpOpenDF( &tSpec, fsWrPerm, &tRefNum );
+		if( error != noErr )
 		{
-			LoadChunk( dWin, cc );
-			count = ( *cc ) ->size;
-			error = FSWrite( tRefNum, &count, *( *cc ) ->data );
-			if( error != noErr )
+			ErrorAlert( ES_Caution, errSave, error );
+			return;
+		}
+	}
+	
+	// Save out to temp file
+	cc = dWin->firstChunk;
+	while( cc )
+	{
+		LoadChunk( dWin, cc );
+		count = ( *cc ) ->size;
+		error = FSWrite( tRefNum, &count, *( *cc ) ->data );
+		if( error != noErr )
+		{
+			// !! Error Message - write error
+			FSClose( tRefNum );
+			if( error == dskFulErr )
 			{
-				// !! Error Message - write error
-				FSClose( tRefNum );
-				if( error == dskFulErr )
-				{
-					ErrorAlert( ES_Stop, errDiskFull );
-					FSpDelete( &tSpec );
+				ErrorAlert( ES_Stop, errDiskFull );
+				FSpDelete( &tSpec );
 //LR 175					HDelete( tSpec.vRefNum, tSpec.parID, tSpec.name );
-				}
-				else
-					ErrorAlert( ES_Caution, errWrite, error );
-
-				return;
 			}
-			cc = ( *cc ) ->next;
+			else
+				ErrorAlert( ES_Caution, errWrite, error );
+
+			return;
 		}
+		cc = ( *cc ) ->next;
+	}
 
-		// Close temp file
-		FSClose( tRefNum );
+	// Close temp file
+	FSClose( tRefNum );
 
-		// If Original File Exists
-		if( dWin->refNum )
+	// If Original File Exists
+	if( dWin->refNum )
+	{
+		// Close original file
+		FSClose( dWin->refNum );
+
+		bSpec = dWin->destSpec;
+
+		// If it exists under current name
+//LR 175			if( ( error = HOpen( bSpec.vRefNum, bSpec.parID, bSpec.name, fsRdPerm, &dWin->refNum ) ) == noErr )
+		if( ( error = FSpOpenDF( &bSpec, fsRdPerm, &dWin->refNum ) ) == noErr )
 		{
-			// Close original file
 			FSClose( dWin->refNum );
 
-			bSpec = dWin->destSpec;
-
-			// If it exists under current name
-//LR 175			if( ( error = HOpen( bSpec.vRefNum, bSpec.parID, bSpec.name, fsRdPerm, &dWin->refNum ) ) == noErr )
-			if( ( error = FSpOpenDF( &bSpec, fsRdPerm, &dWin->refNum ) ) == noErr )
+			if( gPrefs.backupFlag )
 			{
-				FSClose( dWin->refNum );
-
-				if( gPrefs.backupFlag )
-				{
-					// Delete last backup file, if it exists
-					bSpec = dWin->destSpec;
-					if( bSpec.name[0] < 31 )	// LR: 000505 -- don't go beyond 31 chars!
-						bSpec.name[0]++;
-					bSpec.name[bSpec.name[0]] = '~';
-					FSpDelete( &bSpec );
+				// Delete last backup file, if it exists
+				bSpec = dWin->destSpec;
+				if( bSpec.name[0] < 31 )	// LR: 000505 -- don't go beyond 31 chars!
+					bSpec.name[0]++;
+				bSpec.name[bSpec.name[0]] = '~';
+				FSpDelete( &bSpec );
 //LR 175					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );	// backup files end with ~
-		
-					// Rename original file to backup name
+	
+				// Rename original file to backup name
 //LR 175					error = HRename( dWin->destSpec.vRefNum, dWin->destSpec.parID, dWin->destSpec.name, bSpec.name );
-					FSpRename( &dWin->destSpec, bSpec.name );
-					if( error != noErr )
-					{
-						// Backup is probably open, just delete original
-						ErrorAlert( ES_Caution, errBackup, error );
-//LR 175						bSpec = dWin->destSpec;
-						FSpDelete( &dWin->destSpec );
-//LR 175						HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
-					}
-				}
-				else
+				FSpRename( &dWin->destSpec, bSpec.name );
+				if( error != noErr )
 				{
-					// Delete Original if backup flag is false
-//LR 175					bSpec = dWin->destSpec;
+					// Backup is probably open, just delete original
+					ErrorAlert( ES_Caution, errBackup, error );
+//LR 175						bSpec = dWin->destSpec;
 					FSpDelete( &dWin->destSpec );
-//LR 175					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
+//LR 175						HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
 				}
 			}
+			else
+			{
+				// Delete Original if backup flag is false
+//LR 175					bSpec = dWin->destSpec;
+				FSpDelete( &dWin->destSpec );
+//LR 175					HDelete( bSpec.vRefNum, bSpec.parID, bSpec.name );
+			}
+		}
 
-			// Rename temp file to correct name
+		// Rename temp file to correct name
 //LR 175			error = HRename( tSpec.vRefNum, tSpec.parID, tSpec.name, dWin->destSpec.name );
-			error = FSpRename( &tSpec, dWin->destSpec.name );
-			if( error != noErr )
-				ErrorAlert( ES_Stop, errRename, error );
-		}
+		error = FSpRename( &tSpec, dWin->destSpec.name );
+		if( error != noErr )
+			ErrorAlert( ES_Stop, errRename, error );
+	}
 
-		// Open newly saved file read only
-		tSpec = dWin->destSpec;
-		if( dWin->fork == FT_Resource )
-		{
+	// Open newly saved file read only
+	tSpec = dWin->destSpec;
+	if( dWin->fork == FT_Resource )
+	{
 //LR 175			error = HOpenRF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsRdPerm, &dWin->refNum );
-			error = FSpOpenRF( &tSpec, fsRdWrPerm, &dWin->refNum );
-			if( error != noErr )
-				ErrorAlert( ES_Stop, errOpen, error );
-		}
-		else
-		{
+		error = FSpOpenRF( &tSpec, fsRdWrPerm, &dWin->refNum );
+		if( error != noErr )
+			ErrorAlert( ES_Stop, errSave, error );
+	}
+	else
+	{
 //LR 175			error = HOpenDF( tSpec.vRefNum, tSpec.parID, tSpec.name, fsRdPerm, &dWin->refNum );
-			error = FSpOpenDF( &tSpec, fsRdWrPerm, &dWin->refNum );
-			if( error != noErr )
-				ErrorAlert( ES_Stop, errOpen, error );
-		}
+		error = FSpOpenDF( &tSpec, fsRdWrPerm, &dWin->refNum );
+		if( error != noErr )
+			ErrorAlert( ES_Stop, errSave, error );
+	}
 
-		// Reset Work File
-		dWin->fsSpec = dWin->destSpec;
+	// Reset Work File
+	dWin->fsSpec = dWin->destSpec;
 //LR: 1.7		SetWTitle( dWin->oWin.theWin, dWin->fsSpec.name );
 
-		dWin->workBytesWritten = 0L;
-		SetEOF( dWin->workRefNum, 0L );
+	dWin->workBytesWritten = 0L;
+	SetEOF( dWin->workRefNum, 0L );
 
-		// Flush the volume
-		pb.volumeParam.ioCompletion = NULL;
-		pb.volumeParam.ioNamePtr = NULL;
-		pb.volumeParam.ioVRefNum = tSpec.vRefNum;
-		PBFlushVolSync( ( ParmBlkPtr ) &pb );
+	// Flush the volume
+	pb.volumeParam.ioCompletion = NULL;
+	pb.volumeParam.ioNamePtr = NULL;
+	pb.volumeParam.ioVRefNum = tSpec.vRefNum;
+	PBFlushVolSync( ( ParmBlkPtr ) &pb );
 
-		// Clear linked list
-		UnloadFile( dWin );
+	// Clear linked list
+	UnloadFile( dWin );
 
-		// Rebuilt linked list
-		LoadFile( dWin );
+	// Rebuilt linked list
+	LoadFile( dWin );
 
-		// Clear Dirty Flag
-		dWin->dirtyFlag = false;
-	}
+	// Clear Dirty Flag
+	dWin->dirtyFlag = false;
+
 	return;
 }
 
@@ -2970,6 +3035,8 @@ void SaveAsContents( WindowRef theWin )
 //LR: 1.7 not w/modified window titles!	GetWTitle( theWin, dialogOptions.savedFileName );
 		// 05/10/01 - GAB: copy the ENTIRE name, including the last character (hence, the "+ 1" on the count parameter)
 		BlockMoveData( dWin->fsSpec.name, dialogOptions.savedFileName, dWin->fsSpec.name[0] + 1 );
+		GetIndString( dialogOptions.message, strPrompt, 1 );	//LR 180 -- modify prompt
+
 		error = NavPutFile( NULL, &reply, &dialogOptions, eventProc, kDefaultFileType, kAppCreator, NULL );
 		if( reply.validRecord || !error )
 		{
@@ -2983,6 +3050,7 @@ void SaveAsContents( WindowRef theWin )
 			{
 				dWin->destSpec = savedSpec;
 				dWin->creationDate = 0;
+				dWin->readOnlyFlag = false;
 				SaveContents( theWin );
 				NavCompleteSave( &reply, kNavTranslateInPlace );
 			}
@@ -3008,6 +3076,7 @@ void SaveAsContents( WindowRef theWin )
 		{
 			dWin->destSpec = reply.sfFile;
 			dWin->creationDate = 0;
+			dWin->readOnlyFlag = false;
 			SaveContents( theWin );
 		}
 	}
@@ -3055,6 +3124,6 @@ void RevertContents( WindowRef theWin )
 		gRedo.type = 0;
 	}
 
-	DrawPage( dWin );
+//LR 180	DrawPage( dWin );
 	UpdateOnscreen( theWin );
 }

@@ -304,6 +304,13 @@ void DeleteSelection( EditWindowPtr dWin )
 {
 	EditChunk **fc, **ec, **nc, **tc;
 
+	//LR 180 -- first, this is useless on read-only files!
+	if( dWin->readOnlyFlag )
+	{
+		ErrorAlert( ES_Stop, errReadOnly );
+		return;
+	}
+
 	if( dWin->endSel == dWin->startSel ) return;
 
 	// Identify Starting Chunk
@@ -389,6 +396,13 @@ void DeleteSelection( EditWindowPtr dWin )
 void InsertCharacter( EditWindowPtr dWin, short charCode )
 {
 	EditChunk **fc, **ec, **nc;	// LR: remove tc to fix warnings
+
+	//LR 180 -- first, this is useless on read-only files!
+	if( dWin->readOnlyFlag )
+	{
+		ErrorAlert( ES_Stop, errReadOnly );
+		return;
+	}
 
 	// !! Remember Current State for Undo
 
@@ -490,7 +504,7 @@ void InsertCharacter( EditWindowPtr dWin, short charCode )
 
 
 	// Update Display
-	ScrollToSelection( dWin, dWin->startSel, true, false );
+	ScrollToSelection( dWin, dWin->startSel, false );
 }
 
 /*** RELEASE EDIT SCRAP ***/
@@ -655,10 +669,17 @@ void CopyOperation( EditWindowPtr dWin, EditChunk ***scrapChunk )
 /*** CUT SELECTION ***/
 void CutSelection( EditWindowPtr dWin )
 {
+	//LR 180 -- first, this is useless on read-only files!
+	if( dWin->readOnlyFlag )
+	{
+		ErrorAlert( ES_Stop, errReadOnly );
+		return;
+	}
+
 	RememberOperation( dWin, EO_Cut, &gUndo );
-	CopyOperation( dWin, &_scrapChunk );		// Copy into paste buffer
+	CopySelection( dWin );		// Copy into paste buffer (180 -- copy selection, not just operation!)
 	DeleteSelection( dWin );
-	ScrollToSelection( dWin, dWin->startSel, true, false );
+	ScrollToSelection( dWin, dWin->startSel, false );
 }
 
 // LR: v1.6.5 -- New code for getting scrap in Carbon & Classic styles. Here
@@ -720,6 +741,13 @@ void MyGetScrap( EditWindowPtr dWin )
 /*** PASTE SELECTION ***/
 void PasteSelection( EditWindowPtr dWin )
 {
+	//LR 180 -- first, this is useless on read-only files!
+	if( dWin->readOnlyFlag )
+	{
+		ErrorAlert( ES_Stop, errReadOnly );
+		return;
+	}
+
 	MyGetScrap( dWin );	// LR: v1.6.5 get scrap only as needed
 
 	if( _scrapChunk )	// LR: 1.7 due to bug (?) in Carbon, scrap may not be available!
@@ -736,7 +764,7 @@ void PasteSelection( EditWindowPtr dWin )
 		RememberOperation( dWin, EO_Paste, &gUndo );
 
 		PasteOperation( dWin, _scrapChunk );
-		ScrollToSelection( dWin, dWin->startSel, true, false );
+		ScrollToSelection( dWin, dWin->startSel, false );
 	}
 }
 
@@ -815,6 +843,13 @@ void PasteOperation( EditWindowPtr dWin, EditChunk **scrapChunk )
 {
 	EditChunk **fc, **ec, **nc;
 
+	//LR 180 -- first, this is useless on read-only files!
+	if( dWin->readOnlyFlag )
+	{
+		ErrorAlert( ES_Stop, errReadOnly );
+		return;
+	}
+
 	// Create duplicate scrap attached to nc->nec
 	nc = NewChunk( ( *scrapChunk )->size, 0, 0, CT_Unwritten );
 	if( !nc ) return;
@@ -885,9 +920,16 @@ void PasteOperation( EditWindowPtr dWin, EditChunk **scrapChunk )
 /*** CLEAR SELECTION ***/
 void ClearSelection( EditWindowPtr dWin )
 {
+	//LR 180 -- first, this is useless on read-only files!
+	if( dWin->readOnlyFlag )
+	{
+		ErrorAlert( ES_Stop, errReadOnly );
+		return;
+	}
+
 	RememberOperation( dWin, EO_Clear, &gUndo );
 	DeleteSelection( dWin );
-	ScrollToSelection( dWin, dWin->startSel, true, false );
+	ScrollToSelection( dWin, dWin->startSel, false );
 }
 
 // Remember current state for Undo of following operation
@@ -979,5 +1021,5 @@ void UndoOperation( void )
 	gUndo = gRedo;
 	gRedo.undoScrap = NULL;
 
-	ScrollToSelection( dWin, dWin->startSel, true, false );
+	ScrollToSelection( dWin, dWin->startSel, false );
 }

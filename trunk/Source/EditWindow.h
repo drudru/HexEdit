@@ -85,7 +85,8 @@ typedef struct
 	short				lastNybble;		// Last Hex Edit Nibble
 	Boolean				loByteFlag;		// Editing Low Byte for Hex Editor
 	Boolean				dirtyFlag;		// File has been modified
-	GWorldPtr			offscreen;
+	Boolean				readOnlyFlag;	// File is read-only!
+//LR 180	GWorldPtr			offscreen;
 	short				csResID;		// LR: color table res ID for drawing theWin
 }	EditWindowRecord, *EditWindowPtr;
 
@@ -101,19 +102,11 @@ void SizeEditWindow( WindowRef theWin, tWindowType type );
 EditWindowPtr LocateEditWindow( FSSpec *fs, short fork );
 EditWindowPtr FindFirstEditWindow( void );
 EditWindowPtr FindNextEditWindow( EditWindowPtr curr );
-OSStatus InitColorTable( HEColorTablePtr ct );
-OSStatus GetColorInfo( EditWindowPtr dWin );
-void DrawHeader( EditWindowPtr dWin, Rect *r );
-void DrawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages );
-OSStatus DrawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr );
-void DrawPage( EditWindowPtr dWin );
 void MyDraw( WindowRef theWin );
 void UpdateOnscreen( WindowRef theWin );
 void MyIdle( WindowRef theWin, EventRecord *er );
 void MyHandleClick( WindowRef theWin, Point where, EventRecord *er );
-void InvertSelection( EditWindowPtr	dWin );
 void PrintWindow( EditWindowPtr dWin );
-void OffsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFlag );
 void MyProcessKey( WindowRef theWin, EventRecord *er );
 void CursorOff( WindowRef theWin );
 void CursorOn( WindowRef theWin );

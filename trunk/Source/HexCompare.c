@@ -134,13 +134,13 @@ Success:
 	dWin->startSel = matchAddr;
 	dWin->endSel = dWin->startSel + gPrefs.searchSize + 1;
 	if( gPrefs.searchSize==CM_Long ) dWin->endSel += 1;
-	ScrollToSelection( dWin, dWin->startSel, true, true );
+	ScrollToSelection( dWin, dWin->startSel, true );
 
 	SelectWindow( dWin2->oWin.theWin );
 	dWin2->startSel = matchAddr;
 	dWin2->endSel = dWin2->startSel + gPrefs.searchSize + 1;
 	if( gPrefs.searchSize==CM_Long ) dWin2->endSel += 1;
-	ScrollToSelection( dWin2, dWin2->startSel, true, true );
+	ScrollToSelection( dWin2, dWin2->startSel, true );
 
 	MySetCursor( C_Arrow );
 	return true;
@@ -234,13 +234,13 @@ Success:
 	dWin->startSel = matchAddr;
 	dWin->endSel = dWin->startSel + gPrefs.searchSize + 1;
 	if( gPrefs.searchSize==CM_Long ) dWin->endSel += 1;
-	ScrollToSelection( dWin, dWin->startSel, true, true );
+	ScrollToSelection( dWin, dWin->startSel, true );
 
 	SelectWindow( dWin2->oWin.theWin );
 	dWin2->startSel = matchAddr;
 	dWin2->endSel = dWin2->startSel + gPrefs.searchSize + 1;
 	if( gPrefs.searchSize==CM_Long ) dWin2->endSel += 1;
-	ScrollToSelection( dWin2, dWin2->startSel, true, true );
+	ScrollToSelection( dWin2, dWin2->startSel, true );
 
 	MySetCursor( C_Arrow );
 	return true;
@@ -279,9 +279,9 @@ void DoComparison( void )
 	// show the contents of the windows
 	ShowWindow( GetDialogWindow( pDlg ) );
 
-	DrawPage( (EditWindowPtr) GetWRefCon( CompWind1 ) );
+//LR 180	DrawPage( (EditWindowPtr) GetWRefCon( CompWind1 ) );
 	UpdateOnscreen( CompWind1 );
-	DrawPage( (EditWindowPtr) GetWRefCon( CompWind2 ) );
+//LR 180	DrawPage( (EditWindowPtr) GetWRefCon( CompWind2 ) );
 	UpdateOnscreen( CompWind2 );
 			
 	// handle event processing

@@ -61,13 +61,14 @@ void SetSearchButtons( void )
 		}
 
 		//LR 175 -- set the replace buttons
-		if( !g.searchDisabled && *g.replaceText && g.replaceDisabled )
+		//LR 180 -- don't dim replace w/no text as that's a valid replacement!
+		if( !g.searchDisabled /*&& *g.replaceText*/ && g.replaceDisabled )
 		{
 			EnableButton( g.searchDlg, ReplaceItem );
 			EnableButton( g.searchDlg, ReplaceAllItem );
 			g.replaceDisabled = false;
 		}
-		else if( (g.searchDisabled || !*g.replaceText) && !g.replaceDisabled )
+		else if( (g.searchDisabled /*|| !*g.replaceText*/) && !g.replaceDisabled )
 		{
 			DisableButton( g.searchDlg, ReplaceItem );
 			DisableButton( g.searchDlg, ReplaceAllItem );
@@ -190,7 +191,7 @@ Success:
 	dWin->startSel = matchAddr;
 	dWin->endSel = dWin->startSel + g.searchBuffer[0];
 
-	ScrollToSelection( dWin, dWin->startSel, true, true );
+	ScrollToSelection( dWin, dWin->startSel, true );
 	MySetCursor( C_Arrow );
 	return( true );
 }
@@ -346,7 +347,7 @@ ButtonHit:
 								{
 									PasteOperation( dWin, _replaceChunk );	// replace all is NOT undoable!
 								}
-								ScrollToSelection( dWin, dWin->startSel, true, true );
+								ScrollToSelection( dWin, dWin->startSel, true );
 							}
 						}
 					}
@@ -403,7 +404,7 @@ setmode:
 						{
 							dWin->startSel = dWin->endSel = addr;
 							SelectWindow( dWin->oWin.theWin );
-							ScrollToSelection( dWin, addr, true, true );
+							ScrollToSelection( dWin, addr, true );
 						}
 					}
 				}
