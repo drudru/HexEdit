@@ -65,6 +65,9 @@ extern WindowRef	CompWind1, CompWind2;
 static SInt32		caretTime;
 static Boolean		skipOpen = false;
 
+#define kOpenFileAtLaunchDelay 3
+static UInt32		checkForOpen = 0;
+
 // 05/10/01 - GAB: qd must be supplied by Interface.o applications
 #if !__MWERKS__ && !TARGET_API_MAC_CARBON
 QDGlobals	qd;
@@ -121,6 +124,13 @@ OSStatus HandleEvent( void )
 	if( IsDialogEvent( &theEvent ) )	DoModelessDialogEvent( &theEvent );
 	else if( ok )						DoEvent( &theEvent );
 	else								_idleObjects( &theEvent );
+
+	//LR -- 186: apple events came in after the open app event, so we delay a while now.
+	if( checkForOpen )
+	{
+		if( !--checkForOpen && !skipOpen )
+			AskEditWindow( kWindowNormal );	// LR: -- voodoo can't have this
+	}
 
 	return noErr;
 }
@@ -458,8 +468,7 @@ static pascal OSErr _coreEventHandler( const AppleEvent *theEvent, AppleEvent *r
 		case kAEOpenApplication:
 			if( _gotRequiredParams( theEvent ) )
 			{
-				if( !skipOpen )
-					AskEditWindow( kWindowNormal );	// LR: -- voodoo can't have this
+				checkForOpen = kOpenFileAtLaunchDelay;	// give us time before checking, to allow time to process AE
 			}
 			break;
 				
