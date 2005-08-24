@@ -86,6 +86,12 @@ typedef struct
 	short				refNum;			// File's Reference Number
 	short				workRefNum;		// Work File's Reference Number
 
+//	HR/LR 050328 - PPC disassembly support
+	short				asciiStart;		// first char of ascii dump
+	short				hexStart;		// First Character Position of Hex Dump
+	short				bytesPerLine;	// Number of bytes per line
+	short				drawMode;		// 0=Dump, 1=Disassembly
+	
 	long				editOffset;		// Display Offset
 	long				startSel;		// First Character of Selection
 	long				endSel;			// First Character AFTER Selection
@@ -93,8 +99,10 @@ typedef struct
 	long				workBytesWritten;	// Size of Work File
 	long				linesPerPage;	// Lines that fit in the theWin
 
-	EditMode			editMode;		// defines whether we are in the hex or ascii portion
-	short				fork;			// 0=data 1=resource
+//	HR/LR 050328 - Fix error in comments
+	EditMode			editMode;		// 0=Hex, 1=Decimal, 2=Ascii
+	short				fork;				// 0=Undefined, 1=Data, 2=Resource
+
 	short				lastNybble;		// Last Hex Edit Nibble
 
 	Boolean				loByteFlag;		// Editing Low Byte for Hex Editor

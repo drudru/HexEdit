@@ -131,11 +131,19 @@ Boolean PerformTextSearch( EditWindowPtr dWin, SearchUIFlag uiSkipFlag )	//LR 17
 	}
 
 	// Get starting index into file
-	addr = dWin->startSel;
+	//LR 200 -- When searching forward start at the end of the current selection.
 	if( gPrefs.searchForward )
+	{
+		addr = dWin->endSel - 1;
+		if( addr < 0 )
+			addr = 0;
 		adjust = 1;
+	}
 	else
+	{
+		addr = dWin->startSel;
 		adjust = -1;
+	}
 
 	if( !uiSkipFlag && dWin->startSel != dWin->endSel )	//LR 191 -- adjust only if there is a selection
 	{
@@ -184,21 +192,29 @@ wrap:
 		ch = (Byte) (*(*cc)->data)[addr - (*cc)->addr];
 		if( !gPrefs.searchCase && gPrefs.searchMode != EM_Hex )
 			ch = toupper( ch );
+
+		// Do we have a matching character?
 		if( ch == g.searchBuffer[matchIdx+1] )
 		{
 			if( matchIdx == 0 )
 				matchAddr = addr;
+
+			// If # of chars matched equals match string length then we have a successful match!
 			++matchIdx;
 			if( matchIdx >= g.searchBuffer[0] )
 				goto Success;
+
 			++addr;
+
+			//LR 200 -- if we are at the end of the file (matches are always forward) we can't match any more so abort 
 			if( addr == dWin->fileSize )
-			{
-				matchIdx = 0;
-				addr = matchAddr;
-			}
+				break;
 			else
 				continue;
+/*			{	matchIdx = 0;	addr = matchAddr;	}
+			else
+				continue;
+*/
 		}
 		else if( matchIdx )	// if we were in a match, back it out!
 		{
