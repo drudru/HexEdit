@@ -142,7 +142,7 @@ Boolean CheckForAbort( void )
 				// We allow both ESC and Cmd-'.' to abort
 			if( 27 == c || ('.' == c && (event.modifiers & cmdKey)) )
 				{
-					FlushEvents( everyEvent, NULL );	// don't leave any events on queue if aborting!
+					FlushEvents( everyEvent, 0L );	// don't leave any events on queue if aborting!
 					return( true );
 				}
 			}while( GetNextEvent( everyEvent, &event ) );
@@ -401,7 +401,9 @@ OSStatus LaunchURL( StringPtr url )
 {
 	OSStatus error = noErr;
 
+#if !TARGET_API_MAC_CARBON
 	if( ICLaunchURL )	//LR weak linked!
+#endif
 	{
 		long start = 1, end = 1, length = (long)url[0];
 

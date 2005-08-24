@@ -234,6 +234,7 @@ OSStatus DoEvent( EventRecord *theEvent )
 					{
 						long growResult;
 						Rect r;
+						EditWindowPtr dWin = (EditWindowPtr)GetWRefCon(theWin);
 
 						SelectWindow( theWin );
 						SetRect( &r, kHexWindowWidth + 1, kHeaderHeight + (10 * kLineHeight), kHexWindowWidth + 1, g.maxHeight );
@@ -749,7 +750,9 @@ static OSStatus _initGlobals( void )
 	}    
 
 	// Startup InternetConfig (should only be done once!)
+#if !TARGET_API_MAC_CARBON
 	if( ICStart )
+#endif
 	{
 		error = ICStart( &g.icRef, kAppCreator );			// start IC up
 		if( !error )
@@ -771,6 +774,7 @@ static OSStatus _initGlobals( void )
 	g.searchDisabled = false;
 	g.searchDlg = NULL;
 	g.gotoDlg = NULL;
+	g.disassemble = false;
 
 	//LR: 1.66 - clear undo/redo records
 	memset( &gUndo, sizeof(UndoRecord), 0 );
@@ -830,7 +834,9 @@ int main(int argc, char *argv[])	//LR 175
 
 // 05/10/01 - GAB: MPW environment support
 #if !defined(__MC68K__) && !defined(__SC__)
+#if !TARGET_API_MAC_CARBON
 	if( ICStop )
+#endif
 	{
 		ICStop( g.icRef );	// shutdown IC
 	}

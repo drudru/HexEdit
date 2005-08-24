@@ -1,6 +1,14 @@
 HexEdit Revision History
 
 
+--- 08/25/05 2.00
+Added PPC Disassembler
+Cleaned up misc. compile warnings
+Converted XCode project to latest XCode
+Fixed IFD about box link
+Forward searches start at end of current selection
+
+
 --- 03/25/05 1.92
 Fixed replace text, is no longer converted to upper case
 	(basically, my 1.90 fix broke this; it worked ... what was I thinking?)

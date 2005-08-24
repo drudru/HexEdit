@@ -43,6 +43,9 @@
 #include "Menus.h"
 #include "Prefs.h"
 #include "Utility.h"
+//	HR/LR 050328 - PPC disassembly support
+#include "ppc_disasm.h"
+
 
 // Create a new main theWin using a 'WIND' template from the resource fork
 
@@ -541,7 +544,7 @@ void InitializeEditor( void )
 
 	//LR 177 -- create global offscreen drawing surface
 
-	g.offscreen = _newCOffScreen( kHexWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
+	g.offscreen = _newCOffScreen( kMaxWindowWidth - kSBarSize, g.maxHeight - kHeaderHeight );	// LR: 1.7 - areas for scroll bar & header not needed!
 	if( !g.offscreen )
 			ErrorAlert( ES_Fatal, errMemory );
 
@@ -579,7 +582,7 @@ void SizeEditWindow( WindowRef theWin, tWindowType type )
 	else if( kWindowCompareBtm == type )
 	{
 		maxheight = g.maxHeight / 2 - 96;		//LR 180 -- required to keep window of correct height
-		MoveWindow( theWin, 14, maxheight + (48 + 24), true );
+		MoveWindow( theWin, 14, maxheight + (48 + 36), true );
 		CompWind2 = theWin;
 	}
 	else	// kWindowNormal
@@ -900,11 +903,26 @@ contRsrc:
 		dWin->fileSize = pb.fileParam.ioFlRLgLen;
 	}
 
+//	HR/LR 050328 - Enter disassembly mode if g.disassemble is set
+	if ( g.disassemble ) {
+		dWin->drawMode = DM_Disassembly;
+		dWin->bytesPerLine = kDisBytesPerLine;
+		dWin->hexStart = kDisHexStart;
+		dWin->asciiStart = kDisASCIIStart;
+	} else {
+		dWin->drawMode = DM_Dump;
+		dWin->bytesPerLine = kHexBytesPerLine;
+		dWin->hexStart = kHexHexStart;
+		dWin->asciiStart = kHexASCIIStart;
+	}
+
 	/* if we get here, we have a valid file and data to read, or an empty file to work with */
 	/* now, for OS X, we need to get the catalog information for later restoration when saving (file permissions) */
 
 #if !defined(__MC68K__) && !defined(__SC__)
+#if !TARGET_API_MAC_CARBON
 	if( FSGetCatalogInfo )	/* not available in all systems (OS 9 and later only it seems) */
+#endif
 	{
 		FSRef ref;
 
@@ -938,7 +956,7 @@ contRsrc:
 
 	_ensureNameIsUnique( &workSpec );
 //LR 175	error = HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
-	error = FSpCreate( &workSpec, kAppCreator, '????', smSystemScript );
+	error = FSpCreate( &workSpec, kAppCreator, kDefaultFileType, smSystemScript );
 	if( error != noErr )
 	{
 		if( showerr )
@@ -1030,6 +1048,19 @@ void NewEditWindow( void )
 	dWin->fileSize = 0L;
 	dWin->refNum = 0;
 
+//	HR/LR 050328 - Enter disassembly mode if g.disassemble is set
+	if ( g.disassemble ) {
+		dWin->drawMode = DM_Disassembly;
+		dWin->bytesPerLine = kDisBytesPerLine;
+		dWin->hexStart = kDisHexStart;
+		dWin->asciiStart = kDisASCIIStart;
+	} else {
+		dWin->drawMode = DM_Dump;
+		dWin->bytesPerLine = kHexBytesPerLine;
+		dWin->hexStart = kHexHexStart;
+		dWin->asciiStart = kHexASCIIStart;
+	}
+
 	// Initialize WorkSpec
 	workSpec = dWin->workSpec;
 	error = FindFolder( kOnSystemDisk, kTemporaryFolderType, kCreateFolder, &workSpec.vRefNum, &workSpec.parID );
@@ -1042,7 +1073,7 @@ void NewEditWindow( void )
 //LR: 1.66	BlockMove( "\pUntitledw", workSpec.name, 10 );
 	_ensureNameIsUnique( &workSpec );
 //LR 175	HCreate( workSpec.vRefNum, workSpec.parID, workSpec.name, kAppCreator, '????' );
-	error = FSpCreate( &workSpec, kAppCreator, '????', smSystemScript );
+	error = FSpCreate( &workSpec, kAppCreator, kDefaultFileType, smSystemScript );
 	if( error != noErr )
 	{
 		ErrorAlert( ES_Caution, errCreate, error );
@@ -1740,8 +1771,14 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	short	hexPos;
 	short	asciiPos;
 	register short	ch, ch1, ch2;
-	long	addr;
+	unsigned long	addr, lineAddr;
 	Rect addrRect;
+
+//	HR/LR 050328 - PPC disassembly support
+	ppc_word ppcword;
+	DisasmPara_PPC dp;
+	char opcode[10];
+	char operands[24];
 
 	TextFont( g.fontFaceID );
 	TextSize( g.fontSize );
@@ -1759,11 +1796,19 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	EraseRect( &addrRect );
 
 	addr = sAddr - (sAddr % kBytesPerLine);
-	g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kStringHexPos + kBodyStrLen] = ' ';
+	g.buffer[kStringTextPos - 1] = g.buffer[kStringHexPos - 1] = g.buffer[kWindowChars] = ' ';
 
 	// Now, draw each line of data
 	for( y = r->top + (kLineHeight - 2), j = 0; y < r->bottom && addr < eAddr; y += kLineHeight, j++ )
 	{
+		//	HR/LR 050328 - PPC disassembly support
+		if (dWin->drawMode == DM_Disassembly) {
+			/* Zero the PPC word and the text buffer. */
+			ppcword = 0;
+			lineAddr = addr;
+			memset( g.buffer, ' ', sizeof(g.buffer) );
+		}
+
 		if( gPrefs.decimalAddr )
 			sprintf( (char *)&g.buffer[0], "%9ld:", addr );
 		else
@@ -1807,48 +1852,83 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 				ch1 >>= 4;
 				ch2 &= 0x0F;
 
-#define SINGLE_DRAW 1
+//	HR/LR 050328 - PPC disassembly support
+				/* Reconstruct the PPC word from the bytes. */
+				ppcword += (ch << 8 * (i - 1));
 
-#if SINGLE_DRAW
 				g.buffer[hexPos++] = ch1 + (( ch1 < 10 )? '0' : ( 'A'-10 ));
 				g.buffer[hexPos++] = ch2 + (( ch2 < 10 )? '0' : ( 'A'-10 ));
 				g.buffer[hexPos++] = ' ';
 				g.buffer[asciiPos++] = (ch >= 0x20 && ch <= g.highChar && 0x7F != ch) ? ch : '.';	// LR: 1.7 - 0x7F doesn't draw ANYTHING! Ouch!
-#else
-				g.buffer[0] = ch1 + (( ch1 < 10 )? '0' : ( 'A'-10 ));
-				g.buffer[1] = ch2 + (( ch2 < 10 )? '0' : ( 'A'-10 ));
-				g.buffer[2] = ' ';
-				g.buffer[4] = (ch >= 0x20 && ch <= g.highChar && 0x7F != ch) ? ch : '.';	// LR: 1.7 - 0x7F doesn't draw ANYTHING! Ouch!
-#endif
 			}
 			else
 			{
-#if SINGLE_DRAW
 				g.buffer[hexPos++] = ' ';
 				g.buffer[hexPos++] = ' ';
 				g.buffer[hexPos++] = ' ';
 				g.buffer[asciiPos++] = ' ';
-#else
-				g.buffer[0] = ' ';
-				g.buffer[1] = ' ';
-				g.buffer[2] = ' ';
-				g.buffer[4] = ' ';
-#endif
 			}
-#if !SINGLE_DRAW
-			MoveTo( kDataDrawPos - kHexWidth + (kHexWidth * i), y );
-			DrawText( g.buffer, 0, 3 );
-			MoveTo( kTextDrawPos + (kCharWidth * i), y );
-			DrawText( g.buffer, 4, 1 );
-#endif
 		}
 
-		// %% NOTE: Carsten says to move this into for loop (ie, draw each byte's data) to
-		//			prevent font smoothing from messing up the spacing
-#if SINGLE_DRAW
-		MoveTo( kDataDrawPos - kCharWidth, y );
-		DrawText( g.buffer, kStringHexPos - 1, kBodyStrLen + 3 );
-#endif
+//	HR/LR 050328 - PPC disassembly support
+		/* Optionally disassemble the PPC word and print its opcode. */
+		if (dWin->drawMode == DM_Disassembly)
+		{
+			int offset = kDisHexStart + (kDisBytesPerLine * 2) + 4;
+			
+			dp.opcode = opcode;
+			dp.operands = operands;
+			dp.instr = &ppcword;
+			dp.iaddr = (unsigned long *)lineAddr;
+			PPC_Disassemble(&dp);
+			/* Remove dummy instructions. */
+			if (strcmp(opcode,".word") == 0)
+			{
+				strcpy(opcode, "");
+				strcpy(operands, "");
+			}
+			/* Load the disassembled word into the text buffer and draw it. */
+			sprintf( (char *)&g.buffer[offset], " %-8s%s", opcode, operands);
+			MoveTo( kDisHexStart * kCharWidth, y );
+			DrawText(g.buffer, kDisHexStart, kWindowChars);
+			MoveTo( offset * kCharWidth, y );
+
+			if (strcmp(opcode,"mflr") == 0)					/* Redraw mflr instructions in bold green. */
+			{
+				if( ctHdl ) ForeColor(greenColor);
+				TextFace(bold | condense);
+				DrawText(g.buffer, offset, 49);
+				TextFace(0);
+				// draw line at top (ie, start)
+				MoveTo( kDisHexStart * kCharWidth, y - kLineHeight + 2 );
+				LineTo( kWindowChars * kCharWidth, y - kLineHeight + 2 );
+			}
+			else if (strcmp(opcode,"blr") == 0)				/* Redraw blr instructions in bold red. */
+			{
+				if( ctHdl ) ForeColor(redColor);
+				TextFace(bold | condense);
+				DrawText(g.buffer, offset, 49);
+				TextFace(0);
+				// draw line at bottom (ie, end)
+				MoveTo( kDisHexStart * kCharWidth, y + 1);
+				LineTo( kWindowChars * kCharWidth, y + 1 );
+			}
+			else if (strcmp(opcode,"nop") == 0)				/* Redraw nop instructions in pink. */
+			{
+				if( ctHdl ) ForeColor(magentaColor);
+				DrawText(g.buffer, offset, 49);
+			}
+			else if (strncmp(opcode,"b", 1) == 0)			/* Redraw branch instructions in blue. */
+			{
+				if( ctHdl ) ForeColor(blueColor);
+				DrawText(g.buffer, offset, 49);
+			}
+		}
+		else
+		{
+			MoveTo( kDataDrawPos - kCharWidth, y );
+			DrawText( g.buffer, kStringHexPos - 1, kBodyStrLen + 3 );
+		}
 	}
 
 	// Draw left edging? (line only, background erases, but line is erased by text!)
@@ -1865,7 +1945,11 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 
 	// Draw vertical bars?
 	// based on David Emme's vertical bar mod
-	if( gPrefs.vertBars )
+
+//	HR/LR 050328 - PPC disassembly support
+	/* Don't draw vertical lines in disassembly mode */
+	if( gPrefs.vertBars && dWin->drawMode == DM_Dump)
+
 	{
 		if( ctHdl )
 			RGBForeColor( &( *ctHdl )->dividerLine );	//LR 181 -- now had it's own color!
@@ -1987,6 +2071,7 @@ void UpdateOnscreen( WindowRef theWin )
 		r2.top = kHeaderHeight;
 		r2.right -= kSBarSize;
 		r1.bottom = r1.top + (r2.bottom - r2.top);
+		r1.right = r2.right;	//LR: 200 - offscreen is max size window can be grown, so we have to only copy bits the correct rectangle!
 
 	//LR 160 -- Must blit a bit differently when in Carbon
 
@@ -1996,7 +2081,6 @@ void UpdateOnscreen( WindowRef theWin )
 		CopyBits( ( BitMap * ) &( /*LR 180 dWin->*/ g.offscreen )->portPixMap, &theWin->portBits, &r1, &r2, srcCopy, 0L );
 	#endif
 
-		//%% LR: 1.7 -- needs to be done offscreen, but then it's  not erased -- this is a new shell todo item :)
 //LR 180		if( dWin->endSel > dWin->startSel && dWin->endSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + (dWin->linesPerPage * kBytesPerLine) )
 //LR 180			_hiliteSelection( dWin );
 
@@ -2406,7 +2490,7 @@ void CursorOn( WindowRef theWin )
 		{
 			g.cursRect.top = kHeaderHeight + LINENUM(start) * kLineHeight;
 			g.cursRect.bottom = g.cursRect.top + kLineHeight;
-			g.cursRect.left = kDataDrawPos /*kBodyDrawPos + CHARPOS(kStringHexPos - 1)*/ + (COLUMN(start) * kHexWidth) - 2;
+			g.cursRect.left = kDataDrawPos + (COLUMN(start) * kHexWidth) - 2;
 			g.cursRect.right = g.cursRect.left + 2;
 
 			InvertRect( &g.cursRect );
@@ -2415,7 +2499,7 @@ void CursorOn( WindowRef theWin )
 		{
 			g.cursRect.top = kHeaderHeight + LINENUM(start) * kLineHeight;
 			g.cursRect.bottom = g.cursRect.top + kLineHeight;
-			g.cursRect.left = kTextDrawPos /*kBodyDrawPos + CHARPOS(kStringTextPos)*/ + (COLUMN(start) * kCharWidth) - 1;
+			g.cursRect.left = kTextDrawPos + (COLUMN(start) * kCharWidth) - 1;
 			g.cursRect.right = g.cursRect.left + 2;
 
 			InvertRect( &g.cursRect );
@@ -3075,7 +3159,11 @@ void SaveContents( WindowRef theWin )
 		/* now, for OS X, we need to get the catalog information for later restoration when saving (file permissions) */
 
 #if !defined(__MC68K__) && !defined(__SC__)
-		if( FSSetCatalogInfo && dWin->OKToSetCatInfo )	/* not available in all systems (OS 9 and later only it seems) */
+		if(
+#if !TARGET_API_MAC_CARBON
+		 FSSetCatalogInfo &&
+#endif
+		  dWin->OKToSetCatInfo )	/* not available in all systems (OS 9 and later only it seems) */
 		{
 			FSRef ref;
 

@@ -84,8 +84,8 @@
 
 // make some things a bit easier to read
 
-#define kAppCreator		FOUR_CHAR_CODE('hDmp')
-#define kDefaultFileType FOUR_CHAR_CODE('TEXT')
+#define kAppCreator			FOUR_CHAR_CODE('hDmp')
+#define kDefaultFileType	FOUR_CHAR_CODE('TEXT')
 
 //LR 185 -- under Carbon, alloc more RAM for faster ops
 #if TARGET_API_MAC_CARBON
@@ -99,38 +99,59 @@
 
 #define kAllocIncrement	64L
 
-#define kSBarSize		16
-#define	kGrowIconSize	14
-
-#define kBytesPerLine	16
+#define kSBarSize			16
+#define kGrowIconSize	14
 
 #define kHeaderHeight	16
 #define kFooterHeight	16
+#define kLineWidth		16
+
+// define the character offsets into the g.buffer array (used to create draw string)
+#define kDisBytesPerLine	4
+#define kDisHexStart			11
+#define kDisASCIIStart		73
+
+#define kHexBytesPerLine	16
+#define kHexHexStart			12
+#define kHexASCIIStart		(kHexHexStart+(kBytesPerLine*3)+1)	//61
+
+#define kMaxWindowChars		128
+
+//	HR/LR 050328 - PPC disassembly support
+#define kBytesPerLine	(dWin->bytesPerLine)
+#define kStringHexPos	(dWin->hexStart)
+#define kStringTextPos	(dWin->asciiStart)
+
+//LR: 200 #define kWindowChars		77		//((kBytesPerLine * 3) + kBytesPerLine + kLineWidth + 1)		// number of characters wide the window is
+#define kWindowChars		(kStringTextPos + kBytesPerLine)
+
 //LR: 1.7 #define TopMargin		3
 //LR: 1.7 #define BotMargin		0
 //LR: 1.7 #define AsciiSpacing	6
 //LR: 1.7 #define DescendHeight	0
 
-#define kStringHexPos	12
-#define kStringTextPos	(kStringHexPos+(kBytesPerLine*3)+1)
-#define kBodyStrLen		(kStringTextPos+kBytesPerLine-kStringHexPos)	// LR: 1.7 was 75 - (kStringHexPos -  2) in EditWindow.c
+#define kBodyStrLen		(kStringTextPos+kLineWidth-kStringHexPos)	// LR: 1.7 was 75 - (kStringHexPos -  2) in EditWindow.c
 
 //LR 1.72 from resource #define kFontFace		"\pMonaco"
 //#define kFontSize		9
 #define kLineHeight		(g.lineHeight)	//11	//%% make flexible (and char width?)
 #define kCharWidth		(g.charWidth)	//6
-#define kHexWidth		(kCharWidth*3)
+#define kHexWidth			(kCharWidth*3)
 
-#define kBodyDrawPos	0	// LR: 12 - let's not have any undrawn areas, to avoid erasing!
+#define kBodyDrawPos	0	// LR: 120 - let's not have any undrawn areas, to avoid erasing!
 #define kDataDrawPos	(kBodyDrawPos + ((kStringHexPos - 1) * kCharWidth))
 #define kTextDrawPos	(kBodyDrawPos + ((kStringTextPos -  1) * kCharWidth))
 
-#define LINENUM(a)		((a) >> 4)
-#define COLUMN(a)		((a) & 0x0F)
-#define CHARPOS(a)		((a) * kCharWidth)	//1.72 (((a) << 2) + ((a) << 1))	// Multiply by 6
+//	HR/LR 050328 - PPC disassembly support (use divide and mod vs. shift and &)
+#define LINENUM(a)	((a) / dWin->bytesPerLine)
+#define COLUMN(a)		((a) % dWin->bytesPerLine)
+
+#define CHARPOS(a)	((a) * kCharWidth)	//1.72 (((a) << 2) + ((a) << 1))	// Multiply by 6
 #define HEXPOS(a)		(CHARPOS(a) * 3)	//1.72 ((a) << 4) + ((a) << 1))	// Multiply by 18
 
-#define kHexWindowWidth	(((kStringHexPos + kBodyStrLen) * kCharWidth) + kSBarSize)	//LR 1.7 - renamed to show windows are not sizable horizontally! Must be multiple of 2
+//	HR/LR 050328 - PPC disassembly support
+#define kHexWindowWidth	((kWindowChars * kCharWidth) + kSBarSize)
+#define kMaxWindowWidth ((kMaxWindowChars * kCharWidth) + kSBarSize)
 
 //LR 1.7 #define MaxWindowHeight	512	// Note - these are NOT reversed!
 
@@ -161,6 +182,10 @@ typedef enum { FM_Data = 1, FM_Rsrc, FM_Smart } ForkModes;
 typedef enum { HD_Decimal = FT_Resource + 1, HD_Hex, HD_Footer } Headers;
 typedef enum { FN_PrefsFolder = 1, FN_PrefsFile, FN_Untitled, FN_DATA, FN_RSRC } Filenames;
 typedef enum { AM_Lo, AM_Hi } AsciiModes;
+
+//	HR/LR 050328 - PPC disassembly support
+typedef enum { DM_Dump, DM_Disassembly }DrawMode;
+
 typedef enum { EM_Hex, EM_Decimal, EM_Ascii } EditMode;
 typedef enum { EO_Undo = 1, EO_Redo, EO_Typing, EO_Paste, EO_Insert, EO_Overwrite, EO_Cut, EO_Clear, EO_Delete } EditOperation;
 typedef enum { ES_Note, ES_Caution, ES_Stop, ES_Fatal } ErrorSeverity;
@@ -182,17 +207,17 @@ typedef enum { CP_Done=1,CP_Cancel,CP_Bytes,CP_Words,CP_Longs,CP_Different,CP_Ma
 #define kHexEditWindowTag		1000
 
 // Mac OS versions
-#define kMacOSSevenPointOne	 	0x00000710
-#define kMacOSSevenPointFivePointFive 0x00000755
-#define kMacOSEight				0x00000800
-#define kMacOSEightPointFive	0x00000850
-#define kMacOSEightPointSix		0x00000860
-#define kMacOSNine				0x00000900
-#define kMacOSNinePointOne		0x00000910
-#define kMacOSTen				0x00001000
+#define kMacOSSevenPointOne	 			0x00000710
+#define kMacOSSevenPointFivePointFive	0x00000755
+#define kMacOSEight							0x00000800
+#define kMacOSEightPointFive				0x00000850
+#define kMacOSEightPointSix				0x00000860
+#define kMacOSNine							0x00000900
+#define kMacOSNinePointOne					0x00000910
+#define kMacOSTen								0x00001000
 
 // CarbonLib versions
-#define kCarbonLibOnePointOne			0x00000110
+#define kCarbonLibOnePointOne				0x00000110
 #define kCarbonLibOnePointThreePointOne 0x00000131
 
 /*** COLOUR TABLE ***/
@@ -218,22 +243,22 @@ typedef struct
 typedef struct
 {
 	// system info
-	Boolean		quitFlag;
-	SInt32		systemVersion;		// NS 1.7.1
+	Boolean	quitFlag;
+	SInt32	systemVersion;		// NS 1.7.1
 #if !TARGET_API_MAC_CARBON	// LR: v1.6
-	Boolean		WNEImplemented;
-	Boolean		sys7Flag;
-	Boolean		colorQDFlag;
+	Boolean	WNEImplemented;
+	Boolean	sys7Flag;
+	Boolean	colorQDFlag;
 #endif
-	Boolean		dragAvailable;
-	Boolean		translucentDrag;
-	Boolean		navAvailable;
-	Boolean		appearanceAvailable;
+	Boolean	dragAvailable;
+	Boolean	translucentDrag;
+	Boolean	navAvailable;
+	Boolean	appearanceAvailable;
 	
 	// environment gPrefs
 //LR 1.72 unused	Boolean		useAppleEvents;
-	Boolean		useAppearance;
-	Boolean		useNavServices;
+	Boolean	useAppearance;
+	Boolean	useNavServices;
 	
 	// application globals
 	Boolean 	cursorFlag;
@@ -241,14 +266,19 @@ typedef struct
 	UInt8		forkMode;
 	UInt8		highChar;
 	SInt8		buffer[512];
-	UInt16		maxHeight;
+	UInt16	maxHeight;
+
+//	HR/LR 050328 - PPC disassembly support
+	UInt16	maxWidth;
+	Boolean	disassemble;		// treat content as PPC code and disassemble it
+
 	UInt8		searchBuffer[256];
 	UInt8		searchText[256];
 	UInt8		replaceText[256];
 	UInt8		gotoText[256];
-	Boolean		searchDisabled;
-	Boolean		replaceDisabled;
-	Boolean		replaceAll;
+	Boolean	searchDisabled;
+	Boolean	replaceDisabled;
+	Boolean	replaceAll;
 
 	short		fontFaceID;
 	short		fontSize;
@@ -276,7 +306,7 @@ typedef struct
 #endif
 #if TARGET_API_MAC_CARBON	// SEL -- 1.7
 	PMPrintSettings	printSettings;
-	PMPageFormat	pageFormat;
+	PMPageFormat		pageFormat;
 #endif
 }	globals;
 

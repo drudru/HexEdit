@@ -39,7 +39,7 @@ enum	{kAppleMenu = kMenuBaseID, kFileMenu, kEditMenu, kFindMenu, kOptionsMenu, k
 enum	{AM_About=1};
 
 enum	{FM_New=1,FM_Open,FM_Close,FM_Sep1,
-		 FM_OtherFork,FM_CompareFiles,FM_Sep2,	
+		 FM_Disassemble, FM_OtherFork,FM_CompareFiles,FM_Sep2,	
 		 FM_Save, FM_SaveAs, FM_Revert,FM_Sep3,
 		 FM_PageSetup, FM_Print,FM_Sep4,
 		 FM_Quit};

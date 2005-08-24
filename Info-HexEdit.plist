@@ -4,18 +4,6 @@
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>English</string>
-	<key>CFBundleExecutable</key>
-	<string>HexEdit</string>
-	<key>CFBundleIconFile</key>
-	<string>pentagram.icns</string>
-	<key>CFBundleInfoDictionaryVersion</key>
-	<string>6.0</string>
-	<key>CFBundlePackageType</key>
-	<string>APPL</string>
-	<key>CFBundleSignature</key>
-	<string>hDmp</string>
-	<key>CFBundleVersion</key>
-	<string>1.91</string>
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
@@ -25,6 +13,20 @@
 			</array>
 		</dict>
 	</array>
+	<key>CFBundleExecutable</key>
+	<string>HexEdit</string>
+	<key>CFBundleIconFile</key>
+	<string>pentagram.icns</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.ideasfromthedeep.hexedit</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>hDmp</string>
+	<key>CFBundleVersion</key>
+	<string>2.00</string>
 	<key>CSResourcesFileMapped</key>
 	<true/>
 </dict>

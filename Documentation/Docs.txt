@@ -56,6 +56,9 @@ Close - Closes the currently open file
 
 Edit Other Fork - Simply switches to the window containing the other fork for the file. If the window doesn't exist, HexEdit automatically opens the file's other fork in a new window and makes that window active.
 
+
+Disassemble PPC Code - this causes the data, starting at the first byte in the window, to be interpreted as PowerPC assembly code. The resulting assembly-language interpretation of that binary data is displayed in the window. Branches as so forth are displayed as well as common routine entry and exit points.
+
 Compare Files - Brings up two open dialogs, one after the other. For each, select one of the two files you wish to compare. Canceling either dialog cancels the entire compare. Once both files are selected, both file's windows will open (one on below the other) with a dialog bar beneath. This bar has compare commands; find next, find previous, edit them, and done. The finds do just that, edit them closes the dialog bar and allows you to edit both files, and done closes all three windows. Note: the find is a VERY simple find, and only compares bytes. It is not a "diff" type find. If anyone wants to add that to HexEdit it would be greatly appriciated :)
 
 Save - Saves the frontmost edit window to it's opened file

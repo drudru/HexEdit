@@ -299,6 +299,10 @@ OSStatus AdjustMenus( void )
 //	_enableMenuItem( fileMenu, FM_PageSetup, isObjectWin );	//SEL: 1.7 - enabled for carbon
 	_enableMenuItem( fileMenu, FM_Print, isObjectWin );
 
+//	HR/LR 050328 - Enable and check FM_Disassemble menu item
+	_enableMenuItem( fileMenu, FM_Disassemble, isObjectWin );
+	CheckMenuItem( fileMenu, FM_Disassemble, g.disassemble );
+
 	_enableMenuItem( fileMenu, FM_OtherFork, isObjectWin );
 	_enableMenuItem( fileMenu, FM_Close, isDA || isObjectWin || isFindWin || isGotoWin );	// LR: v1.6.5 rewrite via Max Horn
 	_enableMenuItem( fileMenu, FM_Save, isObjectWin && dWin->dirtyFlag );
@@ -440,6 +444,25 @@ OSStatus HandleMenu( long mSelect, short modifiers )
 
 		case FM_Open:
 			AskEditWindow( kWindowNormal );
+			break;
+
+		//	HR/LR 050328 - Handle FM_Disassemble menu item
+		case FM_Disassemble:
+			g.disassemble = !g.disassemble;
+			if ( g.disassemble ) {
+				dWin->drawMode = DM_Disassembly;
+				dWin->bytesPerLine = kDisBytesPerLine;
+				dWin->hexStart = kDisHexStart;
+				dWin->asciiStart = kDisASCIIStart;
+			} else {
+				dWin->drawMode = DM_Dump;
+				dWin->bytesPerLine = kHexBytesPerLine;
+				dWin->hexStart = kHexHexStart;
+				dWin->asciiStart = kHexASCIIStart;
+			}
+			/* Make sure the editOffset position starts on a new line */
+			dWin->editOffset -= dWin->editOffset % dWin->bytesPerLine;
+			UpdateEditWindows();
 			break;
 
 		case FM_OtherFork:	// LR: I want to see both!
