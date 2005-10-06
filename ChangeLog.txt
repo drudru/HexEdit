@@ -5,3 +5,5 @@ This is to track changes made to files checked in. This is NOT the history file!
 This file will be culled to update the version history file for official releases. (ie, for each official release this file is emptied!)
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
+Fix Classic resources (file menu wasn't updated)
+Fix FAT linking order (Carbon must come first, so 68K resources don't overwrite)
