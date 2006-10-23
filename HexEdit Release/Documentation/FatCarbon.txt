@@ -1,0 +1,10 @@
+FatCarbon Information
+
+HexEdit uses FatCarbon, which is Copyright 2000-2001 Eric Allen Grant.  All rights reserved. FatCarbon is used to create a single application that will run under OS X, MacOS PPC and MacOS 68K.
+
+FatCarbon is a Metrowerks CodeWarrior post-linker, and has been licensed for use with HexEdit.
+
+FatCarbon can be obtained at:
+
+<http://www.eagrant.com/FATCarbon.html>
+
