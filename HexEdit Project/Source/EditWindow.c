@@ -71,6 +71,10 @@ enum
 	kNavDITLNumControls = 4//3 radio buttons + radio group control
 };
 
+// RA 051201 unhardcode selection x offset
+#define kHexSelectionOffset -3
+#define kDisasmSelectionOffset 2
+
 /*** NEW OFFSCREEN GWORLD ***/
 // LR: create offscreen drawing surface (so drawing to screen is not flickery)
 //LR 180 -- removed old comments, now always creates offscreen at current color depth
@@ -1273,6 +1277,7 @@ static void _offsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFla
 
 /*** INVERT SELECTION ***/
 //LR 180 -- changes to draw offscreen instead of directly to window
+// RA 051201 replace "- 3" with "+ xOffset"
 static void _hiliteSelection( EditWindowPtr	dWin )
 {
 	Rect	r;
@@ -1281,6 +1286,9 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 	Boolean	frontFlag;
 	RGBColor hColor, opcolor = { 0x8000, 0x8000, 0xF000 };
 //185	RGBColor invertColor;
+
+	// RA 051201 selectxoffset
+	short	xOffset;
 
 	frontFlag = (dWin->oWin.theWin == FrontNonFloatingWindow() && dWin->oWin.active);
 
@@ -1295,6 +1303,14 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 
 	RGBForeColor( &grey );
 	OpColor( &opcolor );
+	
+	// RA 051201 selectxoffset
+	if (dWin->drawMode == DM_Disassembly) {
+		xOffset = kDisasmSelectionOffset;
+	} else {
+		xOffset = kHexSelectionOffset;
+	}
+	
 /*185
 	if( ctHdl )
 		invertColor = ( *ctHdl )->body;
@@ -1323,8 +1339,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 				// Invert Hex
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+				r.left = kDataDrawPos + HEXPOS( startX ) + xOffset;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) + xOffset;
 				HILITERECT( &r );
 
 				// Outline Box around Ascii
@@ -1346,8 +1362,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 				{
 					r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
 					r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
-					r.left = kDataDrawPos - 3;
-					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+					r.left = kDataDrawPos + xOffset;
+					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) + xOffset;
 					HILITERECT( &r );
 	
 					r.left = kTextDrawPos - 1;
@@ -1359,8 +1375,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 				}
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
-				r.left = kDataDrawPos - 3;
-				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+				r.left = kDataDrawPos + xOffset;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth + xOffset;
 				HILITERECT( &r );
 	
 				r.left = kTextDrawPos - 1;
@@ -1380,8 +1396,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 			{
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+				r.left = kDataDrawPos + HEXPOS( startX ) + xOffset;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth + xOffset;
 				HILITERECT( &r );
 	
 				r.left = kTextDrawPos + CHARPOS( startX )-1;
@@ -1409,10 +1425,10 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 				// Outline Hex
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+				r.left = kDataDrawPos + HEXPOS( startX ) + xOffset;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) + xOffset;
 	
-				MoveTo( kDataDrawPos - 3, r.bottom );
+				MoveTo( kDataDrawPos + xOffset, r.bottom );
 				LineTo( r.left, r.bottom );
 				LineTo( r.left, r.top );
 				if( dWin->startSel >= dWin->editOffset )
@@ -1432,8 +1448,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 				{
 					r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
 					r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
-					r.left = kDataDrawPos - 3;
-					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+					r.left = kDataDrawPos + xOffset;
+					r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) + xOffset;
 					MoveTo( r.left, r.top );
 					LineTo( r.left, r.bottom );
 					MoveTo( r.right, r.top );
@@ -1445,8 +1461,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 				}
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
-				r.left = kDataDrawPos - 3;
-				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+				r.left = kDataDrawPos + xOffset;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth + xOffset;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
 				if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
@@ -1456,7 +1472,7 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 				else
 					MoveTo( r.right, r.bottom );
 				LineTo( r.right, r.top );
-				LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
+				LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) + xOffset, r.top );
 	
 				r.left = kTextDrawPos - 1;
 				r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth;	//LR 180 - 1;
@@ -1466,8 +1482,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 			{
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
 				r.bottom = r.top + kLineHeight;
-				r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+				r.left = kDataDrawPos + HEXPOS( startX ) + xOffset;
+				r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth + xOffset;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
 				if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
@@ -1495,10 +1511,10 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 			// Outline Hex
 			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
 			r.bottom = r.top + kLineHeight;
-			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+			r.left = kDataDrawPos + HEXPOS( startX ) + xOffset;
+			r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) + xOffset;
 
-			MoveTo( kDataDrawPos - 3, r.bottom );
+			MoveTo( kDataDrawPos + xOffset, r.bottom );
 			LineTo( r.left, r.bottom );
 			LineTo( r.left, r.top );
 			if( dWin->startSel >= dWin->editOffset )
@@ -1527,8 +1543,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 			{
 				r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight + kLineHeight;
 				r.bottom = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
-				r.left = kDataDrawPos - 3;
-				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) - 3;
+				r.left = kDataDrawPos + xOffset;
+				r.right = kDataDrawPos + HEXPOS( kBytesPerLine ) + xOffset;
 				MoveTo( r.left, r.top );
 				LineTo( r.left, r.bottom );
 				MoveTo( r.right, r.top );
@@ -1543,8 +1559,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 			}
 			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( end ) * kLineHeight;
 			r.bottom = r.top + kLineHeight;
-			r.left = kDataDrawPos - 3;
-			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+			r.left = kDataDrawPos + xOffset;
+			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth + xOffset;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom );
 			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
@@ -1552,7 +1568,7 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 			else
 				MoveTo( r.right, r.bottom );
 			LineTo( r.right, r.top );
-			LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) - 3, r.top );
+			LineTo( kDataDrawPos + HEXPOS( kBytesPerLine ) + xOffset, r.top );
 
 			r.left = kTextDrawPos - 1;
 			r.right = kTextDrawPos + CHARPOS( endX ) + kCharWidth - 1;
@@ -1569,8 +1585,8 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 		{
 			r.top = /*(kHeaderHeight / 2) +*/ LINENUM( start ) * kLineHeight;
 			r.bottom = r.top + kLineHeight;
-			r.left = kDataDrawPos + HEXPOS( startX ) - 3;
-			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth - 3;
+			r.left = kDataDrawPos + HEXPOS( startX ) + xOffset;
+			r.right = kDataDrawPos + HEXPOS( endX ) + kHexWidth + xOffset;
 			MoveTo( r.left, r.top );
 			LineTo( r.left, r.bottom );
 			if( dWin->endSel < dWin->editOffset + dWin->linesPerPage * kBytesPerLine )
