@@ -60,16 +60,22 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 
 	// Search in Direction gPrefs.searchForward for text gSearchBuffer
 
+	// if we're searching forward...
+	if( gPrefs.searchForward ) {
+		// then start the search at the end of the current selection
+		addr1 = dWin1->endSel;
+		addr2 = dWin2->endSel;
+		adjust = 1;	// and set our direction forward
+	} else {	// ...otherwise...
+		// start the search at the beginning of the current selection
 	addr1 = dWin1->startSel;
 	addr2 = dWin2->startSel;
-
-	if( gPrefs.searchForward )
-		adjust = 1;
-	else
-		adjust = -1;
+		adjust = -1;	// and set our direction backwards
+	}
 	
 	// 1 = byte, 2 = words, 4 = longs, ect...
-	matchCnt = gPrefs.searchSize;
+	// note: always set this to at least one so the selection will show on success
+	matchCnt = gPrefs.searchSize ? gPrefs.searchSize : 1;
 
 	//LR 185 -- we handle the chucks ourself to speed up searching!
 	//			get the chunk for the current address & load it.
@@ -108,28 +114,49 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 			}
 			++matchIdx;
 
-			if( matchIdx >= matchCnt )
+			// if we're looking for a match and we have enough bytes...
+			if( gPrefs.searchType == CM_Match && matchIdx >= matchCnt )
 				goto Success;
-
-			++addr1;
-			++addr2;
-			if( addr1 == dWin1->fileSize )
-			{
+		}
+		else if( matchIdx )
+		{
+			// if we were in a diff go show it!
+			if ( gPrefs.searchType == CM_Different ) {
+				if ( adjust < 0 ) {
+					matchAddr1 = addr1 + 1;
+					matchAddr2 = addr2 + 1;
+				}
+				matchCnt = matchIdx;
+				goto Success;
+			}
+			// if we were in a match, back it out!
 				matchIdx = 0;
 				addr1 = matchAddr1;
 				addr2 = matchAddr2;
 			}
-			else
-				continue;
-		}
-		else if( matchIdx )	// if we were in a match, back it out!
+
+		// adjust our addresses
+		addr1 += adjust;
+		addr2 += adjust;
+
+		// if we've moved outside ether of our file sizes
+		if( ( addr1 < 0 ) || ( addr1 >= dWin1->fileSize ) ||
+			( addr2 < 0 ) || ( addr2 >= dWin2->fileSize ) )
 		{
+			// if we were in a diff go show it!
+			if ( gPrefs.searchType == CM_Different ) {
+				if ( adjust < 0 ) {
+					matchAddr1 = addr1 + 1;
+					matchAddr2 = addr2 + 1;
+				}
+				matchCnt = matchIdx;
+				goto Success;
+			}
 			matchIdx = 0;
 			addr1 = matchAddr1;
 			addr2 = matchAddr2;
+			break;
 		}
-		addr1 += adjust;
-		addr2 += adjust;
 
 		//LR 185 -- OK, here we must handle moving to a new chunk if outside current one
 		if( addr1 < (*c1)->addr )
@@ -175,12 +202,12 @@ Failure:
 Success:
 	SelectWindow( dWin1->oWin.theWin );
 	dWin1->startSel = matchAddr1;
-	dWin1->endSel = dWin1->startSel + gPrefs.searchSize;
+	dWin1->endSel = dWin1->startSel + matchCnt;
 	ScrollToSelection( dWin1, dWin1->startSel, true );
 
 	SelectWindow( dWin2->oWin.theWin );
 	dWin2->startSel = matchAddr2;
-	dWin2->endSel = dWin2->startSel + gPrefs.searchSize;
+	dWin2->endSel = dWin2->startSel + matchCnt;
 	ScrollToSelection( dWin2, dWin2->startSel, true );
 
 	MySetCursor( C_Arrow );
