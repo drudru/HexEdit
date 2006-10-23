@@ -1,5 +1,0 @@
-tell application "HexEdit"
-	-- options are "data" and "rsrc" to specify fork, default is HexEdit's "smart"  mode
-	compare newer file ":Documentation:Docs.txt" older file ":Documentation:History.txt" with options "data"
-	activate
-end tell
