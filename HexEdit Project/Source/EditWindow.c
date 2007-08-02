@@ -25,6 +25,7 @@
  *		Scott E. Lasley (SEL) 
  *		Brian Bergstrand (BB) 
  *		Nick Pissaro Jr. (NP)
+ *		Alexei Svitkine (AS)
  */
 
 // 05/10/01 - GAB: MPW environment support
@@ -74,6 +75,16 @@ enum
 // RA 051201 unhardcode selection x offset
 #define kHexSelectionOffset -3
 #define kDisasmSelectionOffset 2
+
+// AS: swapping RGBColors for little endian target
+static RGBColor *_swapColor(RGBColor *color)
+{
+	static RGBColor swappedColor;
+	swappedColor.red = CFSwapInt16BigToHost(color->red);
+	swappedColor.green = CFSwapInt16BigToHost(color->green);
+	swappedColor.blue = CFSwapInt16BigToHost(color->blue);
+	return &swappedColor;
+}
 
 /*** NEW OFFSCREEN GWORLD ***/
 // LR: create offscreen drawing surface (so drawing to screen is not flickery)
@@ -1299,7 +1310,7 @@ static void _hiliteSelection( EditWindowPtr	dWin )
 
 	// Set our colors
 	if( ctHdl )
-		RGBBackColor( &(*ctHdl)->body );
+		RGBBackColor(_swapColor( &(*ctHdl)->body ));
 
 	RGBForeColor( &grey );
 	OpColor( &opcolor );
@@ -1674,8 +1685,8 @@ static void _drawHeader( EditWindowPtr dWin, Rect *r )
 	// LR: if we have color table, fill in the address bar!
 	if( ctHdl )
 	{
-		RGBBackColor( &( *ctHdl )->header );
-		RGBForeColor( &( *ctHdl )->headerLine );
+		RGBBackColor(_swapColor( &( *ctHdl )->header ));
+		RGBForeColor(_swapColor( &( *ctHdl )->headerLine ));
 	}
 	else
 	{
@@ -1691,7 +1702,7 @@ static void _drawHeader( EditWindowPtr dWin, Rect *r )
 	LineTo( r->right, r->bottom );	// uses fore color
 
 	if( ctHdl )
-		RGBForeColor( &( *ctHdl )->headerText );
+		RGBForeColor(_swapColor( &( *ctHdl )->headerText ));
 
 	// LR: v1.6.5 LR - more stuff in the header now & strings are from an localizable resource :)
 
@@ -1732,8 +1743,8 @@ static void _drawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPa
 	// LR: 1.7 - if we have color table, fill in the address bar!
 	if( ctHdl )
 	{
-		RGBBackColor( &( *ctHdl )->header );
-		RGBForeColor( &( *ctHdl )->headerLine );
+		RGBBackColor(_swapColor( &( *ctHdl )->header ));
+		RGBForeColor(_swapColor( &( *ctHdl )->headerLine ));
 	}
 	else
 	{
@@ -1746,7 +1757,7 @@ static void _drawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPa
 	LineTo( r->right, r->top );
 
 	if( ctHdl )
-		RGBForeColor( &( *ctHdl )->headerText );
+		RGBForeColor(_swapColor( &( *ctHdl )->headerText ));
 
 	// Draw Date & Time on left edge of footer
 	GetDateTime( &dt );
@@ -1808,7 +1819,7 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	addrRect.bottom = r->bottom;
 
 	if( ctHdl )
-		RGBBackColor( &( *ctHdl )->bar );
+		RGBBackColor(_swapColor( &( *ctHdl )->bar ));
 	EraseRect( &addrRect );
 
 	addr = sAddr - (sAddr % kBytesPerLine);
@@ -1833,8 +1844,8 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		// draw the address (not one big string due to different coloring!)
 		if( ctHdl )
 		{
-			RGBBackColor( &( *ctHdl )->bar );
-			RGBForeColor( &( *ctHdl )->barText );
+			RGBBackColor(_swapColor( &( *ctHdl )->bar ));
+			RGBForeColor(_swapColor( &( *ctHdl )->barText ));
 		}
 
 		MoveTo( kBodyDrawPos, y );
@@ -1845,8 +1856,8 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 		{
 			Rect r2;
 
-			RGBBackColor( (j & 1) ? &( *ctHdl )->bodyDark : &( *ctHdl )->body );	//LR 180 -- choose appr. body bkgnd color
-			RGBForeColor( &( *ctHdl )->text );
+			RGBBackColor(_swapColor( (j & 1) ? &( *ctHdl )->bodyDark : &( *ctHdl )->body ));	//LR 180 -- choose appr. body bkgnd color
+			RGBForeColor(_swapColor( &( *ctHdl )->text ));
 
 			// LR: 1.7 -- must erase for this to show up on printouts!
 			r2.top = y - (kLineHeight - 3);
@@ -1951,7 +1962,7 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 	if( ctHdl )
 	{
 //LR 1.7		RGBBackColor( &( *ctHdl )->bar );
-		RGBForeColor( &( *ctHdl )->barLine );
+		RGBForeColor(_swapColor( &( *ctHdl )->barLine ));
 
 //LR 1.7 - moved above		EraseRect( &addrRect );
 
@@ -1968,7 +1979,7 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 
 	{
 		if( ctHdl )
-			RGBForeColor( &( *ctHdl )->dividerLine );	//LR 181 -- now had it's own color!
+			RGBForeColor(_swapColor( &( *ctHdl )->dividerLine ));	//LR 181 -- now had it's own color!
 
 		MoveTo( CHARPOS(kStringHexPos + 11) - (kCharWidth / 2) - 1, addrRect.top );
 		LineTo( CHARPOS(kStringHexPos + 11) - (kCharWidth / 2) - 1, addrRect.bottom );
@@ -2011,7 +2022,7 @@ static void _drawPage( EditWindowPtr dWin )
 		GetPortBounds( /*LR 180 dWin->*/ g.offscreen, &r );
 
 		if( ctHdl )
-			RGBBackColor( &( *ctHdl )->body );
+			RGBBackColor(_swapColor( &( *ctHdl )->body ));
 		else
 		{
 			ForeColor( blackColor );
