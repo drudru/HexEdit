@@ -246,8 +246,13 @@ short ErrorAlert( short severity, short strid, ... )
 		KeyMap keys;
 
 		GetKeys( keys );
-		if( keys[1] & (1<<2) )
-
+		// AS: little-endian support
+#if (__LITTLE_ENDIAN__)
+		UInt32 keys1 = CFSwapInt32BigToHost( keys[1].bigEndianValue );
+#else
+		UInt32 keys1 = keys[1];
+#endif
+		if (keys1 & (1<<2)) {
 // 05/10/01 - GAB: DEBUGSTR not defined for non-Carbon builds
 #if __MWERKS__ && TARGET_API_MAC_CARBON
 			debug_string( (StringPtr) tbuf );	//LR -- 1.76 DEBUGSTR is out, this is now in. Sigh.
@@ -255,6 +260,7 @@ short ErrorAlert( short severity, short strid, ... )
 #else
 			DebugStr( (StringPtr) tbuf );
 #endif
+		}
 	}
 
 	if(  severity == ES_Fatal )
