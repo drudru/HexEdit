@@ -5,7 +5,3 @@ This is to track changes made to files checked in. This is NOT the history file!
 This file will be culled to update the version history file for official releases. (ie, for each official release this file is emptied!)
 
 ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
-Universal Binary build! (thanks to the XCode 2.4 project and a few byte swaps required submitted by Svitkine)
-Removed cvs header items (just made merges harder and we're on svn now anyway)
-Hopefully updated svn repository with good resource files (thanks to sieghard)
-New files are once again saved with the correct default HexEdit file type of BINA (existing files creator/type are not changed!)
