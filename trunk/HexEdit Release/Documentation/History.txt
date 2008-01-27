@@ -1,6 +1,16 @@
 HexEdit Revision History
 
---- 10/16/06 2.10
+--- 01/26/08 2.20
+Universal Binary build! (thanks to the XCode 2.4 project and a few byte swaps required submitted by Svitkine)
+Removed cvs header items (just made merges harder and we're on svn now anyway)
+Hopefully updated svn repository with good resource files (thanks to sieghard)
+New files are once again saved with the correct default HexEdit file type of BINA (existing files creator/type are not changed!)
+Converted resource files into data-fork resource files and text .r  sources
+Converted codewarrior project to use .r files for resources instead of .rsrc files (couldn't use datafork resources!)
+Saved copy/paste commands for re-creating .r resource files (took a full day to figure out! And stupid things like 'TEXT' are unknown!)
+Put in Ben's new bundle plist that should (hopefully) fix the OS X "everthing, esp. .dmg files, opens with HexEdit) issues!
+Checked in a 68K application in MacBinary and .zip format as the actual app looses it's resource fork in svn
+Made sure XCode 2.0 and 2.4 and CW 8 projects compile, link and application built runs
 Added new icons (thanks to Ben Boldt)
 Improved compare w/highlighting changes (thanks to George Warner)
 Fixed print offsets (thanks to Ritchie)
