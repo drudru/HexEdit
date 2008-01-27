@@ -13,16 +13,13 @@
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
  * Portions created by Lane Roathe are
- * Copyright (C) Copyright © 1996-2002.
+ * Copyright (C) Copyright © 1996-2008.
  * All Rights Reserved.
- *
- * Modified: $Date$
- * Revision: $Id$
  *
  * Contributor(s):
  *		Lane Roathe
  *		Nick Shanks
- *      Brian Bergstrand
+ *		Brian Bergstrand
  */
 
 // 05/10/01 - GAB: MPW environment support

@@ -13,11 +13,8 @@
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
  * Portions created by Lane Roathe are
- * Copyright (C) Copyright © 1996-2002.
+ * Copyright (C) Copyright © 1996-2008.
  * All Rights Reserved.
- *
- * Modified: $Date$
- * Revision: $Id$
  *
  * Contributor(s):
  *		Lane Roathe
@@ -68,8 +65,8 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 		adjust = 1;	// and set our direction forward
 	} else {	// ...otherwise...
 		// start the search at the beginning of the current selection
-	addr1 = dWin1->startSel;
-	addr2 = dWin2->startSel;
+		addr1 = dWin1->startSel;
+		addr2 = dWin2->startSel;
 		adjust = -1;	// and set our direction backwards
 	}
 	
@@ -133,7 +130,7 @@ Boolean PerformTextCompare( EditWindowPtr dWin1, EditWindowPtr dWin2 )
 				matchIdx = 0;
 				addr1 = matchAddr1;
 				addr2 = matchAddr2;
-			}
+		}
 
 		// adjust our addresses
 		addr1 += adjust;

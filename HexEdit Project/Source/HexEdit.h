@@ -13,11 +13,8 @@
  * 
  * The Initial Developer of the Original Code is Jim Bumgardner
  * Portions created by Lane Roathe (LR) are
- * Copyright (C) Copyright © 1996-2002.
+ * Copyright (C) Copyright © 1996-2008.
  * All Rights Reserved.
- *
- * Modified: $Date$
- * Revision: $Id$
  *
  * Contributor(s):
  *		Lane Roathe
@@ -85,7 +82,7 @@
 // make some things a bit easier to read
 
 #define kAppCreator			FOUR_CHAR_CODE('hDmp')
-#define kDefaultFileType	FOUR_CHAR_CODE('TEXT')
+#define kDefaultFileType	FOUR_CHAR_CODE('BINA')
 
 //LR 185 -- under Carbon, alloc more RAM for faster ops
 #if TARGET_API_MAC_CARBON

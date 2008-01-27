@@ -130,6 +130,8 @@
 //204
 		20286C28FDCF999611CA2CEA = {
 			buildSettings = {
+				MACOSX_DEPLOYMENT_TARGET = 10.2;
+				SDKROOT = /Developer/SDKs/MacOSX10.2.8.sdk;
 			};
 			buildStyles = (
 				05952DFCFFF02D1B11CA0E50,
@@ -145,6 +147,7 @@
 		};
 		20286C29FDCF999611CA2CEA = {
 			children = (
+				3D5006780D4C556C00A25E29,
 				20286C2AFDCF999611CA2CEA,
 				20286C2CFDCF999611CA2CEA,
 				20286C32FDCF999611CA2CEA,
@@ -180,6 +183,8 @@
 				F0FB35B205BC263500673008,
 				F0FB35B505BC263500673008,
 				F0FB35B405BC263500673008,
+				3D5005EE0D4C4A2D00A25E29,
+				3D5005EF0D4C4A2D00A25E29,
 				F0FB35B705BC263500673008,
 				F0FB35B605BC263500673008,
 				F0FB35B905BC263500673008,
@@ -260,6 +265,50 @@
 //3D2
 //3D3
 //3D4
+		3D5005EE0D4C4A2D00A25E29 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.h;
+			name = ppc_disasm.h;
+			path = Source/ppc_disasm.h;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		3D5005EF0D4C4A2D00A25E29 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.c.c;
+			name = ppc_disasm.c;
+			path = Source/ppc_disasm.c;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		3D5005F00D4C4A2E00A25E29 = {
+			fileRef = 3D5005EE0D4C4A2D00A25E29;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		3D5005F10D4C4A2E00A25E29 = {
+			fileRef = 3D5005EF0D4C4A2D00A25E29;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
+		3D5006780D4C556C00A25E29 = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = text;
+			path = ChangeLog.txt;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		3D5006790D4C556C00A25E29 = {
+			fileRef = 3D5006780D4C556C00A25E29;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		3DE55CFC07F5CBC50046B497 = {
 			isa = PBXFileReference;
 			lastKnownFileType = image.icns;
@@ -354,6 +403,7 @@
 				3DFAAE2606EFD3EF00753EF0,
 				3DFAAE2706EFD3EF00753EF0,
 				3DFAAE2806EFD3EF00753EF0,
+				3D5005F00D4C4A2E00A25E29,
 			);
 			isa = PBXHeadersBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -449,6 +499,7 @@
 				3DEA78EC07354D4000F21B22,
 				3DE55CFE07F5CBC50046B497,
 				3DE55CFF07F5CBC50046B497,
+				3D5006790D4C556C00A25E29,
 			);
 			isa = PBXResourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -473,6 +524,7 @@
 				3DFAAE3506EFD3EF00753EF0,
 				3DFAAE3606EFD3EF00753EF0,
 				3DFAAE3706EFD3EF00753EF0,
+				3D5005F10D4C4A2E00A25E29,
 			);
 			isa = PBXSourcesBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
