@@ -241,13 +241,14 @@ short ErrorAlert( short severity, short strid, ... )
 	// LR: v1.6.5, -- No "Debug" buttons, but OPTION on any goes into debugger now!
 	{
 		KeyMap keys;
+		UInt32 keys1;
 
 		GetKeys( keys );
 		// AS: little-endian support
 #if (__LITTLE_ENDIAN__)
-		UInt32 keys1 = CFSwapInt32BigToHost( keys[1].bigEndianValue );
+		keys1 = CFSwapInt32BigToHost( keys[1].bigEndianValue );
 #else
-		UInt32 keys1 = keys[1];
+		keys1 = keys[1];
 #endif
 		if (keys1 & (1<<2)) {
 // 05/10/01 - GAB: DEBUGSTR not defined for non-Carbon builds

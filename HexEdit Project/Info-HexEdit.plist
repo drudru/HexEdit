@@ -7,6 +7,12 @@
 	<key>CFBundleDocumentTypes</key>
 	<array>
 		<dict>
+			<key>CFBundleTypeOSTypes</key>
+			<array>
+				<string>BINA</string>
+			</array>
+		</dict>
+		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>bin</string>

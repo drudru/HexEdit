@@ -76,11 +76,15 @@ enum
 // AS: swapping RGBColors for little endian target
 static RGBColor *_swapColor(RGBColor *color)
 {
+#if (__LITTLE_ENDIAN__)
 	static RGBColor swappedColor;
 	swappedColor.red = CFSwapInt16BigToHost(color->red);
 	swappedColor.green = CFSwapInt16BigToHost(color->green);
 	swappedColor.blue = CFSwapInt16BigToHost(color->blue);
 	return &swappedColor;
+#else
+	return color;
+#endif
 }
 
 /*** NEW OFFSCREEN GWORLD ***/
