@@ -11,11 +11,8 @@
  * 
  * The Initial Developer of the Original Code is Lane Roathe
  * Portions created by Lane Roathe are
- * Copyright (C) Copyright © 1996-2002.
+ * Copyright (C) Copyright © 1996-2008.
  * All Rights Reserved.
- *
- * Modified: $Date$
- * Revision: $Id$
  *
  * Contributor(s):
  *		Lane Roathe
