@@ -1,0 +1,7 @@
+FILE PURPOSE:
+
+This is to track changes made to files checked in. This is NOT the history file! (See the release package's "History.txt" for that) This is a work-in-progress file used to inform other programers of what you have changed, what to watch out for, any problems, and other items of interest.
+
+This file will be culled to update the version history file for official releases. (ie, for each official release this file is emptied!)
+
+ÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑÑ
