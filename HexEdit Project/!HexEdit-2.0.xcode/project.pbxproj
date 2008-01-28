@@ -199,8 +199,8 @@
 		};
 		20286C2CFDCF999611CA2CEA = {
 			children = (
+				3D360B6B0D4D529C00F1639D,
 				F0FB35DE05BC26FC00673008,
-				F0FB35DC05BC26EA00673008,
 				3DE55CFC07F5CBC50046B497,
 				3DE55CFD07F5CBC50046B497,
 				3DEA78EB07354D4000F21B22,
@@ -266,6 +266,21 @@
 //3D2
 //3D3
 //3D4
+		3D360B6B0D4D529C00F1639D = {
+			fileEncoding = 30;
+			isa = PBXFileReference;
+			lastKnownFileType = sourcecode.rez;
+			name = carb.r;
+			path = Resources/carb.r;
+			refType = 4;
+			sourceTree = "<group>";
+		};
+		3D360B6C0D4D529C00F1639D = {
+			fileRef = 3D360B6B0D4D529C00F1639D;
+			isa = PBXBuildFile;
+			settings = {
+			};
+		};
 		3D5005EE0D4C4A2D00A25E29 = {
 			fileEncoding = 30;
 			isa = PBXFileReference;
@@ -625,8 +640,8 @@
 				3DFAAE3E06EFD3EF00753EF0,
 				3DFAAE3F06EFD3EF00753EF0,
 				3DFAAE4006EFD3EF00753EF0,
-				3DFAAE4106EFD3EF00753EF0,
 				3DFAAE4206EFD3EF00753EF0,
+				3D360B6C0D4D529C00F1639D,
 			);
 			isa = PBXRezBuildPhase;
 			runOnlyForDeploymentPostprocessing = 0;
@@ -657,12 +672,6 @@
 		};
 		3DFAAE4006EFD3EF00753EF0 = {
 			fileRef = F0FB35DA05BC26E400673008;
-			isa = PBXBuildFile;
-			settings = {
-			};
-		};
-		3DFAAE4106EFD3EF00753EF0 = {
-			fileRef = F0FB35DC05BC26EA00673008;
 			isa = PBXBuildFile;
 			settings = {
 			};
@@ -951,15 +960,6 @@
 			lastKnownFileType = archive.rsrc;
 			name = VOODOO.rsrc;
 			path = Resources/VOODOO.rsrc;
-			refType = 4;
-			sourceTree = "<group>";
-		};
-		F0FB35DC05BC26EA00673008 = {
-			fileEncoding = 30;
-			isa = PBXFileReference;
-			lastKnownFileType = sourcecode.rez;
-			name = Carbon.r;
-			path = Resources/Carbon.r;
 			refType = 4;
 			sourceTree = "<group>";
 		};
