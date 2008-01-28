@@ -48,6 +48,8 @@
 //LR 1.73 -- make code more readable
 #ifdef __MC68K__
 	#define PLATFORM_STRING "\p68K"
+#elif TARGET_CPU_X86
+	#define PLATFORM_STRING	"\pIntel"
 #elif TARGET_API_MAC_CARBON
 	#define PLATFORM_STRING	"\pCarbon"
 #elif TARGET_CPU_PPC
