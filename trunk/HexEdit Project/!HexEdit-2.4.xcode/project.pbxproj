@@ -43,8 +43,8 @@
 		3DFAAE3E06EFD3EF00753EF0 /* Colors.rsrc in Rez */ = {isa = PBXBuildFile; fileRef = F0FB35D605BC26D900673008 /* Colors.rsrc */; };
 		3DFAAE3F06EFD3EF00753EF0 /* Version.rsrc in Rez */ = {isa = PBXBuildFile; fileRef = F0FB35D805BC26DF00673008 /* Version.rsrc */; };
 		3DFAAE4006EFD3EF00753EF0 /* VOODOO.rsrc in Rez */ = {isa = PBXBuildFile; fileRef = F0FB35DA05BC26E400673008 /* VOODOO.rsrc */; };
-		3DFAAE4106EFD3EF00753EF0 /* Carbon.r in Rez */ = {isa = PBXBuildFile; fileRef = F0FB35DC05BC26EA00673008 /* Carbon.r */; };
 		3DFAAE4206EFD3EF00753EF0 /* Pentagram.rsrc in Rez */ = {isa = PBXBuildFile; fileRef = F0FB35DE05BC26FC00673008 /* Pentagram.rsrc */; };
+		F2401B010D4D5130001405FC /* carb.r in Rez */ = {isa = PBXBuildFile; fileRef = F2401B000D4D5130001405FC /* carb.r */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXBuildRule section */
@@ -99,8 +99,8 @@
 		F0FB35D605BC26D900673008 /* Colors.rsrc */ = {isa = PBXFileReference; lastKnownFileType = archive.rsrc; name = Colors.rsrc; path = Resources/Colors.rsrc; sourceTree = "<group>"; };
 		F0FB35D805BC26DF00673008 /* Version.rsrc */ = {isa = PBXFileReference; lastKnownFileType = archive.rsrc; name = Version.rsrc; path = Resources/Version.rsrc; sourceTree = "<group>"; };
 		F0FB35DA05BC26E400673008 /* VOODOO.rsrc */ = {isa = PBXFileReference; lastKnownFileType = archive.rsrc; name = VOODOO.rsrc; path = Resources/VOODOO.rsrc; sourceTree = "<group>"; };
-		F0FB35DC05BC26EA00673008 /* Carbon.r */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.rez; name = Carbon.r; path = Resources/Carbon.r; sourceTree = "<group>"; };
 		F0FB35DE05BC26FC00673008 /* Pentagram.rsrc */ = {isa = PBXFileReference; lastKnownFileType = archive.rsrc; name = Pentagram.rsrc; path = Resources/Icons/Pentagram.rsrc; sourceTree = "<group>"; };
+		F2401B000D4D5130001405FC /* carb.r */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.rez; name = carb.r; path = Resources/carb.r; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -171,8 +171,8 @@
 		20286C2CFDCF999611CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				F2401B000D4D5130001405FC /* carb.r */,
 				F0FB35DE05BC26FC00673008 /* Pentagram.rsrc */,
-				F0FB35DC05BC26EA00673008 /* Carbon.r */,
 				3DE55CFC07F5CBC50046B497 /* DocumentBinary.icns */,
 				3DE55CFD07F5CBC50046B497 /* DocumentText.icns */,
 				3DEA78EB07354D4000F21B22 /* pentagram.icns */,
@@ -249,7 +249,7 @@
 /* Begin PBXProject section */
 		20286C28FDCF999611CA2CEA /* Project object */ = {
 			isa = PBXProject;
-			buildConfigurationList = 3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit_UB" */;
+			buildConfigurationList = 3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit-2.4" */;
 			hasScannedForEncodings = 1;
 			mainGroup = 20286C29FDCF999611CA2CEA /* ¬´PROJECTNAME¬ª */;
 			projectDirPath = "";
@@ -283,8 +283,8 @@
 				3DFAAE3E06EFD3EF00753EF0 /* Colors.rsrc in Rez */,
 				3DFAAE3F06EFD3EF00753EF0 /* Version.rsrc in Rez */,
 				3DFAAE4006EFD3EF00753EF0 /* VOODOO.rsrc in Rez */,
-				3DFAAE4106EFD3EF00753EF0 /* Carbon.r in Rez */,
 				3DFAAE4206EFD3EF00753EF0 /* Pentagram.rsrc in Rez */,
+				F2401B010D4D5130001405FC /* carb.r in Rez */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -424,6 +424,10 @@
 		3D04068108BD17CE000CFEC9 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = (
+					"$(NATIVE_ARCH)",
+					PPC,
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
 			};
@@ -432,6 +436,10 @@
 		3D04068208BD17CE000CFEC9 /* Deployment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = (
+					"$(NATIVE_ARCH)",
+					PPC,
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
 			};
@@ -440,6 +448,10 @@
 		3D04068308BD17CE000CFEC9 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ARCHS = (
+					"$(NATIVE_ARCH)",
+					PPC,
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
 			};
@@ -458,7 +470,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Development;
 		};
-		3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit_UB" */ = {
+		3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit-2.4" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3D04068108BD17CE000CFEC9 /* Development */,
