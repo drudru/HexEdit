@@ -1,11 +1,5 @@
-#include <AppleEvents.r>
-#include <AEUserTermTypes.r>
-#include <MacTypes.r>
-#include <Dialogs.r>
-#include <Controls.r>
-#include <Menus.r>
-#include <Icons.r>
-#include <Finder.r>
+#include <Carbon/Carbon.r>
+
 
 resource 'ALRT' (10000, "SaveChangesALRT") {
 	{40, 40, 136, 392},
@@ -496,8 +490,8 @@ resource 'DITL' (10002) {
 			"Creating the fork will allow you to add "
 			"data to the file, in the fork specified "
 			"above, but unless you know why you are c"
-			"reating the fork it is best to answer ‘N"
-			"o’ here."
+			"reating the fork it is best to answer ‚ÄòN"
+			"o‚Äô here."
 		}
 	}
 };
@@ -520,7 +514,7 @@ resource 'DITL' (10003) {
 		{8, 64, 72, 344},
 		StaticText {
 			disabled,
-			"Revert “^0”?\n\nAll current changes will b"
+			"Revert ‚Äú^0‚Äù?\n\nAll current changes will b"
 			"e lost!"
 		}
 	}
@@ -604,7 +598,7 @@ data 'DLGX' (131) {
 	$"0000 0000 0000 0000 0000 0000 0000 0000"            /* ................ */
 	$"0000 0000 0000 0000 0000 0000 0000 0000"            /* ................ */
 	$"000C 0000 0000 0000 0004 0004 0000 0000"            /* ................ */
-	$"000A 0002 0000 0000 0000 0000 0000 0001"            /* .¬.............. */
+	$"000A 0002 0000 0000 0000 0000 0000 0001"            /* .¬¨.............. */
 	$"0000 0000 0000 0000 0000 0004 0000 0000"            /* ................ */
 	$"0000 0000 0000 0004 0000 0000 0000 0000"            /* ................ */
 	$"0000 0004 0000 0000 0000 0000 0000 0004"            /* ................ */
@@ -622,11 +616,11 @@ data 'DLGX' (1401) {
 	$"000C 0000 0000 0000 0008 0008 0000 0000"            /* ................ */
 	$"000E 0002 0000 0000 0000 0000 0000 0002"            /* ................ */
 	$"0000 0000 0000 0000 0000 0002 0000 0000"            /* ................ */
-	$"0000 0000 0000 000A 0000 0000 0000 0000"            /* .......¬........ */
+	$"0000 0000 0000 000A 0000 0000 0000 0000"            /* .......¬¨........ */
 	$"0000 0002 0000 0000 0000 0000 0000 0002"            /* ................ */
-	$"0000 0000 0000 0000 0000 000A 0000 0000"            /* ...........¬.... */
-	$"0000 0000 0000 000A 0000 0000 0000 0000"            /* .......¬........ */
-	$"0000 000A 0000 0000 0000 0000 0000 0006"            /* ...¬............ */
+	$"0000 0000 0000 0000 0000 000A 0000 0000"            /* ...........¬¨.... */
+	$"0000 0000 0000 000A 0000 0000 0000 0000"            /* .......¬¨........ */
+	$"0000 000A 0000 0000 0000 0000 0000 0006"            /* ...¬¨............ */
 	$"0000 0000 0000 0000 0000 0004 0000 0000"            /* ................ */
 	$"0000 0000 0000 0004 0000 0000 0000 0000"            /* ................ */
 	$"0000 0004 0000 0000 0000 0000 0000 0006"            /* ................ */
@@ -826,7 +820,7 @@ resource 'MENU' (128) {
 	apple,
 	{	/* array: 2 elements */
 		/* [1] */
-		"About HexEdit…", noIcon, "/", noMark, plain,
+		"About HexEdit‚Ä¶", noIcon, "/", noMark, plain,
 		/* [2] */
 		"-", noIcon, noKey, noMark, plain
 	}
@@ -842,7 +836,7 @@ resource 'MENU' (129, "Classic File Menu") {
 		/* [1] */
 		"New", noIcon, "N", noMark, plain,
 		/* [2] */
-		"Open…", noIcon, "O", noMark, plain,
+		"Open‚Ä¶", noIcon, "O", noMark, plain,
 		/* [3] */
 		"Close", noIcon, "W", noMark, plain,
 		/* [4] */
@@ -852,21 +846,21 @@ resource 'MENU' (129, "Classic File Menu") {
 		/* [6] */
 		"Edit Other Fork", noIcon, "E", noMark, plain,
 		/* [7] */
-		"Compare Files…", noIcon, "K", noMark, plain,
+		"Compare Files‚Ä¶", noIcon, "K", noMark, plain,
 		/* [8] */
 		"-", noIcon, noKey, noMark, plain,
 		/* [9] */
 		"Save", noIcon, "S", noMark, plain,
 		/* [10] */
-		"Save as…", noIcon, "ß", noMark, plain,
+		"Save as‚Ä¶", noIcon, "√ü", noMark, plain,
 		/* [11] */
 		"Revert", noIcon, noKey, noMark, plain,
 		/* [12] */
 		"-", noIcon, noKey, noMark, plain,
 		/* [13] */
-		"Page Setup…", noIcon, noKey, noMark, plain,
+		"Page Setup‚Ä¶", noIcon, noKey, noMark, plain,
 		/* [14] */
-		"Print…", noIcon, "P", noMark, plain,
+		"Print‚Ä¶", noIcon, "P", noMark, plain,
 		/* [15] */
 		"-", noIcon, noKey, noMark, plain,
 		/* [16] */
@@ -908,7 +902,7 @@ resource 'MENU' (131) {
 	"Find",
 	{	/* array: 6 elements */
 		/* [1] */
-		"Find & Replace…", noIcon, "F", noMark, plain,
+		"Find & Replace‚Ä¶", noIcon, "F", noMark, plain,
 		/* [2] */
 		"Find Next", noIcon, "G", noMark, plain,
 		/* [3] */
@@ -918,7 +912,7 @@ resource 'MENU' (131) {
 		/* [5] */
 		"-", noIcon, noKey, noMark, plain,
 		/* [6] */
-		"Go To Address…", noIcon, "J", noMark, plain
+		"Go To Address‚Ä¶", noIcon, "J", noMark, plain
 	}
 };
 
@@ -954,7 +948,7 @@ resource 'MENU' (132) {
 		/* [12] */
 		"-", noIcon, noKey, noMark, plain,
 		/* [13] */
-		"File Comparison Options…", noIcon, ",", noMark, plain
+		"File Comparison Options‚Ä¶", noIcon, ",", noMark, plain
 	}
 };
 
@@ -992,7 +986,7 @@ resource 'MENU' (135, "OS X File Menu") {
 		/* [1] */
 		"New", noIcon, "N", noMark, plain,
 		/* [2] */
-		"Open…", noIcon, "O", noMark, plain,
+		"Open‚Ä¶", noIcon, "O", noMark, plain,
 		/* [3] */
 		"Close", noIcon, "W", noMark, plain,
 		/* [4] */
@@ -1002,21 +996,21 @@ resource 'MENU' (135, "OS X File Menu") {
 		/* [6] */
 		"Edit Other Fork", noIcon, "E", noMark, plain,
 		/* [7] */
-		"Compare Files…", noIcon, "K", noMark, plain,
+		"Compare Files‚Ä¶", noIcon, "K", noMark, plain,
 		/* [8] */
 		"-", noIcon, noKey, noMark, plain,
 		/* [9] */
 		"Save", noIcon, "S", noMark, plain,
 		/* [10] */
-		"Save as…", noIcon, "ß", noMark, plain,
+		"Save as‚Ä¶", noIcon, "√ü", noMark, plain,
 		/* [11] */
 		"Revert", noIcon, noKey, noMark, plain,
 		/* [12] */
 		"-", noIcon, noKey, noMark, plain,
 		/* [13] */
-		"Page Setup…", noIcon, noKey, noMark, plain,
+		"Page Setup‚Ä¶", noIcon, noKey, noMark, plain,
 		/* [14] */
-		"Print…", noIcon, "P", noMark, plain
+		"Print‚Ä¶", noIcon, "P", noMark, plain
 	}
 };
 
@@ -1095,9 +1089,9 @@ resource 'STR#' (128, "Undos", purgeable) {
 resource 'STR#' (129, "Printing", purgeable) {
 	{	/* array StringArray: 2 elements */
 		/* [1] */
-		"Print…",
+		"Print‚Ä¶",
 		/* [2] */
-		"Print Selection…"
+		"Print Selection‚Ä¶"
 	}
 };
 
@@ -1108,11 +1102,9 @@ resource 'STR#' (130, "Header", purgeable) {
 		/* [2] */
 		" - Rsrc",
 		/* [3] */
-		"Len: %9ld | Type/Creator: %4.4s/%4.4s | "
-		"Sel: %9ld:%9ld / %8ld",
+		"Len: %9ld | Type/Creator: %4.4s/%4.4s | Sel: %9ld:%9ld / %8ld ",
 		/* [4] */
-		"Len: $%8.8lX | Type/Creator: %4.4s/%4.4s"
-		" | Sel: $%8.8lX:%8.8lX / $%8.8lX",
+		"Len: $%8.8lX | Type/Creator: %4.4s/%4.4s | Sel: $%8.8lX:%8.8lX / $%8.8lX ",
 		/* [5] */
 		"File:"
 	}
@@ -1169,10 +1161,10 @@ resource 'STR#' (131, "Error", purgeable) {
 		"file may have been opened by another pro"
 		"gram.",
 		/* [20] */
-		"This window’s file is read-only, meaning"
-		" you can’t make or save changes to the e"
-		"xisting file!\n\nTo save changes, select “"
-		"Save As…” from the File menu."
+		"This window‚Äôs file is read-only, meaning"
+		" you can‚Äôt make or save changes to the e"
+		"xisting file!\n\nTo save changes, select ‚Äú"
+		"Save As‚Ä¶‚Äù from the File menu."
 	}
 };
 
@@ -1190,7 +1182,7 @@ resource 'STR#' (133, "Prompt", purgeable) {
 		/* [1] */
 		"Save File As...",
 		/* [2] */
-		"Select the file to open…",
+		"Select the file to open‚Ä¶",
 		/* [3] */
 		"Select first file to compare...",
 		/* [4] */
@@ -1308,7 +1300,7 @@ resource 'alrx' (10003, "RevertALRT", purgeable) {
 };
 
 data 'appl' (0) {
-	$"0002 00DB"                                          /* ...€ */
+	$"0002 00DB"                                          /* ...‚Ç¨ */
 };
 
 resource 'dctb' (128, "FindDLOG") {
@@ -1454,8 +1446,8 @@ resource 'dlgx' (15000) {
 };
 
 data 'hDmp' (0, "Owner resource") {
-	$"2CA9 3139 3933 204A 696D 2042 756D 6761"            /* ,©1993 Jim Bumga */
-	$"7264 6E65 720D A920 3139 3935 2D32 3030"            /* rdner.© 1995-200 */
+	$"2CA9 3139 3933 204A 696D 2042 756D 6761"            /* ,¬©1993 Jim Bumga */
+	$"7264 6E65 720D A920 3139 3935 2D32 3030"            /* rdner.¬© 1995-200 */
 	$"3120 4C61 6E65 2052 6F61 7468 65"                   /* 1 Lane Roathe */
 };
 
@@ -1497,8 +1489,8 @@ data 'ictb' (10001) {
 
 data 'ictb' (10002) {
 	$"0000 0000 0000 0000 0000 0000 0000 0000"            /* ................ */
-	$"800F 0014 0028 0100 000C 7FFF 2000 3003"            /* Ä....(.....ˇ .0. */
-	$"FFFF FFFF FFFF 0000 0554 696D 6573"                 /* ˇˇˇˇˇˇ...Times */
+	$"800F 0014 0028 0100 000C 7FFF 2000 3003"            /* √Ñ....(.....Àá .0. */
+	$"FFFF FFFF FFFF 0000 0554 696D 6573"                 /* ÀáÀáÀáÀáÀáÀá...Times */
 };
 
 data 'ictb' (10003) {

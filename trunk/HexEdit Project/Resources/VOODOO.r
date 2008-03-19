@@ -1,8 +1,5 @@
-#include <AppleEvents.r>
-#include <AEUserTermTypes.r>
-#include <MacTypes.r>
-#include <Dialogs.r>
-#include <Icons.r>
+#include <Carbon/Carbon.r>
+
 
 resource 'aete' (0, "English") {
 	0x1,
