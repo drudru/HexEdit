@@ -1,8 +1,5 @@
-#include <AppleEvents.r>
-#include <AEUserTermTypes.r>
-#include <MacTypes.r>
-#include <Dialogs.r>
-#include <Icons.r>
+#include <Carbon/Carbon.r>
+
 
 resource 'STR#' (1, "Product") {
 	{	/* array StringArray: 5 elements */

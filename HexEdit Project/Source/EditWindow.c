@@ -44,6 +44,7 @@
 //	HR/LR 050328 - PPC disassembly support
 #include "ppc_disasm.h"
 
+#define OUTPUTREZTYPE(val) (char)(val >> 24), (char)(val >> 16), (char)(val >> 8), (char)(val)
 
 // Create a new main theWin using a 'WIND' template from the resource fork
 
@@ -995,8 +996,9 @@ contRsrc:
 	dWin->workRefNum = refNum;
 	dWin->workBytesWritten = 0L;
 
-	dWin->fileType = pb.fileParam.ioFlFndrInfo.fdType;
-	dWin->creator = pb.fileParam.ioFlFndrInfo.fdCreator;
+	//221: LR - for some reason these get swapped on load by OS? (BAD!)
+	dWin->fileType = CFSwapInt32HostToBig(pb.fileParam.ioFlFndrInfo.fdType);
+	dWin->creator = CFSwapInt32HostToBig(pb.fileParam.ioFlFndrInfo.fdCreator);
 	dWin->creationDate = pb.fileParam.ioFlCrDat;
 
 	dWin->fsSpec =
@@ -1717,7 +1719,7 @@ static void _drawHeader( EditWindowPtr dWin, Rect *r )
 	CopyPascalStringToC( (StringPtr) str, str );
 //1.7	GetIndString( (StringPtr) str2, strHeader, dWin->fork );
 //1.7	CopyPascalStringToC( (StringPtr) str2, str2 );
-	sprintf( (char *) g.buffer, str, dWin->fileSize, &dWin->fileType, &dWin->creator, /*str2,*/ dWin->startSel, dWin->endSel, dWin->endSel - dWin->startSel );
+	sprintf( (char *) g.buffer, str, dWin->fileSize, &dWin->fileType, &dWin->creator, dWin->startSel, dWin->endSel, dWin->endSel - dWin->startSel );
 	MoveTo( 5, r->top + kLineHeight );
 	DrawText( g.buffer, 0, strlen( (char *) g.buffer ) );
 	

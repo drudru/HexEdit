@@ -1,8 +1,5 @@
-#include <AppleEvents.r>
-#include <AEUserTermTypes.r>
-#include <MacTypes.r>
-#include <Dialogs.r>
-#include <Icons.r>
+#include <Carbon/Carbon.r>
+
 
 data 'HEct' (128, "Grey") {
 	$"DD4F DD4F E8F4 AAAA AAAA AAAA 0000 0000"            /* ÝOÝOèôªªªªªª.... */
