@@ -9,8 +9,7 @@ resource 'aete' (0, "English") {
 	{	/* array Suites: 1 elements */
 		/* [1] */
 		"Compare suite",
-		"Events and terms used for comparing file"
-		"s in cooperation with VOODOO.",
+		"Events and terms used for comparing files in cooperation with VOODOO.",
 		'Comp',
 		1,
 		1,
@@ -21,8 +20,7 @@ resource 'aete' (0, "English") {
 			'Comp',
 			'Comp',
 			'****',
-			"Can be either boolean or a compare resul"
-			"t record",
+			"Can be either boolean or a compare result record",
 			replyRequired,
 			singleItem,
 			notEnumerated,
@@ -179,8 +177,7 @@ resource 'aete' (0, "English") {
 				"case insensitive",
 				'pCIn',
 				'bool',
-				"If true, the comparison is case-insensit"
-				"ive. (default: false)",
+				"If true, the comparison is case-insensitive. (default: false)",
 				reserved,
 				singleItem,
 				notEnumerated,
@@ -201,9 +198,7 @@ resource 'aete' (0, "English") {
 				"ignore diacritical marks",
 				'pIDM',
 				'bool',
-				"If true, diacritical marks are ignored w"
-				"hen comparing lines of text. (default: f"
-				"alse)",
+				"If true, diacritical marks are ignored when comparing lines of text. (default: false)",
 				reserved,
 				singleItem,
 				notEnumerated,
@@ -224,9 +219,7 @@ resource 'aete' (0, "English") {
 				"ignore leading space",
 				'pILS',
 				'bool',
-				"If true, leading whitespace is ignored w"
-				"hen comparing lines of text. (default: f"
-				"alse)",
+				"If true, leading whitespace is ignored when comparing lines of text. (default: false)",
 				reserved,
 				singleItem,
 				notEnumerated,
@@ -247,8 +240,7 @@ resource 'aete' (0, "English") {
 				"arguments",
 				'pArg',
 				'TEXT',
-				"textually specified compare options (def"
-				"ault: \"\")",
+				"textually specified compare options (default: \"\")",
 				reserved,
 				singleItem,
 				notEnumerated,
@@ -271,8 +263,7 @@ resource 'aete' (0, "English") {
 			/* [2] */
 			"compare result",
 			'cRes',
-			"compare result, if result is not of type"
-			" boolean",
+			"compare result, if result is not of type boolean",
 			{	/* array Properties: 3 elements */
 				/* [1] */
 				"different",
@@ -320,8 +311,7 @@ resource 'aete' (0, "English") {
 				"result shown",
 				'pRsS',
 				'bool',
-				"true if the comparison result has been s"
-				"hown",
+				"true if the comparison result has been shown",
 				reserved,
 				singleItem,
 				notEnumerated,

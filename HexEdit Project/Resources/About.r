@@ -71,7 +71,7 @@ resource 'DITL' (200) {
 		{149, 248, 168, 360},
 		StaticText {
 			enabled,
-			"Nick Shanks’ website"
+			"Nick Shanks"
 		}
 	}
 };
@@ -105,7 +105,7 @@ resource 'DITL' (201) {
 		{8, 208, 48, 390},
 		StaticText {
 			disabled,
-			"© 1996-2002 Lane Roathe\n© 1993 Jim Bumga"
+			"\t� 1996-2010 Lane Roathe\n\t� 1993 Jim Bumga"
 			"rdner"
 		},
 		/* [6] */
@@ -829,62 +829,104 @@ data 'styl' (200) {
 };
 
 data 'TEXT' (200, "Credits") {
-	$"0D0D 0D0D 0D0D 0D0D 0D0D 0D0D 0D0D 0D4D"            /* ...............M */
-	$"6169 6E74 6169 6E65 6420 6279 3A20 4C61"            /* aintained by: La */
-	$"6E65 2052 6F61 7468 650D 0D4F 7269 6769"            /* ne Roathe..Origi */
-	$"6E61 6C20 436F 6465 3A20 4A69 6D20 4275"            /* nal Code: Jim Bu */
-	$"6D67 6172 646E 6572 0D0D 0D54 6861 6E6B"            /* mgardner...Thank */
-	$"7320 746F 2074 6865 2066 6F6C 6C6F 7769"            /* s to the followi */
-	$"6E67 2069 6E64 6976 6964 7561 6C73 2028"            /* ng individuals ( */
-	$"6C69 7374 6564 2069 6E20 616C 7068 6162"            /* listed in alphab */
-	$"6574 6963 616C 206F 7264 6572 2920 666F"            /* etical order) fo */
-	$"7220 7072 6F76 6964 696E 6720 636F 6465"            /* r providing code */
-	$"2C20 7375 6767 6573 7469 6F6E 732C 2061"            /* , suggestions, a */
-	$"6E64 2F6F 7220 7465 7374 696E 6721 0D0D"            /* nd/or testing!.. */
-	$"2059 7661 6E20 4261 7274 6865 6C65 6D79"            /*  Yvan Barthelemy */
-	$"0D20 4272 6961 6E20 4265 7267 7374 7261"            /* . Brian Bergstra */
-	$"6E64 0D20 4772 6567 2042 7261 6E63 6865"            /* nd. Greg Branche */
-	$"0D20 4A65 616E 2D4A 6163 7175 6573 2043"            /* . Jean-Jacques C */
-	$"6F72 7465 730D 0944 6176 6964 2045 6D6D"            /* ortes.∆David Emm */
-	$"650D 2045 7269 6320 4672 6F65 6D6C 696E"            /* e. Eric Froemlin */
-	$"670D 0942 656E 2048 6569 6E73 0D09 5469"            /* g.∆Ben Heins.∆Ti */
-	$"6D20 4865 727A 6F67 0D09 4D61 7820 486F"            /* m Herzog.∆Max Ho */
-	$"726E 0D20 4361 7273 7465 6E20 4B6C 6170"            /* rn. Carsten Klap */
-	$"700D 204D 2E20 556C 6920 4B75 7374 6572"            /* p. M. Uli Kuster */
-	$"6572 0D20 526F 6E20 4C61 6E67 6C65 790D"            /* er. Ron Langley. */
-	$"2053 636F 7474 204C 6173 6C65 790D 094A"            /*  Scott Lasley.∆J */
-	$"6561 6E2D 5069 6572 7265 204D 656C 6B6F"            /* ean-Pierre Melko */
-	$"6E69 616E 0D09 4461 6E20 4D6F 7272 6F77"            /* nian.∆Dan Morrow */
-	$"0D09 5374 6570 6861 6E65 204D 6F75 7265"            /* .∆Stephane Moure */
-	$"6175 0D09 4E69 636B 2050 6973 7361 726F"            /* au.∆Nick Pissaro */
-	$"204A 722E 0D20 416E 746F 6E20 5261 6E67"            /*  Jr.. Anton Rang */
-	$"0D09 4C61 6E65 2052 6F61 7468 650D 0948"            /* .∆Lane Roathe.∆H */
-	$"616E 7320 526F 6E6E 650D 094E 6963 686F"            /* ans Ronne.∆Nicho */
-	$"6C61 7320 5368 616E 6B73 0D20 4A65 6666"            /* las Shanks. Jeff */
-	$"2053 6D69 7468 0D20 416C 6578 6569 2053"            /*  Smith. Alexei S */
-	$"7669 746B 696E 650D 0941 6472 6961 6E20"            /* vitkine.∆Adrian  */
-	$"5761 6C74 690D 2047 656F 7267 6520 5761"            /* Walti. George Wa */
-	$"726E 6572 0D20 5279 616E 2057 696C 636F"            /* rner. Ryan Wilco */
-	$"780D 2046 7261 6E6B 2057 696C 6C65 2028"            /* x. Frank Wille ( */
-	$"7070 635F 6469 7361 736D 206D 6F64 756C"            /* ppc_disasm modul */
-	$"6529 0D09 4A6F 6E61 7468 616E 2057 7269"            /* e).∆Jonathan Wri */
-	$"7465 0D09 546F 7275 2059 6F73 6869 7A61"            /* te.∆Toru Yoshiza */
-	$"7761 0D20 416E 6472 6561 7320 3F3F 3F0D"            /* wa. Andreas ???. */
-	$"0952 6974 6368 6965 203F 3F3F 0D0D 4966"            /* ∆Ritchie ???..If */
-	$"2049 2068 6176 656E D574 206D 656E 7469"            /*  I haven’t menti */
-	$"6F6E 6564 2079 6F75 2070 6C65 6173 6520"            /* oned you please  */
-	$"7365 6E64 206D 6520 616E 2065 6D61 696C"            /* send me an email */
-	$"2120 286C 616E 6540 6966 642E 636F 6D29"            /* ! (lane@ifd.com) */
-	$"0D0D 4865 7845 6469 7420 6973 2072 656C"            /* ..HexEdit is rel */
-	$"6561 7365 6420 756E 6465 7220 7468 6520"            /* eased under the  */
-	$"4D6F 7A69 6C6C 6120 5075 626C 6963 204C"            /* Mozilla Public L */
-	$"6963 656E 7365 2E20 506C 6561 7365 2052"            /* icense. Please R */
-	$"6561 6420 D24C 6963 656E 7365 2E74 7874"            /* ead “License.txt */
-	$"D320 666F 7220 6465 7461 696C 732E 0D0D"            /* ” for details... */
-	$"0D0D 0D0D 0D0D 0D0D 0D0D 0D0D 0D0D"                 /* .............. */
+	"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+	"Maintained by: Lane Roathe\n\n"
+	"Original Code: Jim Bumgardner\n\n\n"
+	"Thanks to the following individuals (listed in alphabetical order) for providing code, suggestions, and/or testing!\n\n"
+	" Yvan Barthelemy\n"
+	" Brian Bergstrand\n"
+	" Greg Branche\n"
+	" Jean-Jacques Cortes\n"
+	" David Emme\n"
+	" Eric Froemling\n"
+	" Ben Heins\n"
+	" Tim Herzog\n"
+	" Max Horn\n"
+	" Carsten Klapp\n"
+	" M. Uli Kusterer\n"
+	" Ron Langley\n"
+	" Scott Lasley\n"
+	" Jean-Pierre Melkonian\n"
+	" Dan Morrow\n"
+	" Stephane Moureau\n"
+	" Nick Pissaro Jr.\n"
+	" Anton Rang\n"
+	" Lane Roathe\n"
+	" Hans Ronne\n"
+	" Nicholas Shanks\n"
+	" Jeff Smith\n"
+	" Alexei Svitkine\n"
+	" Adrian Walti\n"
+	" George Warner\n"
+	" Ryan Wilcox\n"
+	" Frank Wille (ppc_disasm)\n"
+	" Jonathan Write\n"
+	" Toru Yoshizawa\n"
+	" Andreas ???\n"
+	" Ritchie ???\n"
+	"        \n"
+	"If I haven't mentioned you please send me an email! (lane@ifdcom)\n\n"
+	"HexEdit is released under the Mozilla Public License. Please read 'License.txt' for details."
+	"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+
+/*
+	$"0D0D 0D0D 0D0D 0D0D 0D0D 0D0D 0D0D 0D4D"
+	$"6169 6E74 6169 6E65 6420 6279 3A20 4C61"
+	$"6E65 2052 6F61 7468 650D 0D4F 7269 6769"
+	$"6E61 6C20 436F 6465 3A20 4A69 6D20 4275"
+	$"6D67 6172 646E 6572 0D0D 0D54 6861 6E6B"
+	$"7320 746F 2074 6865 2066 6F6C 6C6F 7769"
+	$"6E67 2069 6E64 6976 6964 7561 6C73 2028"
+	$"6C69 7374 6564 2069 6E20 616C 7068 6162"
+	$"6574 6963 616C 206F 7264 6572 2920 666F"
+	$"7220 7072 6F76 6964 696E 6720 636F 6465"
+	$"2C20 7375 6767 6573 7469 6F6E 732C 2061"
+	$"6E64 2F6F 7220 7465 7374 696E 6721 0D0D"
+	$"2059 7661 6E20 4261 7274 6865 6C65 6D79"
+	$"0D20 4272 6961 6E20 4265 7267 7374 7261"
+	$"6E64 0D20 4772 6567 2042 7261 6E63 6865"
+	$"0D20 4A65 616E 2D4A 6163 7175 6573 2043"
+	$"6F72 7465 730D 0944 6176 6964 2045 6D6D"
+	$"650D 2045 7269 6320 4672 6F65 6D6C 696E"
+	$"670D 0942 656E 2048 6569 6E73 0D09 5469"
+	$"6D20 4865 727A 6F67 0D09 4D61 7820 486F"
+	$"726E 0D20 4361 7273 7465 6E20 4B6C 6170"
+	$"700D 204D 2E20 556C 6920 4B75 7374 6572"
+	$"6572 0D20 526F 6E20 4C61 6E67 6C65 790D"
+	$"2053 636F 7474 204C 6173 6C65 790D 094A"
+	$"6561 6E2D 5069 6572 7265 204D 656C 6B6F"
+	$"6E69 616E 0D09 4461 6E20 4D6F 7272 6F77"
+	$"0D09 5374 6570 6861 6E65 204D 6F75 7265"
+	$"6175 0D09 4E69 636B 2050 6973 7361 726F"
+	$"204A 722E 0D20 416E 746F 6E20 5261 6E67"
+	$"0D09 4C61 6E65 2052 6F61 7468 650D 0948"
+	$"616E 7320 526F 6E6E 650D 094E 6963 686F"
+	$"6C61 7320 5368 616E 6B73 0D20 4A65 6666"
+	$"2053 6D69 7468 0D20 416C 6578 6569 2053"
+	$"7669 746B 696E 650D 0941 6472 6961 6E20"
+	$"5761 6C74 690D 2047 656F 7267 6520 5761"
+	$"726E 6572 0D20 5279 616E 2057 696C 636F"
+	$"780D 2046 7261 6E6B 2057 696C 6C65 2028"
+	$"7070 635F 6469 7361 736D 206D 6F64 756C"
+	$"6529 0D09 4A6F 6E61 7468 616E 2057 7269"
+	$"7465 0D09 546F 7275 2059 6F73 6869 7A61"
+	$"7761 0D20 416E 6472 6561 7320 3F3F 3F0D"
+	$"0952 6974 6368 6965 203F 3F3F 0D0D 4966"
+	$"2049 2068 6176 656E D574 206D 656E 7469"
+	$"6F6E 6564 2079 6F75 2070 6C65 6173 6520"
+	$"7365 6E64 206D 6520 616E 2065 6D61 696C"
+	$"2120 286C 616E 6540 6966 642E 636F 6D29"
+	$"0D0D 4865 7845 6469 7420 6973 2072 656C"
+	$"6561 7365 6420 756E 6465 7220 7468 6520"
+	$"4D6F 7A69 6C6C 6120 5075 626C 6963 204C"
+	$"6963 656E 7365 2E20 506C 6561 7365 2052"
+	$"6561 6420 D24C 6963 656E 7365 2E74 7874"
+	$"D320 666F 7220 6465 7461 696C 732E 0D0D"
+	$"0D0D 0D0D 0D0D 0D0D 0D0D 0D0D 0D0D"
+*/
 };
 
-resource 'STR#' (200, "URL’s", purgeable) {
+resource 'STR#' (200, "URLs", purgeable) {
 	{	/* array StringArray: 5 elements */
 		/* [1] */
 		"http://www.ideasfromthedeep.com/hexedit",

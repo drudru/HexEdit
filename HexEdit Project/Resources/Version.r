@@ -8,7 +8,7 @@ resource 'STR#' (1, "Product") {
 		/* [2] */
 		"HexEdit",
 		/* [3] */
-		"2008",
+		"2010",
 		/* [4] */
 		"http://hexedit.sourceforge.net",
 		/* [5] */
@@ -23,10 +23,9 @@ resource 'STR#' (2, "Vendor") {
 		/* [2] */
 		"Ideas From the Deep",
 		/* [3] */
-		"P.O.Box 705 ¥ Little Elm ¥ TX ¥ 75068-07"
-		"05",
+		"P.O.Box 472747, Garland, TX 75047-2747"
 		/* [4] */
-		"214-618-5496",
+		"972-840-8415",
 		/* [5] */
 		"",
 		/* [6] */
@@ -45,16 +44,21 @@ resource 'STR#' (2, "Vendor") {
 };
 
 data 'TEXT' (1, "Product Description") {
-	$"4865 7845 6469 740D 0D41 2066 696C 6520"            /* HexEdit..A file  */
-	$"6564 6974 696E 6720 7574 696C 6974 7920"            /* editing utility  */
-	$"616C 6C6F 7769 6E67 2079 6F75 2074 6F20"            /* allowing you to  */
-	$"6564 6974 2074 6865 2072 6573 6F75 7263"            /* edit the resourc */
-	$"6520 616E 6420 6461 7461 2066 6F72 6B73"            /* e and data forks */
-	$"206F 6620 616E 7920 6669 6C65 2069 6E20"            /*  of any file in  */
-	$"6865 782C 2064 6563 696D 616C 206F 7220"            /* hex, decimal or  */
-	$"4153 4349 492E 2049 7420 616C 736F 2064"            /* ASCII. It also d */
-	$"6973 6173 736D 626C 6573 2050 6F77 6572"            /* isassmbles Power */
-	$"5043 2063 6F64 652E"                                /* PC code. */
+	"HexEdit\n\n"
+	"A file editing utility allowing you to edit the resource "
+	"and data forks of any file in hex, decimal or ASCII. "
+	"It also disassmbles Power PC code."
+/*
+	$"4865 7845 6469 740D 0D41 2066 696C 6520"
+	$"6564 6974 696E 6720 7574 696C 6974 7920"
+	$"616C 6C6F 7769 6E67 2079 6F75 2074 6F20"
+	$"6564 6974 2074 6865 2072 6573 6F75 7263"
+	$"6520 616E 6420 6461 7461 2066 6F72 6B73"
+	$"206F 6620 616E 7920 6669 6C65 2069 6E20"
+	$"6865 782C 2064 6563 696D 616C 206F 7220"
+	$"4153 4349 492E 2049 7420 616C 736F 2064"
+	$"6973 6173 736D 626C 6573 2050 6F77 6572"
+	$"5043 2063 6F64 652E" */
 };
 
 data 'hfdr' (-5696) {
@@ -69,23 +73,21 @@ data 'styl' (1) {
 
 resource 'vers' (1) {
 	0x2,
-	0x20,
+	0x22,
 	release,
 	0x0,
 	0,
-	"2.2",
-	"2.2 ©1996-2008 Lane Roathe, based on cod"
-	"e by Jim Bumgardner. Thanks to Nick Shan"
-	"ks."
+	"2.2.2",
+	"2.2.2 © 1996-2010 Lane Roathe, based on code by Jim Bumgardner. Thanks to Nick Shanks."
 };
 
 resource 'vers' (2) {
 	0x2,
-	0x20,
+	0x22,
 	release,
 	0x0,
 	0,
-	"2.2",
+	"2.2.2",
 	"www.ideasfromthedeep.com/hexedit"
 };
 
