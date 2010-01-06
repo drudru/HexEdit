@@ -58,31 +58,6 @@
 		};
 /* End PBXBuildRule section */
 
-/* Begin PBXBuildStyle section */
-		05952DFCFFF02D1B11CA0E50 /* Development */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = NO;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_ENABLE_FIX_AND_CONTINUE = YES;
-				GCC_GENERATE_DEBUGGING_SYMBOLS = YES;
-				GCC_OPTIMIZATION_LEVEL = 0;
-				OPTIMIZATION_CFLAGS = "-O0";
-				ZERO_LINK = YES;
-			};
-			name = Development;
-		};
-		05952DFDFFF02D1B11CA0E50 /* Deployment */ = {
-			isa = PBXBuildStyle;
-			buildSettings = {
-				COPY_PHASE_STRIP = YES;
-				GCC_ENABLE_FIX_AND_CONTINUE = NO;
-				ZERO_LINK = NO;
-			};
-			name = Deployment;
-		};
-/* End PBXBuildStyle section */
-
 /* Begin PBXFileReference section */
 		0640BAA4FFF0323A11CA0E50 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = /System/Library/Frameworks/ApplicationServices.framework; sourceTree = "<absolute>"; };
 		0640BAA5FFF0323A11CA0E50 /* CoreServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreServices.framework; path = /System/Library/Frameworks/CoreServices.framework; sourceTree = "<absolute>"; };
@@ -93,7 +68,7 @@
 		3DE55CFC07F5CBC50046B497 /* DocumentBinary.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = DocumentBinary.icns; path = Resources/Icons/DocumentBinary.icns; sourceTree = "<group>"; };
 		3DE55CFD07F5CBC50046B497 /* DocumentText.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = DocumentText.icns; path = Resources/Icons/DocumentText.icns; sourceTree = "<group>"; };
 		3DEA78EB07354D4000F21B22 /* pentagram.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = pentagram.icns; path = Resources/Icons/pentagram.icns; sourceTree = "<group>"; };
-		3DFAAE4406EFD3EF00753EF0 /* Info-HexEdit.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "Info-HexEdit.plist"; sourceTree = "<group>"; };
+		3DFAAE4406EFD3EF00753EF0 /* Info-HexEdit.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-HexEdit.plist"; sourceTree = "<group>"; };
 		3DFAAE4506EFD3EF00753EF0 /* HexEdit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HexEdit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0FB35A205BC263500673008 /* AboutBox.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = AboutBox.c; path = Source/AboutBox.c; sourceTree = "<group>"; };
 		F0FB35A305BC263500673008 /* AboutBox.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = AboutBox.h; path = Source/AboutBox.h; sourceTree = "<group>"; };
@@ -261,26 +236,6 @@
 			buildRules = (
 				3D0406A908BD1940000CFEC9 /* PBXBuildRule */,
 			);
-			buildSettings = {
-				FRAMEWORK_SEARCH_PATHS = "";
-				GCC_PRECOMPILE_PREFIX_HEADER = YES;
-				GCC_PREFIX_HEADER = HexEdit_Prefix.h;
-				HEADER_SEARCH_PATHS = "";
-				INFOPLIST_FILE = "Info-HexEdit.plist";
-				INSTALL_PATH = "$(HOME)/Applications";
-				LIBRARY_SEARCH_PATHS = "";
-				OTHER_CFLAGS = "";
-				OTHER_LDFLAGS = "";
-				OTHER_REZFLAGS = "";
-				PRODUCT_NAME = HexEdit;
-				SECTORDER_FLAGS = "";
-				WARNING_CFLAGS = (
-					"-Wmost",
-					"-Wno-four-char-constants",
-					"-Wno-unknown-pragmas",
-				);
-				WRAPPER_EXTENSION = app;
-			};
 			dependencies = (
 			);
 			name = HexEdit;
@@ -294,16 +249,15 @@
 /* Begin PBXProject section */
 		20286C28FDCF999611CA2CEA /* Project object */ = {
 			isa = PBXProject;
-			buildConfigurationList = 3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit" */;
-			buildSettings = {
+			attributes = {
+				ORGANIZATIONNAME = "Ideas From the Deep";
 			};
-			buildStyles = (
-				05952DFCFFF02D1B11CA0E50 /* Development */,
-				05952DFDFFF02D1B11CA0E50 /* Deployment */,
-			);
+			buildConfigurationList = 3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit" */;
+			compatibilityVersion = "Xcode 2.4";
 			hasScannedForEncodings = 1;
 			mainGroup = 20286C29FDCF999611CA2CEA /* ¬´PROJECTNAME¬ª */;
 			projectDirPath = "";
+			projectRoot = "";
 			targets = (
 				3DFAAE1906EFD3EF00753EF0 /* HexEdit */,
 			);
@@ -390,7 +344,6 @@
 				INFOPLIST_FILE = "Info-HexEdit.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "";
-				OPTIMIZATION_CFLAGS = "-O0";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -461,7 +414,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
-				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
+				SDKROOT = /Developer/SDKs/MacOSX10.3.9.sdk;
 			};
 			name = Development;
 		};
@@ -469,7 +422,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
-				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
+				SDKROOT = /Developer/SDKs/MacOSX10.3.9.sdk;
 			};
 			name = Deployment;
 		};
@@ -477,7 +430,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
-				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
+				SDKROOT = /Developer/SDKs/MacOSX10.3.9.sdk;
 			};
 			name = Default;
 		};

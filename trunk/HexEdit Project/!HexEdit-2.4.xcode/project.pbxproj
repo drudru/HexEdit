@@ -16,6 +16,7 @@
 		3DE55CFE07F5CBC50046B497 /* DocumentBinary.icns in Resources */ = {isa = PBXBuildFile; fileRef = 3DE55CFC07F5CBC50046B497 /* DocumentBinary.icns */; };
 		3DE55CFF07F5CBC50046B497 /* DocumentText.icns in Resources */ = {isa = PBXBuildFile; fileRef = 3DE55CFD07F5CBC50046B497 /* DocumentText.icns */; };
 		3DEA78EC07354D4000F21B22 /* pentagram.icns in Resources */ = {isa = PBXBuildFile; fileRef = 3DEA78EB07354D4000F21B22 /* pentagram.icns */; };
+		3DF707B310F3F4E80047E7CE /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20286C33FDCF999611CA2CEA /* Carbon.framework */; };
 		3DFAAE1B06EFD3EF00753EF0 /* HexEdit_Prefix.h in Headers */ = {isa = PBXBuildFile; fileRef = 32BAE0B00371A5F400C91783 /* HexEdit_Prefix.h */; };
 		3DFAAE1C06EFD3EF00753EF0 /* AboutBox.h in Headers */ = {isa = PBXBuildFile; fileRef = F0FB35A305BC263500673008 /* AboutBox.h */; };
 		3DFAAE1D06EFD3EF00753EF0 /* AECompareSuite.h in Headers */ = {isa = PBXBuildFile; fileRef = F0FB35A405BC263500673008 /* AECompareSuite.h */; };
@@ -42,7 +43,6 @@
 		3DFAAE3506EFD3EF00753EF0 /* ObjectWindow.c in Sources */ = {isa = PBXBuildFile; fileRef = F0FB35B405BC263500673008 /* ObjectWindow.c */; };
 		3DFAAE3606EFD3EF00753EF0 /* Prefs.c in Sources */ = {isa = PBXBuildFile; fileRef = F0FB35B605BC263500673008 /* Prefs.c */; };
 		3DFAAE3706EFD3EF00753EF0 /* UtilFuncs.c in Sources */ = {isa = PBXBuildFile; fileRef = F0FB35B805BC263500673008 /* UtilFuncs.c */; };
-		3DFAAE3906EFD3EF00753EF0 /* Carbon.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20286C33FDCF999611CA2CEA /* Carbon.framework */; };
 		F2401B010D4D5130001405FC /* carb.r in Rez */ = {isa = PBXBuildFile; fileRef = F2401B000D4D5130001405FC /* carb.r */; };
 /* End PBXBuildFile section */
 
@@ -64,15 +64,15 @@
 		20286C33FDCF999611CA2CEA /* Carbon.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Carbon.framework; path = /System/Library/Frameworks/Carbon.framework; sourceTree = "<absolute>"; };
 		32BAE0B00371A5F400C91783 /* HexEdit_Prefix.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = HexEdit_Prefix.h; sourceTree = "<group>"; };
 		3D0406B908BD198B000CFEC9 /* ppc_disasm.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = ppc_disasm.c; path = Source/ppc_disasm.c; sourceTree = "<group>"; };
-		3DA211D60D90C187001F5EC7 /* About.r */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.rez; name = About.r; path = Resources/About.r; sourceTree = "<group>"; };
+		3DA211D60D90C187001F5EC7 /* About.r */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.rez; name = About.r; path = Resources/About.r; sourceTree = "<group>"; };
 		3DA211D70D90C187001F5EC7 /* VOODOO.r */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.rez; name = VOODOO.r; path = Resources/VOODOO.r; sourceTree = "<group>"; };
-		3DA211D80D90C187001F5EC7 /* Version.r */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.rez; name = Version.r; path = Resources/Version.r; sourceTree = "<group>"; };
-		3DA211D90D90C187001F5EC7 /* HexEdit.r */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.rez; name = HexEdit.r; path = Resources/HexEdit.r; sourceTree = "<group>"; };
+		3DA211D80D90C187001F5EC7 /* Version.r */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.rez; name = Version.r; path = Resources/Version.r; sourceTree = "<group>"; };
+		3DA211D90D90C187001F5EC7 /* HexEdit.r */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.rez; name = HexEdit.r; path = Resources/HexEdit.r; sourceTree = "<group>"; };
 		3DA211DA0D90C187001F5EC7 /* Colors.r */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.rez; name = Colors.r; path = Resources/Colors.r; sourceTree = "<group>"; };
 		3DE55CFC07F5CBC50046B497 /* DocumentBinary.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = DocumentBinary.icns; path = Resources/Icons/DocumentBinary.icns; sourceTree = "<group>"; };
 		3DE55CFD07F5CBC50046B497 /* DocumentText.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = DocumentText.icns; path = Resources/Icons/DocumentText.icns; sourceTree = "<group>"; };
 		3DEA78EB07354D4000F21B22 /* pentagram.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; name = pentagram.icns; path = Resources/Icons/pentagram.icns; sourceTree = "<group>"; };
-		3DFAAE4406EFD3EF00753EF0 /* Info-HexEdit.plist */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = "Info-HexEdit.plist"; sourceTree = "<group>"; };
+		3DFAAE4406EFD3EF00753EF0 /* Info-HexEdit.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "Info-HexEdit.plist"; sourceTree = "<group>"; };
 		3DFAAE4506EFD3EF00753EF0 /* HexEdit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HexEdit.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		F0FB35A205BC263500673008 /* AboutBox.c */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.c; name = AboutBox.c; path = Source/AboutBox.c; sourceTree = "<group>"; };
 		F0FB35A305BC263500673008 /* AboutBox.h */ = {isa = PBXFileReference; fileEncoding = 30; lastKnownFileType = sourcecode.c.h; name = AboutBox.h; path = Source/AboutBox.h; sourceTree = "<group>"; };
@@ -106,7 +106,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				3DFAAE3906EFD3EF00753EF0 /* Carbon.framework in Frameworks */,
+				3DF707B310F3F4E80047E7CE /* Carbon.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -246,7 +246,10 @@
 /* Begin PBXProject section */
 		20286C28FDCF999611CA2CEA /* Project object */ = {
 			isa = PBXProject;
-			buildConfigurationList = 3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit" */;
+			attributes = {
+				ORGANIZATIONNAME = "Ideas From the Deep";
+			};
+			buildConfigurationList = 3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit-2.4" */;
 			compatibilityVersion = "Xcode 2.4";
 			hasScannedForEncodings = 1;
 			mainGroup = 20286C29FDCF999611CA2CEA /* ¬´PROJECTNAME¬ª */;
@@ -341,7 +344,6 @@
 				INFOPLIST_FILE = "Info-HexEdit.plist";
 				INSTALL_PATH = "$(HOME)/Applications";
 				LIBRARY_SEARCH_PATHS = "";
-				OPTIMIZATION_CFLAGS = "-O0";
 				OTHER_CFLAGS = "";
 				OTHER_LDFLAGS = "";
 				OTHER_REZFLAGS = "";
@@ -422,36 +424,67 @@
 		3D04068108BD17CE000CFEC9 /* Development */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					"$(NATIVE_ARCH)",
-					PPC,
-				);
+				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
+				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				GCC_DEBUGGING_SYMBOLS = full;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_INPUT_FILETYPE = sourcecode.c.c;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = HexEdit_Prefix.h;
+				GCC_STRICT_ALIASING = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_VERSION = 4.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
+				SEPARATE_STRIP = YES;
 			};
 			name = Development;
 		};
 		3D04068208BD17CE000CFEC9 /* Deployment */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					"$(NATIVE_ARCH)",
-					PPC,
-				);
+				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
+				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				GCC_DEBUGGING_SYMBOLS = full;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_INPUT_FILETYPE = sourcecode.c.c;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = HexEdit_Prefix.h;
+				GCC_STRICT_ALIASING = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_VERSION = 4.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
+				SEPARATE_STRIP = YES;
 			};
 			name = Deployment;
 		};
 		3D04068308BD17CE000CFEC9 /* Default */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				ARCHS = (
-					"$(NATIVE_ARCH)",
-					PPC,
-				);
+				ARCHS = "$(ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1)";
+				ARCHS_STANDARD_32_BIT_PRE_XCODE_3_1 = "ppc i386";
+				GCC_DEBUGGING_SYMBOLS = full;
+				GCC_ENABLE_CPP_EXCEPTIONS = NO;
+				GCC_ENABLE_CPP_RTTI = NO;
+				GCC_ENABLE_OBJC_EXCEPTIONS = NO;
+				GCC_INLINES_ARE_PRIVATE_EXTERN = YES;
+				GCC_INPUT_FILETYPE = sourcecode.c.c;
+				GCC_PRECOMPILE_PREFIX_HEADER = YES;
+				GCC_PREFIX_HEADER = HexEdit_Prefix.h;
+				GCC_STRICT_ALIASING = YES;
+				GCC_SYMBOLS_PRIVATE_EXTERN = YES;
+				GCC_VERSION = 4.0;
 				MACOSX_DEPLOYMENT_TARGET = 10.1;
 				SDKROOT = /Developer/SDKs/MacOSX10.1.5.sdk;
+				SEPARATE_STRIP = YES;
 			};
 			name = Default;
 		};
@@ -468,7 +501,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Development;
 		};
-		3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit" */ = {
+		3D04068008BD17CE000CFEC9 /* Build configuration list for PBXProject "!HexEdit-2.4" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				3D04068108BD17CE000CFEC9 /* Development */,
