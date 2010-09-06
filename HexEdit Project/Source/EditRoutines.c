@@ -48,7 +48,7 @@ static EditChunk	**_scrapChunk;
 void LoadFile( EditWindowPtr dWin )
 {
 	EditChunk	**nc;
-	long		count, chunkSize, pos;
+	u_long		count, chunkSize, pos;
 	Boolean		once = true;
 
 	count = dWin->fileSize;
@@ -89,7 +89,7 @@ void UnloadFile( EditWindowPtr dWin )
 }
 
 /*** NEW CHUNK ***/
-EditChunk** NewChunk( long size, long addr, long filePos, short type )
+EditChunk** NewChunk( u_long size, u_long addr, u_long filePos, short type )
 {
 	EditChunk **nc;
 	nc = ( EditChunk ** ) NewHandleClear( sizeof( EditChunk ) );
@@ -155,7 +155,7 @@ EditChunk** AppendChunk( EditChunk **list, EditChunk **chunk )
 }
 
 /*** SET CURRENT CHUNK ***/
-void SetCurrentChunk( EditWindowPtr dWin, long addr )
+void SetCurrentChunk( EditWindowPtr dWin, u_long addr )
 {
 	register EditChunk **cc;
 	cc = GetChunkByAddr( dWin, addr );
@@ -163,7 +163,7 @@ void SetCurrentChunk( EditWindowPtr dWin, long addr )
 }
 
 /*** GET CHUNK BY ADDRESS ***/
-EditChunk** GetChunkByAddr( EditWindowPtr dWin, long addr )
+EditChunk** GetChunkByAddr( EditWindowPtr dWin, u_long addr )
 {
 	register EditChunk **cc;
 
@@ -190,7 +190,7 @@ EditChunk** GetChunkByAddr( EditWindowPtr dWin, long addr )
 }
 
 /*** GET BYTE ***/
-Byte GetByte( EditWindowPtr dWin, long addr )
+Byte GetByte( EditWindowPtr dWin, u_long addr )
 {
 	register EditChunk **cc;
 	if( ( cc = GetChunkByAddr( dWin, addr ) ) != NULL )
@@ -211,7 +211,7 @@ Byte GetByte( EditWindowPtr dWin, long addr )
 /*** LOAD CHUNK ***/
 void LoadChunk( EditWindowPtr dWin, EditChunk **cc )
 {
-	long	count;
+	u_long	count;
 	OSErr	error;
 	short	refNum;
 
@@ -242,7 +242,7 @@ void LoadChunk( EditWindowPtr dWin, EditChunk **cc )
 		if( count )	//LR 1.73 :empty file is OK, don't bring up an error by trying to read nothing!
 		{
 			dWin->totLoaded += count;
-			if( ( error = FSRead( refNum, &count, *( *cc )->data ) ) != noErr )
+			if( ( error = FSRead( refNum, (long *)&count, *( *cc )->data ) ) != noErr )
 				ErrorAlert( ES_Caution, errRead, error );
 		}
 	}
@@ -265,7 +265,7 @@ void UnloadLeastUsedChunk( EditWindowPtr dWin )
 /*** UNLOAD CHUNK ***/
 void UnloadChunk( EditWindowPtr dWin, EditChunk	**cc, Boolean writeFlag )
 {
-	long	count;
+	u_long	count;
 	OSErr	error;
 
 	if( cc && ( *cc )->loaded && ( *cc )->data )
@@ -277,7 +277,7 @@ void UnloadChunk( EditWindowPtr dWin, EditChunk	**cc, Boolean writeFlag )
 			if( error )
 				ErrorAlert( ES_Caution, errSetFPos, error );
 			count = ( *cc )->size;
-			error = FSWrite( dWin->workRefNum, &count, *( *cc )->data );
+			error = FSWrite( dWin->workRefNum, (long *)&count, *( *cc )->data );
 			if( error )
 				ErrorAlert( ES_Caution, errWrite, error );
 			( *cc )->type = CT_Work;
@@ -371,7 +371,7 @@ void RemoveSelection( EditWindowPtr dWin )
 		// Truncate beg of end chunk
 		if( ( *ec )->type == CT_Unwritten )
 		{
-			long	offset;
+			u_long	offset;
 			offset = dWin->endSel - ( *ec )->addr;
 // LR: -- fix according to feedback from Jonathan Wright
 // 			BlockMove( *( *ec )->data, *( *ec )->data+offset, ( *ec )->size - offset );
@@ -380,7 +380,7 @@ void RemoveSelection( EditWindowPtr dWin )
 		}
 		else
 		{
-			long	offset;
+			u_long	offset;
 			offset = dWin->endSel - ( *ec )->addr;
 			UnloadChunk( dWin, ec, true );
 			( *ec )->filePos += offset;
@@ -559,7 +559,7 @@ void CopySelection( EditWindowPtr dWin )
 			Handle tmp;
 			const char *src;
 			char *dest, bit;
-			long i, len = ( *_scrapChunk )->size * (gPrefs.formatCopies ? 3 : 2);	//LR 1.72 -- size depends on how copied
+			u_long i, len = ( *_scrapChunk )->size * (gPrefs.formatCopies ? 3 : 2);	//LR 1.72 -- size depends on how copied
 
 			tmp = NewHandle( len );
 			if( tmp )
@@ -695,7 +695,7 @@ void CutSelection( EditWindowPtr dWin )
 /*** MY GET SCRAP ***/
 void MyGetScrap( EditWindowPtr dWin )
 {
-	long scrapSize = 0;
+	u_long scrapSize = 0;
 	OSErr anErr;
 
 #if TARGET_API_MAC_CARBON
@@ -706,9 +706,9 @@ void MyGetScrap( EditWindowPtr dWin )
 	if( !anErr )
 		anErr = GetScrapFlavorFlags( scrapRef, kScrapFlavorTypeText, &flavorFlags );		// non-blocking check for scrap data
 	if( !anErr )
-		anErr = GetScrapFlavorSize( scrapRef, kScrapFlavorTypeText, &scrapSize );	// blocking call to get size
+		anErr = GetScrapFlavorSize( scrapRef, kScrapFlavorTypeText, (long *)&scrapSize );	// blocking call to get size
 #else
-	long		offset;
+	u_long		offset;
 
 	scrapSize = GetScrap( NULL, kScrapFlavorTypeText, &offset );
 #endif
@@ -726,7 +726,7 @@ void MyGetScrap( EditWindowPtr dWin )
 
 			HLock( (*_scrapChunk)->data );
 #if TARGET_API_MAC_CARBON
-			anErr = GetScrapFlavorData( scrapRef, kScrapFlavorTypeText, &scrapSize, *(*_scrapChunk)->data );
+			anErr = GetScrapFlavorData( scrapRef, kScrapFlavorTypeText, (long *)&scrapSize, *(*_scrapChunk)->data );
 #else
 			anErr = GetScrap( (*_scrapChunk)->data, kScrapFlavorTypeText, &offset );
 #endif

@@ -46,11 +46,11 @@ typedef struct EditChunk
 	Boolean				loaded;			// Flag if chunk is currently loaded
 	short				type;			// 0=Orig File, 1=Work File, 2=Unwritten
 	Handle				data;			// Handle to Chunk Data
-	long				size;			// Size of Chunk
-	long				allocSize;		// Size of allocated Pointer
-	long				addr;			// Start Addr in updated File
-	long				filePos;		// Start Addr in actual File
-	long				lastCtr;		// Use Counter
+	u_long				size;			// Size of Chunk
+	u_long				allocSize;		// Size of allocated Pointer
+	u_long				addr;			// Start Addr in updated File
+	u_long				filePos;		// Start Addr in actual File
+	u_long				lastCtr;		// Use Counter
 }	EditChunk;
 
 /*** EDIT WINDOW ***/
@@ -61,9 +61,9 @@ typedef struct
 
 	EditChunk			**firstChunk;	// File's First Chunk
 	EditChunk			**curChunk;		// File's Current Chunk
-	long				useCtr;			// Chunk access Counter
+	u_long				useCtr;			// Chunk access Counter
 										// Chunks are unloaded from memory based on usage
-	long				totLoaded;		// Amount of bytes in Memory
+	u_long				totLoaded;		// Amount of bytes in Memory
 
 	FSSpec				fsSpec,workSpec;// File Specs for Original, Work File
 	FSSpec				destSpec;		// File Spec for Save, Save As
@@ -71,14 +71,14 @@ typedef struct
 	/* very latest type of info */
 #if !defined(__MC68K__) && !defined(__SC__)
 	FSCatalogInfo 		catinfo;		// File permissions (including unix bytes, etc.)
-	long				OKToSetCatInfo;	// true if no error getting permissions
+	u_long				OKToSetCatInfo;	// true if no error getting permissions
 #endif
 
 	/* old type of info */
-	long				fileSize;		// Total File Size
-	long				fileType;		// File Type
-	long				creator;		// File Creator
-	unsigned long		creationDate;	// Creation Date
+	u_long				fileSize;		// Total File Size
+	u_long				fileType;		// File Type
+	u_long				creator;		// File Creator
+	u_long				creationDate;	// Creation Date
 
 	short				refNum;			// File's Reference Number
 	short				workRefNum;		// Work File's Reference Number
@@ -89,12 +89,12 @@ typedef struct
 	short				bytesPerLine;	// Number of bytes per line
 	short				drawMode;		// 0=Dump, 1=Disassembly
 	
-	long				editOffset;		// Display Offset
-	long				startSel;		// First Character of Selection
-	long				endSel;			// First Character AFTER Selection
-	long				lastTypePos;	// Last Typing Insertion Point
-	long				workBytesWritten;	// Size of Work File
-	long				linesPerPage;	// Lines that fit in the theWin
+	u_long				editOffset;		// Display Offset
+	u_long				startSel;		// First Character of Selection
+	u_long				endSel;			// First Character AFTER Selection
+	u_long				lastTypePos;	// Last Typing Insertion Point
+	u_long				workBytesWritten;	// Size of Work File
+	u_long				linesPerPage;	// Lines that fit in the theWin
 
 //	HR/LR 050328 - Fix error in comments
 	EditMode			editMode;		// 0=Hex, 1=Decimal, 2=Ascii
