@@ -32,9 +32,9 @@ typedef struct
 {
 	short			type;				// Type of operation
 	short			reserved;
-	long			startSel;			// Start of Selection
-	long			endSel;				// End of Selection
-	long			fileSize;			// File Size for Undo Op
+	u_long			startSel;			// Start of Selection
+	u_long			endSel;				// End of Selection
+	u_long			fileSize;			// File Size for Undo Op
 	EditChunk		**undoScrap;
 	EditWindowPtr	theWin;
 }UndoRecord, *UndoPtr;
@@ -47,12 +47,12 @@ extern UndoRecord gUndo, gRedo;
 
 void LoadFile( EditWindowPtr dWin );
 void UnloadFile( EditWindowPtr dWin );
-EditChunk** NewChunk( long size, long addr, long filePos, short type );
+EditChunk** NewChunk( u_long size, u_long addr, u_long filePos, short type );
 void DisposeChunk( EditWindowPtr dWin, EditChunk **cc );
 EditChunk** AppendChunk( EditChunk **list, EditChunk **chunk );
-void SetCurrentChunk( EditWindowPtr dWin, long addr );
-EditChunk** GetChunkByAddr( EditWindowPtr dWin, long addr );
-Byte GetByte( EditWindowPtr dWin, long addr );
+void SetCurrentChunk( EditWindowPtr dWin, u_long addr );
+EditChunk** GetChunkByAddr( EditWindowPtr dWin, u_long addr );
+Byte GetByte( EditWindowPtr dWin, u_long addr );
 void LoadChunk( EditWindowPtr dWin, EditChunk **cc );
 void UnloadLeastUsedChunk( EditWindowPtr dWin );
 void UnloadChunk( EditWindowPtr dWin, EditChunk	**cc, Boolean writeFlag );

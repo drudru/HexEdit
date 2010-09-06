@@ -48,17 +48,6 @@ data 'TEXT' (1, "Product Description") {
 	"A file editing utility allowing you to edit the resource "
 	"and data forks of any file in hex, decimal or ASCII. "
 	"It also disassmbles Power PC code."
-/*
-	$"4865 7845 6469 740D 0D41 2066 696C 6520"
-	$"6564 6974 696E 6720 7574 696C 6974 7920"
-	$"616C 6C6F 7769 6E67 2079 6F75 2074 6F20"
-	$"6564 6974 2074 6865 2072 6573 6F75 7263"
-	$"6520 616E 6420 6461 7461 2066 6F72 6B73"
-	$"206F 6620 616E 7920 6669 6C65 2069 6E20"
-	$"6865 782C 2064 6563 696D 616C 206F 7220"
-	$"4153 4349 492E 2049 7420 616C 736F 2064"
-	$"6973 6173 736D 626C 6573 2050 6F77 6572"
-	$"5043 2063 6F64 652E" */
 };
 
 data 'hfdr' (-5696) {

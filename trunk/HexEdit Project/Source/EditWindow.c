@@ -775,7 +775,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 	HParamBlockRec		pb;
 	FSSpec				workSpec;
 	Str31				tempStr;
-	long				fileEOF;	//LR 175
+	u_long				fileEOF;	//LR 175
 // LR: 1.5 	Rect		r, offRect;
 
 	//LR 175 -- try to find the file in an open window first, and use it if found
@@ -828,7 +828,7 @@ OSStatus OpenEditWindow( FSSpec *fsSpec, tWindowType type, Boolean showerr )
 		}
 		// Check for empty for this way instead of via pb.fileParam.ioFlLgLen so that the user can create the fork if desired!
 		if( !error )
-			error = GetEOF( refNum, &fileEOF );		//LR 175
+			error = GetEOF( refNum, (long *)&fileEOF );		//LR 175
 
 		if( error == fnfErr || (!error && 0 == fileEOF) )
 		{
@@ -886,7 +886,7 @@ contData:
 		}
 		// Check for empty for this way instead of via pb.fileParam.ioFlRLgLen so that the user can create the fork if desired!
 		if( !error )
-			error = GetEOF( refNum, &fileEOF );		//LR 175
+			error = GetEOF( refNum, (long *)&fileEOF );		//LR 175
 
 		if( error == fnfErr || (!error && 0 == fileEOF) )
 		{
@@ -1295,7 +1295,7 @@ static void _offsetSelection( EditWindowPtr dWin, short offset, Boolean shiftFla
 static void _hiliteSelection( EditWindowPtr	dWin )
 {
 	Rect	r;
-	long	start, end;
+	u_long	start, end;
 	short	startX, endX;
 	Boolean	frontFlag;
 	RGBColor hColor, opcolor = { 0x8000, 0x8000, 0xF000 };
@@ -1735,7 +1735,7 @@ static void _drawHeader( EditWindowPtr dWin, Rect *r )
 // LR: 1.7 - use TextUtils to get date/time strings in user preferred format!
 static void _drawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPages )
 {
-	unsigned long	dt;
+	u_long	dt;
 	Str63	s1, s2;
 
 	TextFont( g.fontFaceID );
@@ -1795,13 +1795,13 @@ static void _drawFooter( EditWindowPtr dWin, Rect *r, short pageNbr, short nbrPa
 // NOTE: the kStringTextPos stuff is a bit weird, but it's because I want to draw the leading space in the body
 //			color instead of the address color (and because we don't print the extra spaces every time).
 
-static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
+static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, u_long sAddr, u_long eAddr )
 {
 	short	i, j, y;
 	short	hexPos;
 	short	asciiPos;
 	register short	ch, ch1, ch2;
-	unsigned long	addr, lineAddr;
+	u_long	addr, lineAddr = 0;
 	Rect addrRect;
 
 //	HR/LR 050328 - PPC disassembly support
@@ -1910,7 +1910,7 @@ static OSStatus _drawDump( EditWindowPtr dWin, Rect *r, long sAddr, long eAddr )
 			dp.opcode = opcode;
 			dp.operands = operands;
 			dp.instr = &ppcword;
-			dp.iaddr = (unsigned long *)lineAddr;
+			dp.iaddr = (u_long *)lineAddr;
 			PPC_Disassemble(&dp);
 			/* Remove dummy instructions. */
 			if (strcmp(opcode,".word") == 0)
@@ -2185,7 +2185,7 @@ void MyIdle( WindowRef theWin, EventRecord *er )
 void MyHandleClick( WindowRef theWin, Point where, EventRecord *er )
 {
 	Point			w;
-	long			pos, anchorPos = -1,
+	u_long			pos, anchorPos = -1,
 					sPos, ePos;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 	SetPortWindowPort( theWin );
@@ -2508,7 +2508,7 @@ void CursorOff( WindowRef theWin )
 void CursorOn( WindowRef theWin )
 {
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-	long			start;
+	u_long			start;
 
 	if( !g.cursorFlag && dWin->startSel >= dWin->editOffset && dWin->startSel < dWin->editOffset + ( dWin->linesPerPage * kBytesPerLine ) ) 
 	{
@@ -2618,8 +2618,8 @@ static void _doPrintLoop( PMPrintSession printSession, PMPageFormat pageFormat, 
 	OSStatus status,
 	         printError;
 	PMRect	pageRect;
-	SInt32	startAddr, endAddr, linesPerPage, addr;
-	UInt32	realNumberOfPagesinDoc,
+	SInt32	startAddr, endAddr = 0, linesPerPage = 0, addr = 0;
+	UInt32	realNumberOfPagesinDoc = 0,
 	         pageNumber,
 	         firstPage,
 	         lastPage;
@@ -2766,7 +2766,7 @@ void PrintWindow( EditWindowPtr dWin )
 	TPPrPort		printPort;
 	TPrStatus		prStatus;
 	short		pageNbr, startPage, endPage, nbrPages;
-	long		startAddr, endAddr, addr;
+	u_long		startAddr, endAddr, addr;
 	short		linesPerPage;
 #endif
 
@@ -2940,7 +2940,7 @@ static OSStatus _copyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
 	OSStatus error;
 	short	sRefNum, dRefNum;
 	Ptr		tBuffer;
-	long	srcSize=0L, bufSize, count;
+	u_long	srcSize=0L, bufSize, count;
 
 	tBuffer = NewPtr( 32000 );
 
@@ -2983,7 +2983,7 @@ static OSStatus _copyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
 			return error;
 		}
 	}
-	GetEOF( sRefNum, &srcSize );
+	GetEOF( sRefNum, (long *)&srcSize );
 	SetEOF( dRefNum, 0L );
 	while( srcSize )
 	{
@@ -2993,13 +2993,13 @@ static OSStatus _copyFork( FSSpec *srcSpec, FSSpec *dstSpec, short forkType )
 			bufSize = 32000;
 		srcSize -= bufSize;
 		count = bufSize;
-		error = FSRead( sRefNum, &count, tBuffer );
+		error = FSRead( sRefNum, (long *)&count, tBuffer );
 		if( error != noErr )
 		{
 			ErrorAlert( ES_Caution, errRead, error );
 			goto ErrorExit;
 		}
-		error = FSWrite( dRefNum, &count, tBuffer );
+		error = FSWrite( dRefNum, (long *)&count, tBuffer );
 		if( error != noErr )
 		{
 			ErrorAlert( ES_Caution, errWrite, error );
@@ -3021,7 +3021,7 @@ void SaveContents( WindowRef theWin )
 	FSSpec			tSpec, bSpec;
 	HParamBlockRec	pb;
 	EditChunk		**cc;
-	long			count;
+	u_long			count;
 	OSStatus		error;
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
 
@@ -3120,7 +3120,7 @@ void SaveContents( WindowRef theWin )
 	{
 		LoadChunk( dWin, cc );
 		count = ( *cc ) ->size;
-		error = FSWrite( tRefNum, &count, *( *cc ) ->data );
+		error = FSWrite( tRefNum, (long *)&count, *( *cc ) ->data );
 		if( error != noErr )
 		{
 			// !! Error Message - write error
@@ -3333,7 +3333,7 @@ void SaveAsContents( WindowRef theWin )
 void RevertContents( WindowRef theWin )
 {
 	EditWindowPtr	dWin = (EditWindowPtr) GetWRefCon( theWin );
-	long			newEOF;
+	u_long			newEOF;
 
 	// Reset Work File
 	dWin->workBytesWritten = 0L;
@@ -3343,7 +3343,7 @@ void RevertContents( WindowRef theWin )
 	UnloadFile( dWin );
 
 	// Reset EOF
-	GetEOF( dWin->refNum, &newEOF );
+	GetEOF( dWin->refNum, (long *)&newEOF );
 
 	dWin->fileSize = newEOF;
 
